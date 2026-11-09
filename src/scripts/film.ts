@@ -22,7 +22,7 @@ async function boot(story: HTMLElement) {
   const labels = [...story.querySelectorAll<HTMLElement>('[data-layer]')];
   const clockT = story.querySelector<HTMLElement>('[data-clock-t]')!, clockN = story.querySelector<HTMLElement>('[data-clock-n]')!, clock = story.querySelector<HTMLElement>('[data-clock]')!;
   const fine = matchMedia('(min-width: 48rem)').matches;
-  const NAMES = ['Dawn', 'Morning', 'Midday', 'Golden hour', 'Dusk', 'Night'];
+  const NAMES: [number, string][] = [[480, 'Dawn'], [680, 'Morning'], [900, 'Midday'], [1020, 'Afternoon'], [1150, 'Dusk'], [1e9, 'Night']];
 
   let s = -1, p = 0, frame = 0, shown = -1, visible = true, top = 0, span = 1;
   const resize = () => { top = story.getBoundingClientRect().top + scrollY - parseFloat(getComputedStyle(pin).top); span = story.offsetHeight - pin.offsetHeight; s = -1; };
@@ -53,7 +53,7 @@ async function boot(story: HTMLElement) {
     const lit = p > .23 && p < .985; clock.style.opacity = lit ? '1' : '0';
     if (lit) {
       const tod = todAt(frame), mins = Math.round(370 + tod * 900), hh = String(Math.floor(mins / 60)).padStart(2, '0'), mm = String(mins % 60).padStart(2, '0');
-      clockT.textContent = `${hh}:${mm}`; clockN.textContent = NAMES[Math.round(tod * (NAMES.length - 1))];
+      clockT.textContent = `${hh}:${mm}`; clockN.textContent = NAMES.find(n => mins < n[0])![1];
     }
   };
 
