@@ -26,7 +26,7 @@ const CAMERA: [number, [number, number, number], [number, number, number], numbe
   [.79, [2.6, 1.25, 5], [-.5, 1.75, -1.4], 44],
   [.87, [-2.4, 1.4, 5.8], [.2, 1.95, -1.5], 42],
   [.93, [-.5, 1.5, 15], [0, 2.1, 0], 38],
-  [1, [-11, -2, 47], [-6, 9, 0], 31],
+  [1, [-8, -1, 33], [-3.5, 8, 0], 35],
 ];
 
 const TOD: [number, number][] = [[0, 0], [.3, 0], [.41, .36], [.7, .4], [.79, .4], [.86, .6], [.92, .8], [1, 1]];
@@ -85,6 +85,11 @@ export function createWorld(canvas: HTMLCanvasElement) {
   };
   addPlant(-4.1, -3.3, 1.1); addPlant(4.2, 3.4, 1); addPlant(-1.7, ZB + .55, .7);
 
+  // soft contact shadows: ground the furniture even when a slow GPU has dropped ambient occlusion
+  const blobC = document.createElement('canvas'); blobC.width = blobC.height = 128; const bg = blobC.getContext('2d')!, grad = bg.createRadialGradient(64, 64, 8, 64, 64, 64); grad.addColorStop(0, 'rgba(0,0,0,1)'); grad.addColorStop(.55, 'rgba(0,0,0,.7)'); grad.addColorStop(1, 'rgba(0,0,0,0)'); bg.fillStyle = grad; bg.fillRect(0, 0, 128, 128);
+  const blobMat = new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(blobC), transparent: true, depthWrite: false, opacity: .6 }), blobs: THREE.Object3D[] = [];
+  for (const [w, d, x, z, r] of [[1.9, 4.6, 2.35, .8, 0], [3.5, 1.9, 1.2, -.7, 0], [2.6, 2.6, -.2, .95, 0], [1.9, 1.9, -3, 2.3, .55], [4, 1.1, .2, ZB + .3, 0], [1.2, 1.2, -4.1, -3.3, 0], [1.1, 1.1, 4.2, 3.4, 0], [.9, .9, -1.7, ZB + .55, 0]]) { const m = new THREE.Mesh(new THREE.PlaneGeometry(w, d), blobMat); m.rotation.set(-Math.PI / 2, 0, r); m.position.set(x, .03, z); room.add(m); blobs.push(m); }
+
   // ---- product ----
   const product = createProduct(), { root, spin, layers } = product; scene.add(root); root.visible = false;
   const frameIdx = layers.length - 1;
@@ -140,8 +145,8 @@ export function createWorld(canvas: HTMLCanvasElement) {
   }
   city.add(panesIM);
   const winTex = windowTexture(), towerMat = new THREE.MeshStandardMaterial({ color: '#10141f', metalness: .7, roughness: .3, emissive: '#ffffff', emissiveMap: winTex, emissiveIntensity: 0, envMapIntensity: .35 });
-  [[-20, 0, 12, 100, 14], [21, -2, 13, 96, 16], [-36, -18, 14, 130, 14], [38, -22, 15, 140, 13], [-14, -32, 13, 150, 11], [13, -38, 16, 170, 14], [-56, -40, 16, 120, 16], [58, -44, 18, 150, 16]].forEach(([x, z, w, h, d]) => {
-    const g = new THREE.BoxGeometry(w, h, d), uv = g.attributes.uv; for (let i = 0; i < uv.count; i++) uv.setXY(i, uv.getX(i) * w / 40, uv.getY(i) * h / 96);
+  [[-30, -10, 12, 100, 14], [28, -12, 13, 96, 16], [-46, -24, 14, 130, 14], [44, -26, 15, 140, 13], [-14, -32, 13, 150, 11], [13, -38, 16, 170, 14], [-56, -40, 16, 120, 16], [58, -44, 18, 150, 16]].forEach(([x, z, w, h, d]) => {
+    const g = new THREE.BoxGeometry(w, h, d), uv = g.attributes.uv; for (let i = 0; i < uv.count; i++) uv.setXY(i, uv.getX(i) * w / 18, uv.getY(i) * h / 40);
     const t = new THREE.Mesh(g, towerMat); t.position.set(x, h / 2 - 34, z); city.add(t);
   });
   const skyDome = new THREE.Mesh(new THREE.SphereGeometry(400, 24, 16), new THREE.ShaderMaterial({ side: THREE.BackSide, depthWrite: false, uniforms: { uTop: skyUniforms.uTop, uHor: skyUniforms.uHor }, vertexShader: 'varying vec3 vP; void main(){ vP=normalize(position); gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.); }', fragmentShader: 'uniform vec3 uTop, uHor; varying vec3 vP; void main(){ gl_FragColor=vec4(mix(uHor,uTop,smoothstep(-.05,.55,vP.y))*.3,1.); }' })); skyDome.visible = false; scene.add(skyDome);
@@ -153,7 +158,7 @@ export function createWorld(canvas: HTMLCanvasElement) {
   const gtao = new GTAOPass(scene, camera, 2, 2);
   gtao.updateGtaoMaterial({ radius: .55, distanceExponent: 1.4, thickness: 1, scale: 1.2, samples: 12, distanceFallOff: 1, screenSpaceRadius: false });
   gtao.updatePdMaterial({ lumaPhi: 10, depthPhi: 2, normalPhi: 3, radius: 6, rings: 2, samples: 12 }); gtao.blendIntensity = 1;
-  const noAO: THREE.Object3D[] = [...beamBits, mask, dust, skyDome]; spin.traverse(o => { const m = (o as THREE.Mesh).material as THREE.Material; if (m && !Array.isArray(m) && m.transparent) noAO.push(o); });
+  const noAO: THREE.Object3D[] = [...beamBits, ...blobs, mask, dust, skyDome]; spin.traverse(o => { const m = (o as THREE.Mesh).material as THREE.Material; if (m && !Array.isArray(m) && m.transparent) noAO.push(o); });
   const hide = gtao.overrideVisibility; gtao.overrideVisibility = function () { hide.call(this); noAO.forEach(o => { o.visible = false; }); };
   gtao.enabled = !coarse; composer.addPass(gtao);
   const bloom = new UnrealBloomPass(new THREE.Vector2(2, 2), .22, .55, 1.15); composer.addPass(bloom);
@@ -209,7 +214,7 @@ export function createWorld(canvas: HTMLCanvasElement) {
     if (city.visible) {
       const fade = floorsIn;
       shellMat.color.setRGB(.95, .55, .3).multiplyScalar(.2 * fade + .02); slabMat.color.setRGB(1, .72, .5).multiplyScalar(.42 * fade + .02);
-      paneMat.color.setRGB(s.rect.r, s.rect.g, s.rect.b).multiplyScalar(1.8 * fade + .02); towerMat.emissiveIntensity = night * .55;
+      paneMat.color.setRGB(s.rect.r, s.rect.g, s.rect.b).multiplyScalar(1.8 * fade + .02); towerMat.emissiveIntensity = night * .28;
     }
     (scene.fog as THREE.FogExp2).color.copy(s.hor).multiplyScalar(.28);
     // finish

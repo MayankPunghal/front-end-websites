@@ -1,6 +1,6 @@
 /* Hallmark: custom. Signature: one live day driven by scroll; headline weight follows the sun. */
 :root {
-  --bg: #0b0a09; --paper: #f2ece1; --ink: #17130e; --fg: #f6f0e6; --mute: #a39a8b; --mute-ink: #6a6256; --sun: #ffb648; --line: #d8cfbf; --loader: #121212; --blend: #fefefe; --stage: #060505; --shade: rgb(0 0 0 / .5); --dusk-1: #d9622c; --dusk-2: #3a1c23;
+  --bg: #0b0a09; --paper: #f2ece1; --ink: #17130e; --fg: #f6f0e6; --mute: #a39a8b; --mute-ink: #6a6256; --sun: #ffb648; --line: #d8cfbf; --loader: #121212; --blend: #fefefe; --blend-ink: #010101; --stage: #060505; --shade: rgb(0 0 0 / .5); --dusk-1: #d9622c; --dusk-2: #3a1c23;
   --font: 'Mona Sans Variable', system-ui, sans-serif; --gx: clamp(1.25rem, 4vw, 4rem); --max: 96rem; --ease: cubic-bezier(.2, .7, .1, 1);
 }
 *, *::before, *::after { box-sizing: border-box; }
@@ -22,7 +22,7 @@ a { color: inherit; }
 html.loading .loader { display: grid; } .loader.done { opacity: 0; visibility: hidden; } .loader [data-loader-anim] { width: 100%; }
 
 .top { position: fixed; z-index: 50; inset: 0 0 auto; display: flex; justify-content: space-between; align-items: center; padding: 1.25rem var(--gx); mix-blend-mode: difference; color: var(--blend); }
-.top img { width: clamp(7.5rem, 6rem + 5vw, 10rem); height: auto; } .top nav { display: flex; gap: clamp(1rem, 3vw, 2.5rem); } .top nav a { text-decoration: none; font-size: .9375rem; } .top nav a:hover { text-decoration: underline; text-underline-offset: .3em; }
+.top img { width: clamp(7.5rem, 6rem + 5vw, 10rem); height: auto; } .top nav { display: flex; gap: clamp(1rem, 3vw, 2.5rem); } .top nav { align-items: center; } .top nav a { text-decoration: none; } .top nav a:first-child:hover { text-decoration: underline; text-underline-offset: .3em; } .top nav a:last-child { padding: .55rem 1.15rem; border-radius: 99px; background: var(--blend); color: var(--blend-ink); font-weight: 500; }
 
 /* story: complete stacked page by default, pinned 3D only with .is-3d */
 .story__pin { position: relative; } .story canvas { display: none; }
@@ -49,6 +49,8 @@ html.loading .loader { display: grid; } .loader.done { opacity: 0; visibility: h
 .is-3d .labels li { position: absolute; left: 0; top: 0; opacity: 0; font-size: clamp(.8125rem, .75rem + .3vw, 1rem); white-space: nowrap; padding-left: 3.25rem; margin-top: -.7em; will-change: transform, opacity; }
 .is-3d .labels li::before { content: ''; position: absolute; left: 0; top: .72em; width: 2.75rem; height: 1px; background: currentColor; opacity: .55; }
 .is-3d .clock { display: flex; gap: .75rem; position: absolute; right: var(--gx); bottom: 1.5rem; font-size: .9375rem; font-variant-numeric: tabular-nums; opacity: 0; transition: opacity .4s; }
+
+.is-3d .ch--br { top: auto; bottom: clamp(4rem, 12svh, 7rem); translate: none; }
 
 @media (max-width: 48rem) {
   .is-3d .ch--left, .is-3d .ch--right { left: var(--gx); right: var(--gx); width: auto; top: auto; bottom: 12svh; translate: none; text-align: left; }
