@@ -8,7 +8,7 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, '');
 <Layout title="SUNROOOF: Bring sunlight to spaces where it is not possible to have it" description="SUNROOOF is a wellness lighting technology that brings the experience and benefits of sunlight inside any space through advanced optics, special lenses and AI.">
   <section class="story" data-story aria-label="One day under SUNROOOF">
     <div class="story__pin">
-      <canvas aria-hidden="true"></canvas>
+      <video aria-hidden="true" muted playsinline preload="auto" tabindex="-1"></video>
       <img class="story__poster" src={L(compare.after, 1600)} srcset={LS(compare.after, [800, 1200, 1600, 2200])} sizes="100vw" width="1440" height="720" alt={compare.alt} />
       <article class="ch ch--hero" data-in="0" data-out=".075">
         <h1>Bring Sunlight to Spaces Where it is Not Possible to Have it</h1>

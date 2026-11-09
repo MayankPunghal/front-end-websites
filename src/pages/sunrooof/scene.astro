@@ -1,0 +1,22 @@
+---
+// The live 3D scene, used only by tools/capture-story.mjs to film the homepage video.
+---
+<!doctype html>
+<html lang="en">
+  <head><meta charset="utf-8" /><meta name="robots" content="noindex" /><title>Scene source</title><style>html, body { margin: 0; background: #000; } canvas { display: block; width: 100vw; height: 100vh; }</style></head>
+  <body>
+    <canvas></canvas>
+    <script>
+      import { createWorld } from '../../sites/sunrooof/three/world';
+      import { paceAt } from '../../sites/sunrooof/pace';
+      const canvas = document.querySelector('canvas')!;
+      const world = await createWorld(canvas, true);
+      world.resize();
+      (window as any).frameAt = (i: number, n: number) => {
+        const p = paceAt(i / (n - 1));
+        world.update(p, 1 / 120); world.render();
+        return { url: canvas.toDataURL('image/jpeg', .96), tod: world.tod, labels: p > .52 && p < .615 ? world.layers.map((_, j) => { const q = world.labelAt(j); return [q.x / innerWidth, q.y / innerHeight]; }) : null };
+      };
+    </script>
+  </body>
+</html>

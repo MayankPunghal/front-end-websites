@@ -28,13 +28,13 @@ const pw = (t: [number, number][], p: number) => { for (let i = 0; i < t.length 
 // the room goes fully dark before the product comes down, so the exploded stack never meets the furniture
 const stageAt = (p: number) => up(p, .405, .45) * (1 - up(p, .665, .71));
 
-export async function createWorld(canvas: HTMLCanvasElement) {
+export async function createWorld(canvas: HTMLCanvasElement, capture = false) {
   const base = import.meta.env.BASE_URL.replace(/\/$/, '');
   const [hiBuf, loBuf] = await Promise.all(['hi', 'lo'].map(n => fetch(`${base}/sunrooof/bake/${n}.bin`).then(r => { if (!r.ok) throw new Error(n); return r.arrayBuffer(); })));
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
   const coarse = matchMedia('(pointer: coarse)').matches, gl = renderer.getContext(), info = gl.getExtension('WEBGL_debug_renderer_info');
   // integrated graphics cannot fill a high-density screen at this shading cost
-  const weak = !!info && /intel|uhd|iris|mali|adreno|powervr|swiftshader/i.test(gl.getParameter(info.UNMASKED_RENDERER_WEBGL));
+  const weak = !capture && !!info && /intel|uhd|iris|mali|adreno|powervr|swiftshader/i.test(gl.getParameter(info.UNMASKED_RENDERER_WEBGL));
   renderer.toneMapping = THREE.AgXToneMapping; renderer.toneMappingExposure = 1.15;
   renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap; renderer.shadowMap.autoUpdate = false;
 

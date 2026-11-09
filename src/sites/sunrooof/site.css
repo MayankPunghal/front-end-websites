@@ -25,14 +25,14 @@ html.loading .loader { display: grid; } .loader.done { opacity: 0; visibility: h
 .top img { width: clamp(7.5rem, 6rem + 5vw, 10rem); height: auto; } .top nav { display: flex; gap: clamp(1rem, 3vw, 2.5rem); } .top nav { align-items: center; } .top nav a { text-decoration: none; } .top nav a:first-child:hover { text-decoration: underline; text-underline-offset: .3em; } .top nav a:last-child { padding: .55rem 1.15rem; border-radius: 99px; background: var(--blend); color: var(--blend-ink); font-weight: 500; }
 
 /* story: complete stacked page by default, pinned 3D only with .is-3d */
-.story__pin { position: relative; } .story canvas { display: none; }
+.story__pin { position: relative; } .story video { display: none; }
 .story__poster { width: 100%; height: 70svh; object-fit: cover; }
 .ch { padding: 3rem var(--gx); } .ch h1, .ch h2 { font-size: clamp(2.25rem, 1.2rem + 4vw, 5.5rem); } .ch p { margin-top: 1rem; font-size: clamp(1.0625rem, 1rem + .4vw, 1.375rem); } .ch .btn, .ch .link { margin-top: 1.5rem; display: inline-block; }
 .labels, .clock { display: none; }
 
 .is-3d .story { height: 1500svh; }
 .is-3d .story__pin { position: sticky; top: 0; height: 100svh; overflow: clip; background: var(--stage); }
-.is-3d .story canvas { display: block; position: absolute; inset: 0; width: 100%; height: 100%; }
+.is-3d .story video { display: block; position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
 .is-3d .story__poster { display: none; }
 .is-3d .ch { position: absolute; padding: 0; color: var(--fg); opacity: 0; visibility: hidden; will-change: opacity, transform; text-shadow: 0 1px 30px var(--shade); pointer-events: none; }
 .is-3d .ch[data-live] a { pointer-events: auto; }
