@@ -36,17 +36,17 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, '');
     </div>
   </section>
 
+  <section class="future wrap">
+    <h2>The Future of Indoor Lighting.</h2>
+    <p>SUNROOOF is the worlds first wellness lighting technology that brings the experience and benefits of sunlight inside any space through advanced optics, special lenses and AI.</p>
+  </section>
+
   <section class="compare" data-compare style="--pos:50%" aria-label="Before and after SUNROOOF">
     <img src={L(compare.after, 1600)} srcset={LS(compare.after, [800, 1200, 1600, 2200])} sizes="100vw" width="1440" height="720" alt={compare.alt} loading="lazy" />
     <img class="compare__b" src={L(compare.before, 1600)} srcset={LS(compare.before, [800, 1200, 1600, 2200])} sizes="100vw" width="1440" height="720" alt="The same room before SUNROOOF, dark" loading="lazy" />
     <span class="compare__rule"></span><span class="compare__knob" aria-hidden="true"></span>
     <input type="range" min="0" max="100" value="50" aria-label="Drag to compare the room before and after SUNROOOF" />
     <p class="compare__t compare__t--a">Before</p><p class="compare__t compare__t--z">After</p>
-  </section>
-
-  <section class="future wrap">
-    <h2>The Future of Indoor Lighting.</h2>
-    <p>SUNROOOF is the worlds first wellness lighting technology that brings the experience and benefits of sunlight inside any space through advanced optics, special lenses and AI.</p>
   </section>
 
   <section class="spaces wrap">

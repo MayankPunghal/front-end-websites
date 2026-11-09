@@ -13,13 +13,15 @@ const rewrite = text => text
   .replace(/return`\/`\+/g, 'return`' + PRE + '/`+') // Vite's preload helper
   .replace(/url\((["']?)\/(?!\/)/g, `url($1${PRE}/`)
   .replace(/(content="\d+;\s*url=)\/(?!\/)/g, `$1${PRE}/`)
-  .replace(new RegExp(`(["'\`])/(${DIRS})(?=[/"'\`?#])`, 'g'), `$1${PRE}/$2`);
+  .replace(new RegExp(`(["'\`])/(${DIRS})(?=[/"'\`?#])`, 'g'), `$1${PRE}/$2`)
+  .replace(/data-film="[^"]*"/g, 'data-film="/front-end-websites/sunrooof/film"');
 
 fs.rmSync(OUT, { recursive: true, force: true });
 let n = 0;
 for (const entry of fs.readdirSync(SRC, { recursive: true, withFileTypes: true })) {
   if (!entry.isFile()) continue;
   const from = path.join(entry.parentPath, entry.name), to = path.join(OUT, path.relative(SRC, from));
+  if (path.relative(SRC, from).startsWith('film')) continue; // served from the studio's own /sunrooof/film
   fs.mkdirSync(path.dirname(to), { recursive: true });
   if (/\.(html|css|js|json)$/.test(entry.name)) fs.writeFileSync(to, rewrite(fs.readFileSync(from, 'utf8'))); else fs.copyFileSync(from, to);
   n++;
