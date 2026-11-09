@@ -46,6 +46,8 @@ export const skyMaterial = new THREE.ShaderMaterial({
       col += uHor * pow(s, 7.) * .9 + vec3(1., .94, .84) * pow(s, 90.) * 3.;
       col = mix(col, mix(uHor, vec3(1.), .7), c * .75);
       gl_FragColor = vec4(col * uGain, 1.);
+      #include <tonemapping_fragment>
+      #include <colorspace_fragment>
     }`,
 });
 

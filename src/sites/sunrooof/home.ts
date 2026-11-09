@@ -1,4 +1,6 @@
 // Scroll drives one value (0 to 1). The 3D world, chapter copy, layer labels and clock all read from it.
+import { paceAt } from './pace';
+
 const story = document.querySelector<HTMLElement>('[data-story]');
 const on3d = document.documentElement.classList.contains('is-3d');
 
@@ -19,7 +21,7 @@ async function boot(story: HTMLElement) {
   const fine = matchMedia('(min-width: 48rem)').matches;
   const NAMES = ['Dawn', 'Morning', 'Midday', 'Golden hour', 'Dusk', 'Night'];
 
-  let target = 0, p = 0, last = performance.now(), since = last, drops = 0, low = 0, idle = 0, frames = 0, visible = true, lastW = -1;
+  let target = 0, s = 0, p = 0, last = performance.now(), since = last, drops = 0, low = 0, idle = 0, frames = 0, visible = true, lastW = -1;
   // reads cached geometry: measuring the page on every scroll event forces a layout
   let top = 0, span = 1;
   const read = () => { target = clamp((scrollY - top) / span); };
@@ -44,9 +46,9 @@ async function boot(story: HTMLElement) {
     if (lit) {
       const mins = Math.round(370 + world.tod * 900), hh = String(Math.floor(mins / 60)).padStart(2, '0'), mm = String(mins % 60).padStart(2, '0');
       clockT.textContent = `${hh}:${mm}`; clockN.textContent = NAMES[Math.round(world.tod * (NAMES.length - 1))];
-      // headline weight follows the height of the sun: thin at dawn, heavy at noon
+      // headline weight follows the height of the sun: thin at dawn, heavy at noon. Changing it re-renders text, so it only changes between headlines
       const wt = Math.round(250 + 350 * Math.sin(Math.PI * Math.min(1, world.tod / .8)));
-      if (Math.abs(wt - lastW) > 20) { lastW = wt; story.style.setProperty('--sun-w', String(wt)); }
+      if (Math.abs(wt - lastW) > 20 && chapters.every(c => c.shown <= .01)) { lastW = wt; story.style.setProperty('--sun-w', String(wt)); }
     }
   };
 
@@ -57,8 +59,9 @@ async function boot(story: HTMLElement) {
     if (!visible || document.hidden) { last = now; return; }
     const dt = Math.min(.05, (now - last) / 1000); last = now;
     // follows the scrollbar closely, and the speed limit stops a late frame from turning into a lurch
-    p += clamp2((target - p) * (1 - Math.exp(-dt * 12)), .25 * dt); if (Math.abs(target - p) < .00002) p = target;
-    const moving = Math.abs(target - p) > .00005; idle = moving ? 0 : idle + 1;
+    s += clamp2((target - s) * (1 - Math.exp(-dt * 12)), .4 * dt); if (Math.abs(target - s) < .00002) s = target;
+    p = paceAt(s);
+    const moving = Math.abs(target - s) > .00005; idle = moving ? 0 : idle + 1;
     // once the scroll settles, only the clouds and dust are moving: a third of the frames is plenty
     if (moving || idle % 3 === 0) { world.update(p, dt); world.render(); overlay(); }
     if (!moving) { frames = 0; since = now; return; }

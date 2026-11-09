@@ -1,10 +1,5 @@
 import * as THREE from 'three';
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
-import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
-import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
-import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
-import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass.js';
-import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { createProduct, panes, W } from './product';
 import { buildRoom, H, NO_CAST, PALETTE, PANEL, X, type Key } from './room';
@@ -36,7 +31,7 @@ const stageAt = (p: number) => up(p, .405, .45) * (1 - up(p, .665, .71));
 export async function createWorld(canvas: HTMLCanvasElement) {
   const base = import.meta.env.BASE_URL.replace(/\/$/, '');
   const [hiBuf, loBuf] = await Promise.all(['hi', 'lo'].map(n => fetch(`${base}/sunrooof/bake/${n}.bin`).then(r => { if (!r.ok) throw new Error(n); return r.arrayBuffer(); })));
-  const renderer = new THREE.WebGLRenderer({ canvas, antialias: false, powerPreference: 'high-performance' });
+  const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
   const coarse = matchMedia('(pointer: coarse)').matches, gl = renderer.getContext(), info = gl.getExtension('WEBGL_debug_renderer_info');
   // integrated graphics cannot fill a high-density screen at this shading cost
   const weak = !!info && /intel|uhd|iris|mali|adreno|powervr|swiftshader/i.test(gl.getParameter(info.UNMASKED_RENDERER_WEBGL));
@@ -48,12 +43,13 @@ export async function createWorld(canvas: HTMLCanvasElement) {
   const envTex = new THREE.PMREMGenerator(renderer).fromScene(new RoomEnvironment(), .04).texture;
 
   // ---- room: all fill light is pre-computed per vertex (tools/bake-room.ts), so the only live light is the sun ----
-  const bakeU = { uPanel: { value: new THREE.Color(0, 0, 0) }, uAmb: { value: new THREE.Color(0, 0, 0) }, uMaxA: { value: new DataView(hiBuf).getFloat32(0, true) }, uMaxB: { value: new DataView(hiBuf).getFloat32(4, true) } };
+  const bakeU = { uPanel: { value: new THREE.Color(0, 0, 0) }, uAmb: { value: new THREE.Color(0, 0, 0) }, uMaxA: { value: new DataView(hiBuf).getFloat32(0, true) }, uMaxB: { value: new DataView(hiBuf).getFloat32(4, true) }, uSat: { value: .34 }, uVig: { value: .5 }, uRes: { value: new THREE.Vector2(1, 1) } };
   const withBake = <T extends THREE.Material>(m: T) => {
+    m.dithering = true; // no film grain any more, and dark gradients would band without this
     m.onBeforeCompile = s => {
       Object.assign(s.uniforms, bakeU);
       s.vertexShader = 'attribute vec4 aBake; varying vec4 vBake;\n' + s.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\nvBake = aBake;');
-      s.fragmentShader = 'uniform vec3 uPanel, uAmb; uniform float uMaxA, uMaxB; varying vec4 vBake;\n' + s.fragmentShader.replace('#include <lights_fragment_end>', '#include <lights_fragment_end>\nreflectedLight.indirectDiffuse += material.diffuseColor * (vBake.rgb * vBake.rgb * uMaxA * uPanel + vBake.a * vBake.a * uMaxB * uAmb);').replace('#include <opaque_fragment>', 'outgoingLight = min(outgoingLight, vec3(1.6));\n#include <opaque_fragment>'); // the cap keeps room surfaces out of the bloom, which shimmers on small bright edges
+      s.fragmentShader = 'uniform vec3 uPanel, uAmb; uniform vec2 uRes; uniform float uMaxA, uMaxB, uSat, uVig; varying vec4 vBake;\n' + s.fragmentShader.replace('#include <lights_fragment_end>', '#include <lights_fragment_end>\nreflectedLight.indirectDiffuse += material.diffuseColor * (vBake.rgb * vBake.rgb * uMaxA * uPanel + vBake.a * vBake.a * uMaxB * uAmb);').replace('#include <opaque_fragment>', 'outgoingLight = pow(max(outgoingLight, vec3(0.)) / .18, vec3(1.14)) * .18; outgoingLight = mix(vec3(dot(outgoingLight, vec3(.2126, .7152, .0722))), outgoingLight, uSat); vec2 vq = gl_FragCoord.xy / uRes - .5; outgoingLight *= 1. - uVig * smoothstep(.25, .85, dot(vq, vq) * 2.);\n#include <opaque_fragment>'); // the colour grade lives here because a full-screen pass costs too much
     };
     return m;
   };
@@ -81,7 +77,7 @@ export async function createWorld(canvas: HTMLCanvasElement) {
     const m = new THREE.Mesh(geo, mats[key]); m.receiveShadow = true; m.matrixAutoUpdate = false; room.add(m);
   }
   if (off !== hiBuf.byteLength) throw new Error('bake data does not match the room; rerun tools/bake-room.ts');
-  const glow = new THREE.MeshBasicMaterial({ color: new THREE.Color(0, 0, 0), toneMapped: false });
+  const glow = new THREE.MeshBasicMaterial({ color: new THREE.Color(0, 0, 0) });
   for (const y of [1, 1.7, 2.4]) { const b = new THREE.Mesh(new THREE.BoxGeometry(.02, .012, 2.2), glow); b.position.set(X - .32, y - .032, -2.3); room.add(b); }
 
   // ---- product ----
@@ -89,7 +85,7 @@ export async function createWorld(canvas: HTMLCanvasElement) {
   const frameIdx = layers.length - 1, productMats: THREE.MeshStandardMaterial[] = [];
   layers.forEach((l, i) => l.obj.traverse(o => {
     (o as THREE.Mesh).castShadow = i === frameIdx;
-    for (const m of [(o as THREE.Mesh).material].flat() as THREE.MeshStandardMaterial[]) if (m?.isMeshStandardMaterial) { m.envMap = envTex; m.needsUpdate = true; productMats.push(m); }
+    for (const m of [(o as THREE.Mesh).material].flat() as THREE.MeshStandardMaterial[]) if (m && (m.toneMapped = true) && m.isMeshStandardMaterial) { m.envMap = envTex; m.needsUpdate = true; productMats.push(m); }
   }));
   // flies in below the ceiling line, then lifts straight up into place
   const flight = new THREE.CatmullRomCurve3([[1.4, 2.4, 11.5], [-1, 2.45, 5.6], [.6, 2.3, 1.6], [0, 2.3, PZ], [0, MOUNT, PZ]].map(a => new THREE.Vector3(...(a as [number, number, number]))));
@@ -110,7 +106,7 @@ export async function createWorld(canvas: HTMLCanvasElement) {
   const beamMat = new THREE.ShaderMaterial({
     uniforms: beamU, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending,
     vertexShader: 'varying float vY; varying vec3 vN, vV; void main(){ vY=-position.y; vec4 mv=modelViewMatrix*vec4(position,1.); vN=normalize(normalMatrix*normal); vV=normalize(-mv.xyz); gl_Position=projectionMatrix*mv; }',
-    fragmentShader: 'uniform float uBeam; uniform vec3 uColor; varying float vY; varying vec3 vN, vV; void main(){ float a=pow(1.-clamp(vY,0.,1.),2.2)*pow(abs(dot(normalize(vN),normalize(vV))),1.6); gl_FragColor=vec4(uColor*a*uBeam,1.); }',
+    fragmentShader: 'uniform float uBeam; uniform vec3 uColor; varying float vY; varying vec3 vN, vV; void main(){ float a=pow(1.-clamp(vY,0.,1.),2.2)*pow(abs(dot(normalize(vN),normalize(vV))),1.6); gl_FragColor=vec4(uColor*a*uBeam*1.5,1.); }',
   });
   const beamBits = panes().map(p => { const g = new THREE.BoxGeometry(p.w, 1, p.d); g.translate(0, -.5, 0); const m = new THREE.Mesh(g, beamMat); m.matrixAutoUpdate = false; m.frustumCulled = false; m.userData.pane = p; scene.add(m); return m; });
   const N = coarse ? 160 : 320, pts = new Float32Array(N * 3); for (let i = 0; i < N; i++) { pts[i * 3] = Math.random() * 7 - 3.5; pts[i * 3 + 1] = Math.random() * H; pts[i * 3 + 2] = Math.random() * 6 - 3.2; }
@@ -123,7 +119,7 @@ export async function createWorld(canvas: HTMLCanvasElement) {
   }));
   dust.frustumCulled = false; scene.add(dust);
   const glowU = { uA: { value: 0 } };
-  const stageFloor = new THREE.Mesh(new THREE.PlaneGeometry(9, 7), new THREE.ShaderMaterial({ uniforms: glowU, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, vertexShader: 'varying vec2 vUv; void main(){ vUv=uv; gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.); }', fragmentShader: 'uniform float uA; varying vec2 vUv; void main(){ float d=length((vUv-.5)*vec2(1.,1.25))*2.; gl_FragColor=vec4(vec3(1.,.74,.46)*pow(max(0.,1.-d),2.2)*uA,1.); }' }));
+  const stageFloor = new THREE.Mesh(new THREE.PlaneGeometry(9, 7), new THREE.ShaderMaterial({ uniforms: glowU, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, vertexShader: 'varying vec2 vUv; void main(){ vUv=uv; gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.); }', fragmentShader: 'uniform float uA; varying vec2 vUv; void main(){ float d=length((vUv-.5)*vec2(1.,1.25))*2.; gl_FragColor=vec4(sqrt(vec3(1.,.74,.46)*pow(max(0.,1.-d),2.2)*uA)*.7,1.); }' }));
   stageFloor.rotation.x = -Math.PI / 2; stageFloor.position.set(0, .01, PZ); scene.add(stageFloor);
 
   // ---- the building at the end: every storey is the same furnished, pre-lit room ----
@@ -131,7 +127,7 @@ export async function createWorld(canvas: HTMLCanvasElement) {
   const loGeo = mergeGeometries(buildRoom(.4).map(p => { p.geo.deleteAttribute('uv'); return p.geo; }), false)!, loMax = new DataView(loBuf).getFloat32(0, true);
   if (4 + loGeo.attributes.position.count * 6 !== loBuf.byteLength) throw new Error('storey bake data does not match; rerun tools/bake-room.ts');
   loGeo.setAttribute('color', new THREE.BufferAttribute(new Uint16Array(loBuf.slice(4)), 3, true));
-  const storeyMat = new THREE.MeshBasicMaterial({ vertexColors: true }), paneMat = new THREE.MeshBasicMaterial({ color: '#000', toneMapped: false });
+  const storeyMat = new THREE.MeshBasicMaterial({ vertexColors: true }), paneMat = new THREE.MeshBasicMaterial({ color: '#000' });
   const allPanes = panes(), floors = [-3, -2, -1, 1, 2, 3, 4, 5];
   const storeys = new THREE.InstancedMesh(loGeo, storeyMat, floors.length), panesIM = new THREE.InstancedMesh(new THREE.BoxGeometry(1, .02, 1), paneMat, allPanes.length * floors.length);
   let pi = 0; const dummy = new THREE.Object3D();
@@ -140,33 +136,30 @@ export async function createWorld(canvas: HTMLCanvasElement) {
     for (const p of allPanes) { dummy.position.set(p.x, k * STOREY + MOUNT, p.z + PZ); dummy.scale.set(p.w, 1, p.d); dummy.updateMatrix(); panesIM.setMatrixAt(pi++, dummy.matrix); }
   });
   storeys.frustumCulled = false; city.add(storeys, panesIM);
-  const winTex = windowTexture(), towerMat = new THREE.MeshStandardMaterial({ color: '#10141f', metalness: .2, roughness: .75, emissive: '#ffffff', emissiveMap: winTex, emissiveIntensity: 0, envMap: envTex, envMapIntensity: .2 });
+  const winTex = windowTexture(), towerMat = new THREE.MeshBasicMaterial({ color: '#000', map: winTex, fog: false });
   [[-30, -10, 12, 100, 14], [28, -12, 13, 96, 16], [-46, -24, 14, 130, 14], [44, -26, 15, 140, 13], [-14, -32, 13, 150, 11], [13, -38, 16, 170, 14], [-56, -40, 16, 120, 16], [58, -44, 18, 150, 16]].forEach(([x, z, w, h, d]) => {
     const g = new THREE.BoxGeometry(w, h, d), uv = g.attributes.uv; for (let i = 0; i < uv.count; i++) uv.setXY(i, uv.getX(i) * w / 7, uv.getY(i) * h / 16);
     const t = new THREE.Mesh(g, towerMat); t.position.set(x, h / 2 - 34, z); city.add(t);
   });
-  const skyDome = new THREE.Mesh(new THREE.SphereGeometry(400, 24, 16), new THREE.ShaderMaterial({ side: THREE.BackSide, depthWrite: false, uniforms: { uTop: skyUniforms.uTop, uHor: skyUniforms.uHor }, vertexShader: 'varying vec3 vP; void main(){ vP=normalize(position); gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.); }', fragmentShader: 'uniform vec3 uTop, uHor; varying vec3 vP; void main(){ gl_FragColor=vec4(mix(uHor,uTop,smoothstep(-.05,.55,vP.y))*.14,1.); }' })); skyDome.visible = false; scene.add(skyDome);
+  const skyDome = new THREE.Mesh(new THREE.SphereGeometry(400, 24, 16), new THREE.ShaderMaterial({ side: THREE.BackSide, depthWrite: false, uniforms: { uTop: skyUniforms.uTop, uHor: skyUniforms.uHor }, vertexShader: 'varying vec3 vP; void main(){ vP=normalize(position); gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.); }', fragmentShader: 'uniform vec3 uTop, uHor; varying vec3 vP; void main(){ gl_FragColor=vec4(mix(uHor,uTop,smoothstep(-.05,.55,vP.y))*.14,1.);\n#include <tonemapping_fragment>\n#include <colorspace_fragment>\n}' })); skyDome.visible = false; scene.add(skyDome);
 
-  // ---- post: anti-aliased HDR target, bloom at half resolution ----
-  const target = new THREE.WebGLRenderTarget(2, 2, { type: THREE.HalfFloatType, samples: weak ? 2 : 4 });
-  const composer = new EffectComposer(renderer, target);
-  composer.addPass(new RenderPass(scene, camera));
-  const bloom = new UnrealBloomPass(new THREE.Vector2(2, 2), .26, .55, 1.6), bloomSize = bloom.setSize.bind(bloom); bloom.setSize = (w, h) => bloomSize(Math.ceil(w / 4), Math.ceil(h / 4)); composer.addPass(bloom);
-  const grade = new ShaderPass({ uniforms: { tDiffuse: { value: null }, uSat: { value: .4 }, uVig: { value: .35 }, uGr: { value: .025 }, uT: { value: 0 } }, vertexShader: 'varying vec2 vUv; void main(){ vUv=uv; gl_Position=vec4(position.xy,0.,1.); }', fragmentShader: 'uniform sampler2D tDiffuse; uniform float uSat,uVig,uGr,uT; varying vec2 vUv; float r(vec2 p){return fract(sin(dot(p,vec2(12.9898,78.233))+uT)*43758.5453);} void main(){ vec4 c=texture2D(tDiffuse,vUv); c.rgb=pow(max(c.rgb,vec3(0.))/.18,vec3(1.14))*.18; float l=dot(c.rgb,vec3(.2126,.7152,.0722)); c.rgb=mix(vec3(l),c.rgb,uSat); vec2 q=vUv-.5; c.rgb*=1.-uVig*smoothstep(.25,.85,dot(q,q)*2.); c.rgb+=(r(vUv)-.5)*uGr*(l+.15); gl_FragColor=c; }' });
-  composer.addPass(grade); composer.addPass(new OutputPass());
+  // ---- one pass straight to the screen: tone mapping happens in each material, so there are no full-screen passes to pay for; a soft sprite stands in for bloom ----
+  const haloCanvas = document.createElement('canvas'); haloCanvas.width = haloCanvas.height = 128;
+  { const g = haloCanvas.getContext('2d')!, r = g.createRadialGradient(64, 64, 0, 64, 64, 64); r.addColorStop(0, 'rgba(255,255,255,1)'); r.addColorStop(.35, 'rgba(255,255,255,.35)'); r.addColorStop(1, 'rgba(255,255,255,0)'); g.fillStyle = r; g.fillRect(0, 0, 128, 128); }
+  const halo = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(haloCanvas), blending: THREE.AdditiveBlending, depthTest: false, depthWrite: false, transparent: true, toneMapped: false, fog: false })); halo.scale.setScalar(9); scene.add(halo);
   // compile every shader now, so the product and the building do not stall the scroll when they first appear
-  root.visible = city.visible = skyDome.visible = true; renderer.setRenderTarget(target); renderer.compile(scene, camera); renderer.setRenderTarget(null); root.visible = city.visible = skyDome.visible = false;
+  root.visible = city.visible = skyDome.visible = true; renderer.compile(scene, camera); root.visible = city.visible = skyDome.visible = false;
 
   // ---- frame update ----
   const n = CAMERA.length, posC = new THREE.CatmullRomCurve3(CAMERA.map(k => new THREE.Vector3(...k[1]))), tgtC = new THREE.CatmullRomCurve3(CAMERA.map(k => new THREE.Vector3(...k[2])));
   const tgt = new THREE.Vector3(), mouse = { x: 0, y: 0, mx: 0, my: 0 }; addEventListener('pointermove', e => { mouse.mx = e.clientX / innerWidth - .5; mouse.my = e.clientY / innerHeight - .5; }, { passive: true });
   // never below one render pixel per CSS pixel: a blurry frame reads worse than a slightly slower one
-  const dpr = Math.min(devicePixelRatio, weak ? 1 : 1.5); let width = 2, height = 2, portrait = false, time = 0, curTod = 0, lastSun = '', shadowTick = 0;
+  let dpr = Math.min(devicePixelRatio, weak ? 1 : 1.5), width = 2, height = 2, portrait = false, time = 0, curTod = 0, lastSun = '';
   const v = new THREE.Vector3(), right = new THREE.Vector3(), a1 = new THREE.Vector3(), a2 = new THREE.Vector3(), dullC = new THREE.Color(.62, .68, .78), warm = new THREE.Color(1, .82, .55), sunlit = new THREE.Color(6, 5, 3.6); // the other storeys are in sunlight while the city is dark
 
   function resize() {
     width = canvas.clientWidth; height = canvas.clientHeight; portrait = width < height;
-    renderer.setPixelRatio(dpr); renderer.setSize(width, height, false); composer.setPixelRatio(dpr); composer.setSize(width, height);
+    renderer.setPixelRatio(dpr); renderer.setSize(width, height, false); bakeU.uRes.value.set(width * dpr, height * dpr);
     dustU.uDpr.value = dpr * height / 800; camera.aspect = width / height;
   }
 
@@ -206,16 +199,17 @@ export async function createWorld(canvas: HTMLCanvasElement) {
     // the sun mask sits at the ceiling while the panes hang lower: slide it along the ray so light through it passes exactly through the panes
     mask.position.x = dx * (mask.position.y - by); mask.position.z = dz * (mask.position.y - by);
     for (const b of beamBits) { const q = b.userData.pane; b.visible = beam > .002; b.matrix.set(1, dx * L, 0, q.x, 0, L, 0, by, 0, dz * L, 1, q.z + PZ, 0, 0, 0, 1); }
+    halo.position.set(0, by - .1, PZ); halo.material.color.copy(s.rect).lerp(warm, .3); halo.material.opacity = clamp(skyUniforms.uGain.value * .09) * lit * (1 - night); halo.visible = halo.material.opacity > .004;
     // the building reveal
     city.visible = skyDome.visible = p > .86;
-    if (city.visible) { storeyMat.color.copy(sunlit).multiplyScalar(loMax * (floorsIn + .03)); paneMat.color.setRGB(3, 2.5, 1.9).multiplyScalar(floorsIn + .02); towerMat.emissiveIntensity = night * .16; }
+    if (city.visible) { storeyMat.color.copy(sunlit).multiplyScalar(loMax * (floorsIn + .03)); paneMat.color.setRGB(3, 2.5, 1.9).multiplyScalar(floorsIn + .02); towerMat.color.setScalar(night * .16); }
     (scene.fog as THREE.FogExp2).color.copy(s.hor).multiplyScalar(.1);
     // finish
-    grade.uniforms.uSat.value = lerp(.34, 1, ignite); grade.uniforms.uVig.value = lerp(.5, .32, ignite) + stage * .35; grade.uniforms.uT.value = time % 10;
+    bakeU.uSat.value = lerp(.34, 1, ignite); bakeU.uVig.value = lerp(.5, .32, ignite);
     renderer.toneMappingExposure = lerp(.9, 1.15, ignite);
-    // shadows only redraw when the sun or the frame has moved
-    const key = `${sun.position.x.toFixed(2)},${sun.position.z.toFixed(2)},${root.position.y.toFixed(2)}`;
-    if (key !== lastSun && sun.intensity > .01 && (shadowTick++ % 2 === 0)) { lastSun = key; renderer.shadowMap.needsUpdate = true; }
+    // shadows only redraw once the sun has moved visibly, because a redraw makes that frame late
+    const key = `${sun.position.x.toFixed(1)},${sun.position.z.toFixed(1)},${root.position.y.toFixed(2)}`;
+    if (key !== lastSun && sun.intensity > .01) { lastSun = key; renderer.shadowMap.needsUpdate = true; }
   }
 
   /** Screen position of a layer's right edge, in CSS pixels, for its label. */
@@ -228,10 +222,10 @@ export async function createWorld(canvas: HTMLCanvasElement) {
   return {
     update, resize, labelAt, layers,
     get tod() { return curTod; },
-    render: () => composer.render(),
-    /** Step down on slow machines, without ever lowering resolution. Returns false when nothing is left to drop. */
+    render: () => renderer.render(scene, camera),
+    /** Step down on slow machines, never below one render pixel per CSS pixel. Returns false when nothing is left to drop. */
     degrade() {
-      if (target.samples > 2) { for (const t of [composer.renderTarget1, composer.renderTarget2]) { t.samples = 2; t.dispose(); } target.samples = 2; return true; }
+      if (dpr > 1) { dpr = 1; resize(); return true; }
       if (sun.shadow.mapSize.x > 1024) { sun.shadow.mapSize.set(1024, 1024); sun.shadow.map?.dispose(); sun.shadow.map = null as never; lastSun = ''; return true; }
       return false;
     },
