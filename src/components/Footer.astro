@@ -1,0 +1,59 @@
+---
+import { SITE } from '../lib/site';
+const year = new Date().getFullYear();
+const tel = SITE.phone.in.replace(/\s/g, '');
+---
+<footer class="ftr">
+  <div class="ftr__top">
+    <nav aria-label="Footer" class="ftr__col">
+      <a href="/">Home</a><a href="/collections/all">Products</a><a href="/pages/contact-us">Contact Us</a><a href="/pages/gallery">Gallery</a><a href="/pages/about-us">About Us</a><a href="/pages/faqs">FAQs</a>
+    </nav>
+    <nav aria-label="Policies" class="ftr__col">
+      <a href="/policies/privacy-policy">Privacy Policy</a><a href="/policies/refund-policy">Refund Policy</a><a href="/policies/shipping-policy">Shipping Policy</a><a href="/policies/terms-of-service">Terms of Service</a>
+    </nav>
+    <div class="ftr__co">
+      <a href={`tel:${tel}`}>{SITE.phone.in.replace(/ (\d{5}) (\d{5})/, ' $1$2')}</a>
+      <a href={`mailto:${SITE.email}`}>{SITE.email}</a>
+      <p><b>Legal name</b>{SITE.legal}</p>
+      <p><b>Building address</b>Plot No 358, Sector 8, IMT Manesar, Manesar, Gurugram, Haryana, India</p>
+      <p><b>GST</b>06ABICS7892J1ZL</p>
+      <p class="ftr__soc">
+        <a href={SITE.instagram} target="_blank" rel="noopener" aria-label="Instagram"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.3" cy="6.7" r=".6" fill="currentColor"/></svg></a>
+        <a href={SITE.youtube} target="_blank" rel="noopener" aria-label="YouTube"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><rect x="2.5" y="5" width="19" height="14" rx="4"/><path d="m10 9 5 3-5 3z" fill="currentColor"/></svg></a>
+      </p>
+    </div>
+  </div>
+  <div class="ftr__bot">
+    <p class="ftr__tag">SUNROOOF brings the beauty and benefits of natural light indoors, creating healthier, more vibrant spaces.</p>
+    <div class="ftr__row">
+      <img src="/brand/logo-light.svg" width="310" height="47" alt="SUNROOOF" />
+      <p class="ftr__pol"><a href="/policies/privacy-policy">Privacy Policy</a><a href="/pages/terms-and-conditions">Terms &amp; Conditions</a></p>
+      <a class="ftr__top-btn" href="#main" data-top><svg viewBox="0 0 12 8" width="12" height="8" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="m1 7 5-5 5 5"/></svg> Go back to the top</a>
+    </div>
+    <p class="ftr__c">© {year} {SITE.legal.replace('SUNROOOF LUMINARIES PRIVATE LIMITED', 'SUNROOOF LUMINARIES PRIVATE LIMITED')}. All rights reserved.</p>
+  </div>
+</footer>
+<style>
+  .ftr { --ink: #fff; margin: 0; padding: clamp(3rem, 6vw, 5rem) clamp(1rem, 0.5rem + 3vw, 3.25rem) 1.5rem; color: #fff; text-transform: uppercase; font-size: .875rem; background-color: #121212;
+    background-image: radial-gradient(59.37% 20.97% at 54.09% 105.92%, rgb(85 98 109 / .83) 3.85%, rgb(85 108 109 / .83) 33.17%, rgb(85 108 109 / .47) 62.98%, rgb(255 255 255 / 0) 100%), radial-gradient(118.56% 115.06% at 23.5% 124.29%, #556b6b 0%, #bf9736 13.46%, #ac7f39 22.89%, #9f6930 43.27%, #885b2d 49.52%, #624327 59.7%, #37291c 76.77%, rgb(255 255 255 / 0) 100%); }
+  .ftr a { color: #fff; text-decoration: none; } .ftr a:hover { color: var(--sun); }
+  .ftr__top { display: grid; gap: 2.5rem 2rem; grid-template-columns: 1fr 1fr; margin-bottom: clamp(5rem, 14vw, 11rem); }
+  .ftr__col { display: grid; gap: .75rem; align-content: start; }
+  .ftr__co { grid-column: 1 / -1; display: grid; gap: .75rem; justify-items: start; }
+  .ftr__co p { margin: 0; display: grid; gap: .1rem; } .ftr__co p { text-transform: none; } .ftr__co b { font-weight: 700; text-transform: uppercase; }
+  .ftr__soc { display: flex !important; gap: .75rem; }
+  .ftr__tag { text-transform: none; font-size: clamp(1rem, .9rem + .5vw, 1.25rem); line-height: 1.35; max-width: 27rem; margin: 0 0 clamp(2rem, 4vw, 3.5rem); }
+  .ftr__row { display: grid; gap: 1.5rem; align-items: end; }
+  .ftr__row img { width: min(19.4rem, 80%); height: auto; }
+  .ftr__pol { display: grid; gap: .3rem; margin: 0; font-size: .75rem; }
+  .ftr__top-btn { display: inline-flex; align-items: center; gap: .5rem; font-size: .8125rem; text-transform: none; }
+  .ftr__c { margin: 1.5rem 0 0; font-size: .75rem; text-transform: none; }
+  @media (min-width: 62rem) {
+    .ftr__top { grid-template-columns: 1fr 1fr 1fr 1fr 1.3fr; } .ftr__top .ftr__col:first-child { grid-column: 3; } .ftr__top .ftr__col:nth-child(2) { grid-column: 4; }
+    .ftr__co { grid-column: 5; justify-items: end; text-align: right; }
+    .ftr__row { grid-template-columns: 1fr 1fr 1fr; } .ftr__pol { grid-column: 2; } .ftr__top-btn { justify-self: end; }
+  }
+</style>
+<script>
+  document.querySelector('[data-top]')?.addEventListener('click', e => { e.preventDefault(); scrollTo({ top: 0, behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' }); });
+</script>

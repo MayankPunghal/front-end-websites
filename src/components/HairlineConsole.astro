@@ -1,0 +1,81 @@
+---
+// Hairline isometric exploded view of one light console (1200 × 400 mm footprint, 3:1). Strokes draw in, then the layers lift apart as you scroll.
+// Layer order and part count are illustrative; only the facts in the labels come from the SUNROOOF spec. Geometry is generated, no raster.
+const W = 300, D = 100, hx = W / 2, hy = D / 2;
+const P = (x: number, y: number, z = 0) => [(x - y) * 0.866, (x + y) * 0.5 - z] as const;
+const pt = (a: readonly number[]) => `${a[0].toFixed(1)},${a[1].toFixed(1)}`;
+const poly = (cls: string, ...p: (readonly number[])[]) => `<polygon class="${cls}" pathLength="1" points="${p.map(pt).join(' ')}"/>`;
+const seg = (a: readonly number[], b: readonly number[], cls = 'hl') => `<path class="${cls}" pathLength="1" d="M${pt(a)}L${pt(b)}"/>`;
+const ell = (x: number, y: number, z: number, r: number, cls = 'hl') => { const [cx, cy] = P(x, y, z); return `<ellipse class="${cls}" pathLength="1" cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" rx="${(r * 1.22).toFixed(2)}" ry="${(r * 0.71).toFixed(2)}"/>`; };
+// slab with front, right and top faces (back faces hidden)
+function slab(sx: number, sy: number, t: number, cls = 'hl') {
+  const x0 = -sx / 2, x1 = sx / 2, y0 = -sy / 2, y1 = sy / 2;
+  return poly(cls, P(x0, y1, 0), P(x1, y1, 0), P(x1, y1, t), P(x0, y1, t)) + poly(cls, P(x1, y1, 0), P(x1, y0, 0), P(x1, y0, t), P(x1, y1, t)) + poly(cls, P(x0, y0, t), P(x1, y0, t), P(x1, y1, t), P(x0, y1, t));
+}
+const grid = (fn: (x: number, y: number) => string) => { let s = ''; for (let i = 0; i < 12; i++) for (let j = 0; j < 4; j++) s += fn(-hx + 38 + i * 20.6, -hy + 24 + j * 17.3); return s; };
+
+const LAYERS = [
+  { id: 'frame', label: 'Frame', note: 'Wooden frame (rafters) carries the consoles',
+    svg: slab(W, D, 7) + poly('hl', P(-hx + 8, -hy + 8, 7), P(hx - 8, -hy + 8, 7), P(hx - 8, hy - 8, 7), P(-hx + 8, hy - 8, 7)) + seg(P(0, -hy + 8, 7), P(0, hy - 8, 7)) },
+  { id: 'glass', label: 'Toughened glass', note: 'Lacquered toughened glass diffuser',
+    svg: slab(W - 18, D - 14, 3) + seg(P(-hx + 12, -hy + 10, 3), P(hx - 12, -hy + 10, 3), 'hl hl--soft') + seg(P(-110, -30, 3), P(-70, 10, 3), 'hl hl--soft') + seg(P(-90, -30, 3), P(-50, 10, 3), 'hl hl--soft') },
+  { id: 'lens', label: 'Optics', note: 'Special lenses make the light feel distant',
+    svg: slab(W - 30, D - 26, 2.5) + grid((x, y) => ell(x, y, 2.5, 6.2) + ell(x, y, 2.5, 3.4, 'hl hl--soft')) },
+  { id: 'led', label: 'LED console', note: 'Dimmable 0–100%, flicker-free, 50 W peak',
+    svg: slab(W - 30, D - 26, 3) + grid((x, y) => ell(x, y, 3, 3.2, 'hl hl--sun')) + [0, 1, 2, 3].map(i => seg(P(-hx + 28, -hy + 24 + i * 17.3, 3), P(hx - 28, -hy + 24 + i * 17.3, 3), 'hl hl--soft')).join('') },
+  { id: 'driver', label: 'Housing + DALI driver', note: 'Isolated constant-current DALI-compatible driver',
+    svg: slab(W - 10, D - 8, 9) + Array.from({ length: 13 }, (_, i) => seg(P((i - 6) * 22, -hy + 6, 9), P((i - 6) * 22, hy - 6, 9), 'hl hl--soft')).join('') +
+      [[86, 0, 62, 34]].map(([x, , sx, sy]) => { const x0 = x - sx / 2, x1 = x + sx / 2, y0 = -sy / 2, y1 = sy / 2, z = 9, t = 9; return poly('hl hl--sun', P(x0, y1, z), P(x1, y1, z), P(x1, y1, z + t), P(x0, y1, z + t)) + poly('hl hl--sun', P(x1, y1, z), P(x1, y0, z), P(x1, y0, z + t), P(x1, y1, z + t)) + poly('hl hl--sun', P(x0, y0, z + t), P(x1, y0, z + t), P(x1, y1, z + t), P(x0, y1, z + t)); }).join('') },
+];
+---
+<section class="hc ps" data-hc aria-labelledby="hc-h">
+  <div class="hc__t"><p class="kicker">Inside every console</p><h2 id="hc-h">Five layers, built to feel like sky</h2></div>
+  <figure class="hc__f">
+    <svg viewBox="-60 -270 760 640" role="img" aria-labelledby="hc-t hc-d" class="hc__svg" data-hc-svg>
+      <title id="hc-t">Exploded view of a SUNROOOF light console</title>
+      <desc id="hc-d">Conceptual isometric line drawing. From the room side up: a wooden frame, toughened glass, a lens array, an LED board, and a housing with a DALI driver. Not to scale.</desc>
+      <g transform="translate(220 150)">
+        {LAYERS.map((l, i) => <g class="hc__layer" style={`--i:${i}`}><g set:html={l.svg} /></g>)}
+      </g>
+      <g font-family="var(--font-body)">
+        {LAYERS.map((l, i) => (
+          <g class="hc__label" style={`--i:${i}`}>
+            <path d="M410 150h60" /><circle cx="410" cy="150" r="2.6" />
+            <text x="480" y="148" class="hc__lt">{l.label}</text><text x="480" y="167" class="hc__ln">{l.note}</text>
+          </g>
+        ))}
+      </g>
+    </svg>
+    <figcaption class="muted">Conceptual illustration, not to scale. Console size (1200 × 400 mm), 50 W peak power, 0–100% DALI dimming and the toughened-glass diffuser are from the SUNROOOF specification; the arrangement of layers is illustrative.</figcaption>
+  </figure>
+</section>
+
+<style is:global>
+  .hc { padding-block: clamp(3rem, 6vw, 5rem); }
+  .hc__t { display: grid; gap: .75rem; margin-bottom: clamp(1.5rem, 3vw, 2.5rem); }
+  .hc__t h2 { font: 300 clamp(1.75rem, 1.2rem + 2vw, 2.75rem)/1.15 var(--font-display); margin: 0; max-width: 18ch; }
+  .hc__f { margin: 0; display: grid; gap: 1rem; }
+  .hc__svg { width: 100%; height: min(76svh, 44rem); overflow: visible; --p: 1; --g: .8; }
+  .hc .hl { fill: #111; stroke: rgb(255 255 255 / .9); stroke-width: 1; vector-effect: non-scaling-stroke; stroke-linejoin: round; stroke-dasharray: 1; stroke-dashoffset: calc(1 - var(--p)); }
+  .hc .hl--soft { fill: none; stroke: rgb(255 255 255 / .45); } .hc .hl--sun { stroke: var(--sun); }
+  .hc__layer { transform: translateY(calc(var(--g) * 66px * var(--i) * -1)); }
+  .hc__label { transform: translateY(calc(var(--g) * 66px * var(--i) * -1)); opacity: var(--g); } .hc__label path { stroke: rgb(255 255 255 / .5); stroke-width: 1; fill: none; vector-effect: non-scaling-stroke; } .hc__label circle { fill: var(--sun); }
+  .hc__lt { fill: #fff; font-size: 15px; font-weight: 600; } .hc__ln { fill: rgb(255 255 255 / .7); font-size: 12.5px; }
+  .hc figcaption { font-size: var(--t-micro, .75rem); max-width: 60ch; }
+  @media (max-width: 40rem) { .hc__ln { display: none; } .hc__svg { height: auto; } }
+</style>
+
+<script>
+  const box = document.querySelector<HTMLElement>('[data-hc]');
+  const svg = box?.querySelector<SVGElement>('[data-hc-svg]');
+  if (box && svg) {
+    import('../scripts/motion').then(({ motion }) => motion()).then(({ gsap, mm }) => {
+      mm.add('(prefers-reduced-motion: no-preference)', () => {
+        const s = { p: 0, g: 0 }, set = () => { svg.style.setProperty('--p', String(s.p)); svg.style.setProperty('--g', String(s.g)); };
+        set();
+        gsap.timeline({ scrollTrigger: { trigger: box, start: 'top 75%', end: 'bottom 55%', scrub: 0.6 }, onUpdate: set })
+          .to(s, { p: 1, duration: 0.45, ease: 'none' }).to(s, { g: 1, duration: 0.55, ease: 'power2.inOut' });
+      });
+    });
+  }
+</script>

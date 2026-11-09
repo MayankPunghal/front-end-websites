@@ -1,0 +1,33 @@
+---
+// "Crystal Clear. But I have a question.": grouped accordion that closes each page, as on sunrooof.com.
+import faqs from '../data/faqs.json';
+interface Props { groups?: string[]; }
+const { groups = ['Console', 'Installation'] } = Astro.props;
+---
+<section class="fb" aria-labelledby="fb-h">
+  <h2 id="fb-h">Crystal Clear.<br />But I have a question.</h2>
+  <div class="fb__list">
+    {groups.map(g => (
+      <details class="fb__g">
+        <summary>{g}</summary>
+        <div class="fb__q">
+          {faqs.filter(f => f.groups.includes(g)).map(f => <details><summary>{f.q}</summary><p>{f.a}</p></details>)}
+        </div>
+      </details>
+    ))}
+  </div>
+  <p class="fb__more">Have more questions?<span><a href="/pages/contact-us">Contact us</a><a href="/pages/faqs">All FAQ</a></span></p>
+</section>
+<style>
+  .fb { background: #121212; color: #fff; padding: clamp(3rem, 7vw, 6rem) clamp(1rem, 0.5rem + 3vw, 3.25rem); }
+  .fb h2 { font: 300 clamp(1.75rem, 1.3rem + 1.4vw, 2.25rem)/1.2 var(--font-display); margin: 0 0 2.5rem; }
+  .fb details { border-bottom: 1px solid rgb(255 255 255 / .3); }
+  .fb summary { display: flex; align-items: center; justify-content: space-between; gap: 1rem; min-height: 3.5rem; cursor: pointer; list-style: none; font: 300 1.5rem/1.2 var(--font-display); }
+  .fb summary::-webkit-details-marker { display: none; }
+  .fb summary::after { content: ''; flex: none; width: .5rem; height: .5rem; border: solid #fff; border-width: 0 1.5px 1.5px 0; transform: rotate(45deg); transition: transform .3s var(--ease-out); }
+  .fb details[open] > summary::after { transform: rotate(225deg); }
+  .fb__q { padding-bottom: 1rem; } .fb__q details { border: 0; border-top: 1px solid rgb(255 255 255 / .12); }
+  .fb__q summary { font: 400 .9375rem/1.3 var(--font-body); min-height: 3rem; } .fb__q p { margin: 0 0 1rem; max-width: 60ch; color: #bdbdbd; font-size: .9375rem; }
+  .fb__more { display: grid; justify-items: center; gap: .75rem; margin: 3rem 0 0; font-size: .8125rem; text-align: center; }
+  .fb__more span { display: flex; gap: 1rem; } .fb__more a { color: #fff; text-decoration: none; text-transform: uppercase; font-size: .75rem; padding: .5rem .25rem; border-bottom: 1px solid #fff; } .fb__more a:hover { color: var(--sun); border-color: var(--sun); }
+</style>

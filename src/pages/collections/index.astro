@@ -1,0 +1,99 @@
+---
+// "SUNROOOF Atelier": category filter with hairline isometric icons, square tiles, no prices (as on sunrooof.com/collections).
+import Base from '../../layouts/Base.astro';
+import FaqBlock from '../../components/FaqBlock.astro';
+import products from '../../data/products.json';
+const F = 'https://sunrooof.com/cdn/shop/files/';
+const tiles = [
+  { t: 'Classical SUNROOOF', href: '/collections/classical-sunrooof', img: F + '13_baad50f0-4d6b-4ae6-9354-c4d9d8390526.jpg', k: 'ceiling' },
+  { t: 'Minimalist SUNROOOF', href: '/collections/minimalist-sunrooof', img: F + 'FLUTED.webp', k: 'ceiling' },
+  { t: 'Greens SUNROOOF', href: '/collections/modern-sunrooof', img: F + 'MODERN.webp', k: 'ceiling' },
+  { t: 'French Window', href: '/collections/french-window', img: F + 'French.webp', k: 'window' },
+  { t: 'Arch Window', href: '/collections/arch-window', img: F + 'ARCH.webp', k: 'window' },
+  { t: 'Louvered Window', href: '/collections/louvered-window', img: F + 'Louvered.webp', k: 'window' },
+  ...products.filter(p => p.kind === 'accessory').map(p => ({ t: p.title, href: `/products/${p.handle}`, img: p.images[0], k: 'accessories' })),
+];
+// Isometric room cube, 80 × 72: top rhombus, three verticals, front floor edges, back corner. Panels are the "light".
+const cube = `<path class="ln" pathLength="1" d="M40 6 72 22 40 38 8 22Z M8 22V54L40 70 72 54V22 M40 38V70 M40 38 8 54 M40 38 72 54 M40 38V6"/>`;
+const topPanel = `<path class="pn pn--top" d="M40 12 62 22 40 32 18 22Z"/>`;
+const winPanel = `<path class="pn pn--win" d="M48 42 64 34V50L48 58Z"/>`;
+// Light: a shaft from the skylight to a patch on the floor, and from the window across the floor. Hairline rays flow along it, dust motes drift up.
+const motes = [[30, 44], [46, 38], [52, 50]].map(([x, y], i) => `<circle class="mt" style="--n:${i}" cx="${x}" cy="${y}" r="1.1"/>`).join('');
+const beamTop = `<g class="bm"><path class="bf" d="M18 22 40 12 62 22V54L40 64 18 54Z"/><path class="fl" d="M40 44 62 54 40 64 18 54Z"/><path class="ry" d="M29 27V59M51 27V59"/>${motes}</g>`;
+const beamWin = `<g class="bm bm--win"><path class="bf" d="M64 34 46 49 30 57 48 42Z"/><path class="fl" d="M48 66 64 58 46 49 30 57Z"/><path class="ry" d="M56 38 38 53"/></g>`;
+const plate = `<path class="ln" pathLength="1" d="M10 14H62V66H10Z M62 14 70 8V60L62 66 M10 14 18 8H70"/>` + [0, 1, 2].flatMap(r => [0, 1].map(c => `<path class="pn pn--cell" style="--n:${r * 2 + c}" d="M${15 + c * 24} ${20 + r * 15}h20v11h-20Z"/>`)).join('');
+const icons: Record<string, string> = { all: beamTop + beamWin + cube + topPanel + winPanel, ceiling: beamTop + cube + topPanel, window: beamWin + cube + winPanel, accessories: plate };
+const tabs = [['all', 'All'], ['ceiling', 'Ceiling'], ['window', 'Window'], ['accessories', 'Accessories']];
+---
+<Base title="SUNROOOF Atelier" description="Explore SUNROOOF skylights, windows and accessories.">
+  <section class="at wrap" data-at>
+    <nav class="at__bc" aria-label="Breadcrumb"><a href="/">Home</a><span aria-hidden="true">›</span><span aria-current="page">Category</span></nav>
+    <h1>SUNROOOF Atelier</h1>
+    <div class="at__tabs" role="group" aria-label="Filter products">
+      {tabs.map(([k, l], i) => (
+        <button type="button" class="at__tab" data-f={k} aria-pressed={i === 0}>
+          <svg viewBox="0 0 80 72" width="80" height="72" aria-hidden="true" set:html={icons[k]}></svg>
+          <span>{l}</span>
+        </button>
+      ))}
+    </div>
+    <ul class="at__g" aria-live="polite">
+      {tiles.map((t, i) => (
+        <li data-k={t.k}><a href={t.href} data-plx><img src={`${t.img}?width=900`} width="900" height="900" alt={t.t} loading={i < 2 ? 'eager' : 'lazy'} /><h2>{t.t}</h2></a></li>
+      ))}
+    </ul>
+  </section>
+  <FaqBlock />
+</Base>
+
+<style is:global>
+  .at { padding-block: clamp(2rem, 5vw, 4rem) clamp(3rem, 6vw, 5rem); }
+  .at__bc { display: flex; gap: .5rem; align-items: center; font-size: .9375rem; color: #111; } .at__bc a { color: inherit; text-decoration: none; } .at__bc a:hover { text-decoration: underline; }
+  .at h1 { font: 300 clamp(2rem, 1.4rem + 2.4vw, 3.25rem)/1.15 var(--font-display); margin: .5rem 0 clamp(2rem, 5vw, 4rem); color: #111; }
+  .at__tabs { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: clamp(1.5rem, 3vw, 2.5rem); }
+  .at__tab { display: grid; justify-items: center; gap: .75rem; padding: .5rem 0 .25rem; background: none; border: 0; color: #111; cursor: pointer; font: inherit; }
+  .at__tab span { position: relative; text-transform: uppercase; font-size: clamp(.8125rem, .6rem + .8vw, 1.5rem); padding-bottom: .375rem; }
+  .at__tab span::after { content: ''; position: absolute; left: 50%; bottom: 0; width: 3.5rem; height: 1px; translate: -50% 0; background: var(--sun); transform: scaleX(0); transition: transform .45s var(--ease-out); }
+  .at__tab[aria-pressed=true] span::after { transform: scaleX(1); }
+  .at__tab:focus-visible { outline: 2px solid #111; outline-offset: 4px; }
+  .at__tab svg { width: clamp(3.5rem, 2rem + 6vw, 7rem); height: auto; overflow: visible; transition: translate .4s var(--ease-out); } .at__tab:hover svg { translate: 0 -4px; }
+  .at__tab .ln { fill: none; stroke: #111; stroke-width: 1; vector-effect: non-scaling-stroke; stroke-linejoin: round; stroke-dasharray: 1; }
+  .at__tab .pn { fill: #f9d65c; fill-opacity: .4; stroke: #111; stroke-width: .75; vector-effect: non-scaling-stroke; transition: fill-opacity .5s, filter .5s; }
+  .at__tab:hover .pn, .at__tab[aria-pressed=true] .pn { fill-opacity: 1; }
+  .at__tab .bf { fill: #f9d65c; fill-opacity: .2; } .at__tab .fl { fill: #f9d65c; fill-opacity: .5; } .at__tab[aria-pressed=true] .bf, .at__tab:hover .bf { fill-opacity: .34; }
+  .at__tab .ry { fill: none; stroke: #d9a400; stroke-width: 1; vector-effect: non-scaling-stroke; stroke-dasharray: 3 5; } .at__tab .mt { fill: #d9a400; opacity: 0; }
+  .at__tab[aria-pressed=true] .pn { filter: drop-shadow(0 0 5px rgb(249 214 92 / .9)); }
+  .at__g { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: clamp(.5rem, 1vw, .875rem); }
+  .at__g li[hidden] { display: none; }
+  .at__g a { position: relative; display: block; aspect-ratio: 1; overflow: hidden; background: #ddd; color: #fff; text-decoration: none; }
+  .at__g img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .at__g a::after { content: ''; position: absolute; inset: auto 0 0; height: 45%; background: linear-gradient(transparent, rgb(0 0 0 / .6)); pointer-events: none; }
+  .at__g h2 { position: absolute; z-index: 1; left: clamp(1rem, 4vw, 3rem); right: 1rem; bottom: clamp(1rem, 3.5vw, 2.75rem); margin: 0; font: 300 clamp(1.125rem, .8rem + 1.2vw, 1.75rem)/1.2 var(--font-display); text-transform: uppercase; color: #fff; }
+  @media (max-width: 40rem) { .at__g { grid-template-columns: 1fr; } .at__tabs { gap: .25rem; } }
+  @media (prefers-reduced-motion: no-preference) {
+    .at__tab .ln { animation: at-draw 1.1s var(--ease-out) both; } .at__tab:hover .ln { animation: at-draw .9s var(--ease-out) both; }
+    .at__tab .bm { animation: at-breathe 3.6s ease-in-out infinite; } .at__tab .bm--win { animation: at-breathe 3.6s ease-in-out infinite, at-sway 7s ease-in-out infinite; }
+    .at__tab .ry { animation: at-flow 1.4s linear infinite; } .at__tab .mt { animation: at-mote 3.2s calc(var(--n) * 1s) ease-in-out infinite; }
+    .at__tab .pn--top, .at__tab .pn--win { animation: at-lamp 3.6s ease-in-out infinite; }
+    .at__tab .pn--cell { animation: at-level 2.6s calc(var(--n, 0) * .32s) ease-in-out infinite; }
+    @keyframes at-breathe { 50% { opacity: .6; } } @keyframes at-sway { 50% { transform: translate(-3px, -1.5px); } } @keyframes at-flow { to { stroke-dashoffset: -8; } }
+    @keyframes at-mote { 0% { transform: translateY(5px); opacity: 0; } 35%, 60% { opacity: .9; } 100% { transform: translateY(-9px); opacity: 0; } }
+    @keyframes at-lamp { 0%, 100% { fill-opacity: .55; } 50% { fill-opacity: 1; } } @keyframes at-level { 0%, 100% { fill-opacity: .2; } 50% { fill-opacity: 1; } }
+    .at__g li:not([hidden]) { animation: at-in .6s var(--ease-out) both; animation-delay: calc(var(--i, 0) * 70ms); }
+    @keyframes at-draw { from { stroke-dashoffset: 1; } to { stroke-dashoffset: 0; } }
+    @keyframes at-in { from { opacity: 0; transform: translateY(24px); } }
+  }
+</style>
+
+<script>
+  const root = document.querySelector<HTMLElement>('[data-at]');
+  if (root) {
+    const tabs = [...root.querySelectorAll<HTMLButtonElement>('[data-f]')], items = [...root.querySelectorAll<HTMLElement>('.at__g li')];
+    const apply = (f: string) => {
+      tabs.forEach(t => t.setAttribute('aria-pressed', String(t.dataset.f === f)));
+      let n = 0; items.forEach(li => { const on = f === 'all' ? li.dataset.k !== 'accessories' : li.dataset.k === f; li.hidden = !on; if (on) li.style.setProperty('--i', String(n++)); });
+    };
+    tabs.forEach(t => t.addEventListener('click', () => { apply(t.dataset.f!); dispatchEvent(new Event('resize')); })); // lets ScrollTrigger re-measure the parallax tiles
+    apply('all');
+  }
+</script>

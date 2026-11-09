@@ -1,0 +1,12 @@
+---
+import Base from '../../layouts/Base.astro';
+import LegalDoc from '../../components/LegalDoc.astro';
+import policies from '../../data/policies.json';
+export const getStaticPaths = () => policies.map(p => ({ params: { handle: p.handle }, props: { p } }));
+const { p } = Astro.props;
+// first paragraph repeats the title
+const [, ...body] = p.paragraphs;
+---
+<Base title={p.title} description={`${p.title} for SUNROOOF LUMINARIES PRIVATE LIMITED.`}>
+  <LegalDoc title={p.title} paragraphs={body} />
+</Base>

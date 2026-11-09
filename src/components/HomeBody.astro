@@ -1,0 +1,259 @@
+---
+// Sections below the hero, shared by every home-page variant. Styles live in src/styles/home.css; variants skin them with their own CSS.
+import ReasonsCarousel from './ReasonsCarousel.astro';
+import ReviewsCarousel from './ReviewsCarousel.astro';
+import ig from '../data/instagram.json';
+import { SITE, portraits } from '../lib/site';
+import { L, LS, REEL } from '../lib/live';
+import { mosaic, apps, designs, skyTabs, spaces, logoNames, vids, reels, centres, faqTop, posts, arrow } from '../lib/homeData';
+---
+  <!-- 2 · ABOUT -->
+  <section class="about">
+    <div class="about__copy">
+      <h2 class="h-xl" data-reveal>The Future of<br />Indoor Lighting.</h2>
+      <p data-reveal>SUNROOOF is the worlds first wellness lighting technology that brings the experience and benefits of sunlight inside any space through advanced optics, special lenses and AI.</p>
+      <p data-reveal>Transforming dull, dark and lifeless areas to beautiful sunlit courtyard experiences.</p>
+    </div>
+    <div class="about__f" data-reveal data-plx><img class="about__img" src={L('future-light.webp', 900)} srcset={LS('future-light.webp', [480, 700, 900])} sizes="(min-width: 62rem) 46vw, 100vw" width="642" height="642" alt="A timber-framed corridor with a SUNROOOF skylight, a plant and a woman walking through" loading="lazy" /></div>
+  </section>
+
+  <ReasonsCarousel />
+
+  <!-- 5 · HEALTH & WELLNESS (sun gradient) -->
+  <section class="sun" data-sun>
+    <span class="sun__dot" data-sun-dot aria-hidden="true"></span>
+    <div class="sun__intro">
+      <h2 class="h-l" data-reveal>Lighting that brings health and wellness</h2>
+      <p data-reveal>We spend 90% of our time indoors, missing all the vital benefits of sunlight. SUNROOOF’s patented lighting technology brings all the psychological benefits of sunlight into your space.</p>
+    </div>
+    <div class="sun__grid">
+      <article class="sun__a">
+        <img data-reveal data-plx src={L('Joyful_Woman_by_Bright_Shutters.png', 900)} srcset={LS('Joyful_Woman_by_Bright_Shutters.png', [500, 700, 900])} sizes="(min-width: 62rem) 38vw, 90vw" width="1190" height="1322" alt="A woman looking up and smiling in daylight by bright shutters" loading="lazy" />
+        <h3 data-reveal>Brings Happiness and Feeling of Joy</h3>
+        <p data-reveal>SUNROOOF makes us feel more relaxed, calm and happier when we are under it, reducing a lot of our stress. It gives a very joyful and positive aura just like the real sun. It has a substantial impact on our mood and emotions.</p>
+      </article>
+      <article class="sun__b">
+        <img data-reveal data-plx src={L('sun-two-img_1.webp', 900)} srcset={LS('sun-two-img_1.webp', [500, 700, 900])} sizes="(min-width: 62rem) 38vw, 90vw" width="1261" height="1401" alt="A woman reading a SUNROOOF magazine in a bright room" loading="lazy" />
+        <h3 data-reveal>Increases focus and concentration</h3>
+        <p data-reveal>With SUNROOOF your focus increases substantially as it releases a chemical in our body called serotonin, a chemical which is meant to sharpen concentration.</p>
+      </article>
+    </div>
+    <div class="sun__cta">
+      <h2 class="h-l" data-reveal>Ready to elevate your space?</h2>
+      <p class="links" data-reveal><a href="/pages/contact-us" data-lead>Book now</a><a href="/collections/all">Explore all variants</a></p>
+    </div>
+  </section>
+
+  <!-- 6 · VERSATILE: 3x3 mosaic that zooms into the before/after -->
+  <section class="vs" data-mosaic>
+    <div class="vs__pin" data-vs-pin>
+      <div class="vs__grid" data-vs-grid>
+        {mosaic.slice(0, 3).map(([f, t, a]) => <figure class="vs__c"><img src={L(f, 700)} width="500" height="334" alt={a} loading="lazy" /><figcaption>{t}</figcaption></figure>)}
+        <div class="vs__c vs__txt"><h2 class="h-l">Seamless Light, Anywhere</h2></div>
+        <div class="vs__c vs__mid">
+          <div class="cmp" data-cmp style="--pos:50%">
+            <img class="cmp__a" src={L('After_LE_upscale_prime.jpg', 1600)} width="1440" height="1000" alt="A café with SUNROOOF switched on: bright, daylit" loading="lazy" />
+            <div class="cmp__clip"><img class="cmp__b" src={L('Before_LE_upscale_prime.jpg', 1600)} width="1440" height="1000" alt="The same café with ordinary lighting: dim and brown" loading="lazy" /></div>
+            <span class="cmp__h" aria-hidden="true"><svg viewBox="0 0 28 14" width="22" height="11" fill="currentColor"><path d="M8 0 0 7l8 7V0zm12 0v14l8-7-8-7z"/></svg></span>
+            <input class="cmp__r" type="range" min="0" max="100" value="50" aria-label="Compare before and after: drag to reveal" />
+          </div>
+        </div>
+        <div class="vs__c vs__txt vs__end"><p>Whether creating a cozy, sunlit ambiance at home or a vibrant, well-lit workspace, SUNROOOF adapts to any environment with ease.</p></div>
+        {mosaic.slice(3).map(([f, t, a]) => <figure class="vs__c"><img src={L(f, 700)} width="500" height="334" alt={a} loading="lazy" /><figcaption>{t}</figcaption></figure>)}
+      </div>
+    </div>
+  </section>
+  <section class="app" data-tabs>
+    <div class="app__head">
+      <h2 class="h-m" data-reveal>Courtyard experience anywhere</h2>
+      <p data-reveal>Explore how SUNROOOF transforms different environments. From homes to commercial spaces, see its versatility and stunning applications.</p>
+    </div>
+    <div class="app__tabs" role="tablist" aria-label="Space type">
+      {Object.keys(apps).map((k, i) => <button type="button" role="tab" aria-selected={i === 0 ? 'true' : 'false'} data-tab={k}>{k}</button>)}
+    </div>
+    <ul class="app__list">
+      {Object.entries(apps).map(([k, v], i) => v.map(x => <li data-for={k} hidden={i === 1 ? true : undefined}>{x}</li>))}
+    </ul>
+  </section>
+
+  <!-- 7 · ENGINEERED -->
+  <section class="eng night">
+    <h2 class="h-m" data-reveal>Engineered to bring Sun Indoors</h2>
+    <div class="eng__rooms">
+      <a class="eng__r" href="/collections/all" data-reveal><img data-depth="70" style="--depth:70px" src={L('room-one.png', 900)} srcset={LS('room-one.png', [500, 700, 900])} sizes="(min-width: 48rem) 40vw, 90vw" width="1000" height="824" alt="An isometric cut-away room with a SUNROOOF skylight" loading="lazy" /><h3>Skylight</h3><span class="ul">Explore all products</span></a>
+      <a class="eng__r" href="/collections/all" data-reveal><img data-depth="-70" style="--depth:-70px" src={L('room-two.png', 900)} srcset={LS('room-two.png', [500, 700, 900])} sizes="(min-width: 48rem) 40vw, 90vw" width="1000" height="824" alt="An isometric cut-away room with SUNROOOF windows and curtains" loading="lazy" /><h3>Window</h3><span class="ul">Explore all products</span></a>
+    </div>
+  </section>
+
+  <!-- 8 · MANIFESTO -->
+  <section class="man night"><p class="man__t h-m" data-words>We were never meant to be living under false ceilings, we were meant to live under the sun. Now you can bring the sun inside any room.</p></section>
+
+  <!-- 9 · SKY ON A SLIDER -->
+  <section class="sky" aria-labelledby="sky-h">
+    <h2 id="sky-h" class="h-l" data-reveal>Your sky, on a slider.</h2>
+    <div class="hs-row" data-row>
+      {skyTabs.map(s => (
+        <figure class="sky__c">
+          <img src={L(s.img, 1600)} srcset={LS(s.img, [800, 1200, 1600])} sizes="(min-width: 62rem) 80vw, 92vw" width="1440" height="720" alt={s.alt} loading="lazy" />
+          <figcaption>{s.t}</figcaption>
+        </figure>
+      ))}
+    </div>
+  </section>
+
+  <!-- 10 · DESIGNS -->
+  <section class="ds" data-designs aria-labelledby="ds-h">
+    <div class="ds__head">
+      <h2 id="ds-h" class="h-m" data-reveal>Choose the design<br />you love</h2>
+      <div class="ds__tabs" role="tablist" aria-label="Design family">
+        {Object.keys(designs).map((k, i) => <button type="button" role="tab" aria-selected={i === 0 ? 'true' : 'false'} data-d={k}>{k}</button>)}
+      </div>
+    </div>
+    {Object.entries(designs).map(([k, v], i) => (
+      <div class="hs-row ds__row" data-row data-for={k} hidden={i > 0 ? true : undefined}>
+        {v.map(f => <img src={L(f, 800)} srcset={LS(f, [500, 800])} sizes="(min-width: 62rem) 42vw, 80vw" width="648" height="648" alt={`${k} SUNROOOF design`} loading="lazy" />)}
+      </div>
+    ))}
+  </section>
+
+  <!-- 11 · REAL SPACES -->
+  <section class="rsp" data-spaces aria-labelledby="rsp-h">
+    <div class="rsp__head">
+      <h2 id="rsp-h" class="h-m" data-reveal>SUNROOOF in Real Spaces</h2>
+      <div class="rsp__tabs" role="tablist" aria-label="Filter">
+        {['all', 'commercial', 'residential'].map((k, i) => <button type="button" role="tab" aria-selected={i === 0 ? 'true' : 'false'} data-f={k}>{k}</button>)}
+      </div>
+    </div>
+    <div class="rsp__grid">
+      {spaces.map(s => <img src={s.src} width="464" height="253" alt={`SUNROOOF installed in a ${s.type === 'all' ? '' : s.type + ' '}space`.replace('  ', ' ')} loading="lazy" data-t={s.type} hidden={s.type !== 'all' ? true : undefined} />)}
+    </div>
+    <p class="links"><a href="/pages/gallery">View full gallery</a></p>
+  </section>
+
+  <!-- 12 · TRUSTED -->
+  <section class="tp" aria-labelledby="tp-h">
+    <div class="tp__head">
+      <h2 id="tp-h" class="h-m" data-reveal>Trusted by Those Who Inspire</h2>
+      <p>Discover how renowned personalities have integrated SUNROOOF into their spaces, bringing unparalleled lighting and ambiance to their homes and workplaces.</p>
+    </div>
+    <div class="tp__rib">
+      <ul class="tp__t">
+        {[0, 1].map(k => portraits.map(([n, r, f]) => <li aria-hidden={k ? 'true' : undefined}><img src={L(f, 600)} width="500" height="500" alt={k ? '' : n} loading="lazy" /><h3>{n}</h3><p>{r}</p></li>))}
+      </ul>
+    </div>
+  </section>
+
+  <!-- 13 · MARQUEE + NOD -->
+  <section class="mq" aria-label="Clients">
+    <div class="mq__t" data-marquee>
+      {[0, 1].map(() => logoNames.map(f => <img src={L(f, 300)} height="64" alt="" loading="lazy" />))}
+    </div>
+  </section>
+  <section class="nod">
+    <h2 class="h-m" data-reveal>A Nod to What We’re Building</h2>
+    <div class="nod__b"><img src={L('the-economic-times-social-preview.png', 400)} width="120" height="120" alt="The Economic Times" loading="lazy" /><img src={L('good-design.png', 400)} width="120" height="120" alt="Good Design Award" loading="lazy" /><img src={L('if.png', 400)} width="120" height="120" alt="iF Design Award" loading="lazy" /></div>
+  </section>
+
+  <!-- 14 · REVIEWS -->
+  <ReviewsCarousel />
+
+  <!-- 15 · VIDEO TESTIMONIALS -->
+  <section class="vt night" aria-labelledby="vt-h">
+    <h2 id="vt-h" class="h-m" data-reveal>Hear from those who have experienced SUNROOOF</h2>
+    <div class="hs-row vt__row" data-row>
+      {vids.map(([href, f, a]) => (
+        <a class="vt__c" href={href} target="_blank" rel="noopener" aria-label={`Watch: ${a}`}>
+          <img src={L(f, 1200)} width="1500" height="844" alt="" loading="lazy" /><span class="vt__play" aria-hidden="true"></span>
+        </a>
+      ))}
+    </div>
+  </section>
+
+  <!-- 16 · EXPERIENCE CENTRES -->
+  <section class="ct" aria-labelledby="ct-h">
+    <div class="ct__head"><h2 id="ct-h" class="h-m" data-reveal>Experience SUNROOOF Live</h2><a class="ul" href="/pages/contact-us" data-lead>Book a visit</a></div>
+    <ul class="ct__grid">
+      {centres.map(([n, a, m, f]) => (
+        <li data-reveal><img data-plx src={L(f, 600)} width="360" height="268" alt={`SUNROOOF experience centre, ${n}`} loading="lazy" /><h3>{n}</h3>{m ? <a href={m} target="_blank" rel="noopener">{a}</a> : <p>{a}</p>}</li>
+      ))}
+    </ul>
+  </section>
+
+  <!-- 17 · THE WORD GOT OUT (reels) -->
+  <section class="wo night" aria-labelledby="wo-h">
+    <h2 id="wo-h" class="h-m" data-reveal>The Word Got Out</h2>
+    <div class="hs-row wo__row" data-row>
+      {reels.map(r => {
+        const id = r.split('.')[0];
+        return <button class="wo__c" type="button" data-reel={`${REEL}/${id}/${r}.mp4`} aria-label="Play reel"><img src={`${REEL.replace('videos/c/vp', 'files/preview_images')}/${id}.thumbnail.0000000000_800x.jpg`} width="270" height="480" alt="" loading="lazy" /><span class="vt__play" aria-hidden="true"></span></button>;
+      })}
+    </div>
+  </section>
+
+  <!-- 18 · VISION & STORIES -->
+  <section class="vn" aria-labelledby="vn-h" data-vn>
+    <h2 id="vn-h" class="h-m" data-reveal>SUNROOOF Vision &amp; Stories</h2>
+    <div class="vn__tabs" role="tablist" aria-label="Vision and stories">
+      <button type="button" role="tab" id="vn-t0" aria-controls="vn-p0" aria-selected="true" data-vn-tab="0">Founder’s Note</button>
+      <button type="button" role="tab" id="vn-t1" aria-controls="vn-p1" aria-selected="false" tabindex="-1" data-vn-tab="1">Instagram</button>
+    </div>
+    <div id="vn-p0" role="tabpanel" aria-labelledby="vn-t0">
+      <a class="vn__v" href="https://vimeo.com/1105019030" target="_blank" rel="noopener" aria-label="Watch the Founder’s Note"><img src={L('thrmbnail2.png', 1600)} width="1238" height="567" alt="Founder’s Note" loading="lazy" /><span class="vt__play" aria-hidden="true"></span></a>
+    </div>
+    <div id="vn-p1" role="tabpanel" aria-labelledby="vn-t1" hidden>
+      <h3 class="vn__ih">Follow us on Instagram</h3>
+      <p class="vn__is">Join our community for daily inspiration and a closer look at our creations</p>
+      <div class="ig" data-ig>
+        <button class="ig__n ig__n--p" type="button" data-ig-dir="-1" aria-label="Previous posts"><svg viewBox="0 0 11 18" width="11" height="18" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M9 1 2 9l7 8"/></svg></button>
+        <ul class="ig__t" data-ig-track>
+          {[0, 1].map(k => ig.map(p => (
+            <li aria-hidden={k ? 'true' : undefined}>
+              <a href={SITE.instagram} target="_blank" rel="noopener" tabindex={k ? -1 : undefined} aria-label="See this post on Instagram">
+                <img src={p.img} width="270" height="480" alt="" loading="lazy" />
+                {p.vid && <video muted loop playsinline preload="none" data-src={p.vid} poster={p.img}></video>}
+                {p.vid && <span class="ig__r" aria-hidden="true"></span>}
+              </a>
+            </li>
+          )))}
+        </ul>
+        <button class="ig__n ig__n--n" type="button" data-ig-dir="1" aria-label="Next posts"><svg viewBox="0 0 11 18" width="11" height="18" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="m2 1 7 8-7 8"/></svg></button>
+      </div>
+      <p class="links"><a class="ul" href={SITE.instagram} target="_blank" rel="noopener">Visit Instagram</a></p>
+    </div>
+  </section>
+
+  <!-- 19 · BLOG -->
+  <section class="bl" aria-labelledby="bl-h" data-bl>
+    <div class="bl__l">
+      <div class="bl__h"><h2 id="bl-h" class="h-m">Blogs</h2><a class="ul" href="/blogs/news">Read all</a></div>
+      <div class="bl__ts" aria-live="polite">
+        {posts.map((p, i) => (
+          <article class={i ? 'bl__t' : 'bl__t is-on'} aria-hidden={i ? 'true' : undefined}>
+            <h3>{p.title}</h3>
+            <p>{p.description}</p>
+            <a class="ul" href={`/blogs/news/${p.handle}`} tabindex={i ? -1 : undefined}>Read more</a>
+          </article>
+        ))}
+      </div>
+      <div class="bl__c">
+        <button type="button" data-bl-dir="-1" aria-label="Previous post"><svg viewBox="0 0 11 18" width="11" height="18" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M9 1 2 9l7 8"/></svg></button>
+        <button type="button" data-bl-dir="1" aria-label="Next post"><svg viewBox="0 0 11 18" width="11" height="18" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="m2 1 7 8-7 8"/></svg></button>
+      </div>
+    </div>
+    <div class="bl__r" data-bl-img>
+      {posts.map((p, i) => <a class={i ? 'bl__i' : 'bl__i is-on'} href={`/blogs/news/${p.handle}`} tabindex="-1" aria-hidden="true"><img src={p.image.replace('http:', 'https:') + '?width=1000'} width="720" height="810" alt="" loading={i ? 'lazy' : 'eager'} /></a>)}
+    </div>
+  </section>
+
+  <!-- 20 · GET IN TOUCH + FAQ -->
+  <section class="git night">
+    <div><h2 class="h-m" data-reveal>Get in Touch with Us</h2><p class="git__s">Fill out the form and our specialist will contact you as soon as possible</p></div>
+    <div class="git__r"><h3>A 15-minute call to design your sky</h3><button class="git__b" type="button" data-lead>Request a call back</button></div>
+  </section>
+  <section class="fq night" aria-labelledby="fq-h">
+    <h2 id="fq-h" class="h-m" data-reveal>Crystal Clear. But I have a question.</h2>
+    <div class="fq__l">
+      {faqTop.map((f: any) => <details><summary>{f.q ?? f.question}</summary><div>{f.a ?? f.answer}</div></details>)}
+    </div>
+    <p class="links"><a href="/pages/contact-us" data-lead>Have more questions? Contact us</a><a href="/pages/faqs">All FAQ</a></p>
+  </section>

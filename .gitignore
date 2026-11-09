@@ -1,0 +1,9 @@
+node_modules
+dist
+.astro
+artifacts/_tmp
+artifacts/_slices*
+artifacts/
+.claude/
+.mcp.json
+.impeccable/

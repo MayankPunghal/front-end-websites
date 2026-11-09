@@ -1,0 +1,8 @@
+---
+import Base from '../layouts/Base.astro';
+import PageHead from '../components/PageHead.astro';
+---
+<Base title="Page not found" noindex>
+  <PageHead kicker="404" title="This room has no ceiling." lead="The page you wanted is not here. Try the products or get in touch." />
+  <p class="wrap" style="padding-bottom:var(--section);display:flex;gap:var(--s-3);flex-wrap:wrap"><a class="btn" href="/collections/all">See products</a><a class="btn btn--ghost" href="/pages/contact-us">Contact</a></p>
+</Base>

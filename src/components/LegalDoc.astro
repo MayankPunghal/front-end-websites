@@ -1,0 +1,14 @@
+---
+// Policy / terms body as on sunrooof.com: centred 40px title, full-width copy, short unpunctuated lines are section titles.
+interface Props { title: string; paragraphs: string[]; }
+const { title, paragraphs } = Astro.props;
+const isHead = (t: string) => t.length < 70 && !/[.:;,]$/.test(t) && !/^Last updated/i.test(t);
+---
+<h1 class="lg__h">{title}</h1>
+<section class="lg">{paragraphs.map(t => (isHead(t) ? <h2>{t}</h2> : <p>{t}</p>))}</section>
+<style>
+  .lg__h { font: 300 clamp(1.75rem, 1.4rem + 1.2vw, 2.5rem)/1.2 var(--font-display); text-align: center; margin: 0; padding: clamp(2rem, 4vw, 3.5rem) 1rem clamp(1.5rem, 3vw, 2.5rem); }
+  .lg { padding: 0 clamp(1rem, 0.5rem + 3vw, 3.25rem) clamp(3rem, 7vw, 6rem); display: grid; gap: .75rem; }
+  .lg h2 { font: 400 clamp(1.375rem, 1.1rem + 1vw, 1.75rem)/1.2 var(--font-display); margin: 1.5rem 0 .25rem; }
+  .lg p { margin: 0; font-size: .875rem; line-height: 1.6; color: var(--ink-2); }
+</style>

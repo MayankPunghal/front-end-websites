@@ -1,0 +1,24 @@
+---
+interface Props { kicker?: string; title: string; lead?: string; dark?: boolean; crumbs?: { href: string; label: string }[]; }
+const { kicker, title, lead, dark = false, crumbs = [] } = Astro.props;
+---
+<header class:list={['ph', { night: dark }]}>
+  <div class="wrap ph__in">
+    {crumbs.length > 0 && (
+      <nav class="ph__crumbs" aria-label="Breadcrumb">
+        {crumbs.map(c => <a href={c.href}>{c.label}</a>)}
+      </nav>
+    )}
+    <h1 data-reveal>{title}</h1>
+    {lead && <p class="lead" data-reveal>{lead}</p>}
+    <slot />
+  </div>
+</header>
+<style>
+  .ph { padding-block: clamp(2.5rem, 1.5rem + 4vw, 5.5rem) clamp(2rem, 1rem + 3vw, 4rem); }
+  .ph__in { display: grid; gap: var(--s-5); }
+  .ph h1 { font-size: clamp(2.25rem, 1.4rem + 2.8vw, 4rem); line-height: 1.05; max-width: 20ch; }
+  .ph__crumbs { display: flex; flex-wrap: wrap; gap: var(--s-3); font-size: var(--t-small); }
+  .ph__crumbs a { text-decoration: none; color: var(--ink-3); } .ph__crumbs a:hover { color: var(--ink); text-decoration: underline; }
+  .ph__crumbs a:not(:last-child)::after { content: '/'; margin-left: var(--s-3); color: var(--line); }
+</style>

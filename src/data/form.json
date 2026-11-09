@@ -1,0 +1,88 @@
+{
+ "selects": {
+  "which_best_describes_you": {
+   "label": "Which best describes you?",
+   "options": [
+    "Homeowner",
+    "Architect / Interior Designer",
+    "Builder / Developer",
+    "Business Owner"
+   ]
+  },
+  "Lead_Type": {
+   "label": "Where are you considering Sunrooof?",
+   "options": [
+    "Home / Residential",
+    "Hotel, restaurant or retail space",
+    "Commercial Projects"
+   ]
+  },
+  "How_many_spaces_are_you_considering": {
+   "label": "How many spaces are you considering?",
+   "options": [
+    "One room / space",
+    "2 to 3 space",
+    "4+ spaces",
+    "Not sure yet"
+   ]
+  },
+  "Project_Stage": {
+   "label": "Which stage is your space currently at?",
+   "options": [
+    "Already completed / Occupied",
+    "Under renovation",
+    "Under construction",
+    "Planning a new project"
+   ]
+  },
+  "Timeline_for_Installing_SUNROOOF": {
+   "label": "When would you ideally like to install Sunrooof?",
+   "options": [
+    "Within 1 month",
+    "1 to 3 months",
+    "3 to 6 months",
+    "Just exploring"
+   ]
+  },
+  "state": {
+   "label": "Where is your space/project located?",
+   "options": [
+    "Andhra Pradesh",
+    "Arunachal Pradesh",
+    "Assam",
+    "Bihar",
+    "Chhattisgarh",
+    "Goa",
+    "Gujarat",
+    "Haryana",
+    "Himachal Pradesh",
+    "Jharkhand",
+    "Karnataka",
+    "Kerala",
+    "Madhya Pradesh",
+    "Maharashtra",
+    "Manipur",
+    "Meghalaya",
+    "Mizoram",
+    "Nagaland",
+    "Odisha",
+    "Punjab",
+    "Rajasthan",
+    "Sikkim",
+    "Tamil Nadu",
+    "Telangana",
+    "Tripura",
+    "Uttar Pradesh",
+    "Uttarakhand",
+    "West Bengal",
+    "Other"
+   ]
+  }
+ },
+ "required": [
+  "city",
+  "Name",
+  "mobile",
+  "email"
+ ]
+}

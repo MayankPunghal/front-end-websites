@@ -1,0 +1,76 @@
+---
+// "Three Reasons": one wide video per slide with the neighbours peeking in. Plays in turn, moves on when a video ends,
+// progress fills the active dot, the round button pauses everything (as on sunrooof.com).
+interface Props { first?: string; }
+const { first } = Astro.props;
+const reasons = [
+  { n: 1, t: 'Changes colours & brightness just like the sky' },
+  { n: 2, t: 'Feel the light coming from far away' },
+  { n: 3, t: 'Bring the sun experience to any room, any floor' },
+];
+const play = '<svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path fill="currentColor" d="M4 2.5v11l9-5.5z"/></svg>';
+const pause = '<svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path fill="currentColor" d="M3.5 2h3v12h-3zM9.5 2h3v12h-3z"/></svg>';
+---
+<section class="r3c" data-r3 aria-roledescription="carousel" aria-labelledby="r3c-h">
+  <h2 id="r3c-h">Three Reasons why SUNROOOF looks and feels like real sunlight</h2>
+  <div class="r3c__t" data-r3-track>
+    {reasons.map((r, i) => (
+      <figure class="r3c__s" aria-roledescription="slide" aria-label={`${i + 1} of ${reasons.length}`}>
+        <video src={r.n === 1 && first ? `${first}.mp4` : `/video/reason${r.n}.mp4`} poster={r.n === 1 && first ? `${first}.jpg` : `/video/reason${r.n}.jpg`} muted playsinline preload="none" tabindex="-1" aria-label={r.t}></video>
+        <figcaption>{r.t}</figcaption>
+      </figure>
+    ))}
+  </div>
+  <div class="r3c__c">
+    <button type="button" class="r3c__p" aria-label="Pause videos" data-r3-toggle><span set:html={pause}></span></button>
+    <div class="r3c__d" role="group" aria-label="Choose video">{reasons.map((r, i) => <button type="button" aria-label={`Show video ${i + 1}`} data-r3-go={i}><i></i></button>)}</div>
+  </div>
+</section>
+
+<style is:global>
+  .r3c { background: #e3dab9; color: #111; padding: clamp(1.5rem, 3vw, 2.5rem) 0 clamp(2rem, 4vw, 3rem); }
+  .r3c h2 { font: 300 clamp(1.75rem, 1.2rem + 2vw, 2.5rem)/1.2 var(--font-display); margin: 0 0 1.5rem; padding-inline: clamp(1rem, 0.5rem + 3vw, 3.75rem); color: #111; }
+  .r3c__t { display: flex; gap: 1.25rem; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; padding-inline: clamp(1rem, 0.5rem + 3vw, 3.75rem); scroll-padding-inline: clamp(1rem, 0.5rem + 3vw, 3.75rem); }
+  .r3c__t::-webkit-scrollbar { display: none; }
+  .r3c__s { position: relative; flex: 0 0 min(calc(100% - clamp(2rem, 1rem + 6vw, 7.5rem)), 66rem); margin: 0; aspect-ratio: 2.1; scroll-snap-align: start; background: #111; overflow: hidden; }
+  .r3c__s video { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .r3c__s::after { content: ''; position: absolute; inset: auto 0 0; height: 40%; background: linear-gradient(transparent, rgb(0 0 0 / .55)); pointer-events: none; }
+  .r3c__s figcaption { position: absolute; z-index: 1; left: clamp(1rem, 2vw, 1.875rem); bottom: clamp(1rem, 3vw, 2.5rem); right: 1rem; color: #fff; font: 300 clamp(1.25rem, 1rem + 1vw, 1.875rem)/1.2 var(--font-display); }
+  .r3c__c { display: flex; justify-content: center; align-items: center; gap: 1.25rem; margin-top: 1.5rem; }
+  .r3c__p { width: 2.75rem; height: 2.75rem; border-radius: 50%; border: 0; background: rgb(17 17 17 / .55); color: #fff; display: grid; place-items: center; cursor: pointer; transition: background .3s; } .r3c__p:hover { background: rgb(17 17 17 / .8); }
+  .r3c__d { display: flex; align-items: center; gap: .75rem; height: 2.75rem; padding-inline: 1.25rem; border-radius: 99px; background: rgb(17 17 17 / .55); }
+  .r3c__d button { position: relative; width: .5rem; height: .5rem; padding: 0; border: 0; border-radius: 99px; background: rgb(255 255 255 / .45); cursor: pointer; overflow: hidden; transition: width .4s var(--ease-out); }
+  .r3c__d button::before { content: ""; position: absolute; inset: -1.125rem -.5rem; }
+  .r3c__d button[aria-current=true] { width: 2.25rem; } .r3c__d i { position: absolute; inset: 0; background: #fff; transform-origin: left; transform: scaleX(0); }
+</style>
+
+<script>
+  const root = document.querySelector<HTMLElement>('[data-r3]');
+  if (root) {
+    const tr = root.querySelector<HTMLElement>('[data-r3-track]')!, vids = [...root.querySelectorAll<HTMLVideoElement>('video')], dots = [...root.querySelectorAll<HTMLButtonElement>('[data-r3-go]')];
+    const tog = root.querySelector<HTMLButtonElement>('[data-r3-toggle]')!, calm = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    let cur = 0, paused = calm, seen = false, tween = 0;
+    const ease = (t: number) => (t < .5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
+    const slideLeft = (i: number) => (tr.children[i] as HTMLElement).offsetLeft - parseFloat(getComputedStyle(tr).paddingLeft);
+    const mark = () => dots.forEach((d, k) => { d.setAttribute('aria-current', String(k === cur)); (d.firstElementChild as HTMLElement).style.transform = k < cur ? 'scaleX(1)' : k === cur ? '' : 'scaleX(0)'; });
+    const run = () => vids.forEach((v, k) => { if (k !== cur || paused || !seen) v.pause(); else { v.preload = 'auto'; v.play().catch(() => {}); } });
+    const go = (i: number, instant = false) => {
+      cur = (i + vids.length) % vids.length; vids.forEach((v, k) => { if (k !== cur) v.currentTime = 0; }); mark(); run();
+      const from = tr.scrollLeft, dest = slideLeft(cur); cancelAnimationFrame(tween);
+      if (instant || calm) { tr.scrollLeft = dest; return; }
+      tr.style.scrollSnapType = 'none'; const t0 = performance.now(), dur = 800;
+      const step = (t: number) => { const k = Math.min(1, (t - t0) / dur); tr.scrollLeft = from + (dest - from) * ease(k); if (k < 1) tween = requestAnimationFrame(step); else tr.style.scrollSnapType = ''; };
+      tween = requestAnimationFrame(step);
+    };
+    vids.forEach((v, k) => {
+      v.addEventListener('ended', () => { if (k === cur) go(cur + 1); });
+      v.addEventListener('timeupdate', () => { if (k === cur && v.duration) (dots[k].firstElementChild as HTMLElement).style.transform = `scaleX(${v.currentTime / v.duration})`; });
+    });
+    dots.forEach((d, k) => d.addEventListener('click', () => go(k)));
+    tog.addEventListener('click', () => { paused = !paused; tog.setAttribute('aria-label', paused ? 'Play videos' : 'Pause videos'); tog.innerHTML = paused ? '<svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path fill="currentColor" d="M4 2.5v11l9-5.5z"/></svg>' : '<svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path fill="currentColor" d="M3.5 2h3v12h-3zM9.5 2h3v12h-3z"/></svg>'; run(); });
+    tr.addEventListener('scrollend', () => { const i = Math.round(tr.scrollLeft / (tr.scrollWidth / vids.length)); if (i !== cur && i >= 0 && i < vids.length) { cur = i; vids.forEach((v, k) => { if (k !== cur) v.currentTime = 0; }); mark(); run(); } });
+    new IntersectionObserver(es => { seen = es[0].isIntersecting; run(); }, { threshold: 0.35 }).observe(root);
+    if (calm) tog.setAttribute('aria-label', 'Play videos');
+    mark();
+  }
+</script>

@@ -1,0 +1,40 @@
+---
+import Base from '../../layouts/Base.astro';
+import PageHead from '../../components/PageHead.astro';
+import downloads from '../../data/downloads.json';
+import { COLLECTIONS, productsOf } from '../../lib/site';
+export const getStaticPaths = () => Object.entries(downloads.guides).map(([family, g]) => ({ params: { guide: g.page.replace('/pages/', '') }, props: { family, g } }));
+const { family, g } = Astro.props;
+const col = COLLECTIONS.find(c => c.family === family)!;
+const p = productsOf(family).find(x => x.variants.some(v => v.frame)) ?? productsOf(family)[0];
+const rows = p.variants.filter(v => v.frame);
+---
+<Base title={g.title} description={`Frame sizes and downloadable PDF and CAD files for the ${col.title} SUNROOOF.`}>
+  <PageHead kicker="Size guide" title={g.title} lead="Share this guide with your architect or interior designer, or use it yourself to check which size fits your space. SUNROOOF recommends 60–70% ceiling or wall coverage for the best experience." crumbs={[{ href: '/', label: 'Home' }, { href: `/collections/${col.handle}`, label: col.title }, { href: g.page, label: 'Size guide' }]} />
+  <section class="wrap sg">
+    <p class="sg__dl">
+      <a class="btn" href={g.pdf} rel="noopener">Download PDF</a>
+      <a class="btn btn--ghost" href={g.cad} rel="noopener">Download CAD (.dwg)</a>
+    </p>
+    {rows.length > 0 && (
+      <div class="sg__t" tabindex="0" role="region" aria-label="Frame dimensions">
+        <table>
+          <caption>Frame outer dimensions for {p.title}. Each console is 1200 × 400 mm.</caption>
+          <thead><tr><th scope="col">Grid (cols × rows)</th><th scope="col">Consoles</th><th scope="col">Width (mm)</th><th scope="col">Length (mm)</th><th scope="col">Depth (mm)</th></tr></thead>
+          <tbody>{rows.map(v => <tr><th scope="row">{v.title.replace('X', ' × ')}</th><td class="num">{v.cols! * v.rows!}</td><td class="num">{v.frame!.w}</td><td class="num">{v.frame!.l}</td><td class="num">{v.frame!.d}</td></tr>)}</tbody>
+        </table>
+      </div>
+    )}
+    <p><a class="link-arrow" href={`/collections/${col.handle}`}>See the {col.title} collection</a></p>
+  </section>
+</Base>
+
+<style>
+  .sg { display: grid; gap: var(--s-6); padding-bottom: var(--section); }
+  .sg__dl { display: flex; flex-wrap: wrap; gap: var(--s-3); }
+  .sg__t { overflow-x: auto; border-top: 1px solid var(--ink); }
+  table { border-collapse: collapse; width: 100%; min-width: 34rem; font-size: var(--t-small); }
+  caption { text-align: left; padding: var(--s-3) 0; color: var(--ink-3); }
+  th, td { text-align: left; padding: var(--s-3); border-bottom: 1px solid var(--line); }
+  thead th { font: var(--w-semi) var(--t-micro)/1 var(--font-body); text-transform: uppercase; letter-spacing: .12em; color: var(--ink-3); }
+</style>

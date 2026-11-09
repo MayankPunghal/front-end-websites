@@ -1,0 +1,65 @@
+---
+import Base from '../layouts/Base.astro';
+import HomeBody from '../components/HomeBody.astro';
+import '../styles/home.css';
+import { L, LS } from '../lib/live';
+import { slides } from '../lib/homeData';
+---
+<Base
+  title="SUNROOOF: Sun Lighting Solutions for Modern Interiors"
+  description="SUNROOOF brings the feel of natural daylight indoors with sun lighting for homes, offices, hotels, retail spaces and premium interiors."
+  image={L(slides[0].after, 1200)}
+>
+  <!-- 1 · HERO: before / after slideshow -->
+  <section class="hero" data-hero aria-roledescription="carousel" aria-label="Before and after SUNROOOF">
+    {slides.map((s, i) => (
+      <div class="hs" data-slide data-on={i === 0 ? '' : undefined} aria-hidden={i === 0 ? undefined : 'true'}>
+        <img class="hs__img hs__before" src={L(s.before, 1600)} srcset={LS(s.before, [800, 1200, 1600, 2200])} sizes="100vw" width="1440" height="720" alt="" loading={i === 0 ? 'eager' : 'lazy'} decoding="async" />
+        <img class="hs__img hs__after" src={L(s.after, 1600)} srcset={LS(s.after, [800, 1200, 1600, 2200])} sizes="100vw" width="1440" height="720" alt={s.alt} loading={i === 0 ? 'eager' : 'lazy'} decoding="async" fetchpriority={i === 0 ? 'high' : undefined} />
+      </div>
+    ))}
+    <div class="hero__shade"></div>
+    <div class="hero__copy">
+      <h1>Bring Sunlight to Spaces Where it is Not Possible to Have it</h1>
+      <p>through technology, innovation and design</p>
+    </div>
+    <div class="hero__toggle" role="group" aria-label="Show before or after">
+      <button type="button" data-state="before" aria-pressed="false">Before</button>
+      <button type="button" data-state="after" aria-pressed="true">After</button>
+    </div>
+    <button class="hero__nav hero__prev" type="button" aria-label="Previous slide" data-prev><svg viewBox="0 0 11 18" width="11" height="18" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M10 1 2 9l8 8"/></svg></button>
+    <button class="hero__nav hero__next" type="button" aria-label="Next slide" data-next><svg viewBox="0 0 11 18" width="11" height="18" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M1 1l8 8-8 8"/></svg></button>
+    <div class="hero__awards">
+      <img src={L('ba-logo-1.png', 120)} width="44" height="44" alt="The Economic Times" loading="lazy" />
+      <img src={L('ba-logo-2.png', 120)} width="44" height="44" alt="iF Design Award" loading="lazy" />
+      <img src={L('ba-logo-3.png', 120)} width="44" height="44" alt="Good Design Award" loading="lazy" />
+    </div>
+  </section>
+
+  <HomeBody />
+</Base>
+
+<style is:global>
+  /* ---- hero ---- */
+  .hero { position: relative; height: calc(100svh - 4.5rem); min-height: 34rem; overflow: hidden; background: #000; color: #fff; }
+  .hs { position: absolute; inset: 0; opacity: 0; transition: opacity .9s var(--ease-in-out); }
+  .hs[data-on] { opacity: 1; }
+  .hs__img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; transition: opacity .9s var(--ease-in-out); will-change: opacity; }
+  .hero[data-state=before] .hs__after { opacity: 0; }
+  .hero__shade { position: absolute; inset: 0; background: linear-gradient(to top, rgb(0 0 0 / .62), rgb(0 0 0 / 0) 55%); pointer-events: none; }
+  .hero__copy { position: absolute; left: 50%; bottom: 7.5rem; translate: calc(-50% + var(--cx, 0) * 1px) calc(var(--cy, 0) * 1px); width: min(62rem, 90%); text-align: center; text-shadow: 0 2px 20px rgb(0 0 0 / .35); }
+  .hero h1 { color: #fff; font-size: clamp(1.75rem, 1.2rem + 1.5vw, 2.5rem); line-height: 1.25; max-width: 24ch; margin-inline: auto; letter-spacing: -.01em; }
+  .hero__copy p { margin-top: var(--s-3); font-size: 1.0625rem; }
+  .hero__toggle { position: absolute; left: 50%; bottom: 1.75rem; translate: -50% 0; display: flex; padding: .4rem; background: rgb(17 17 17 / .86); border-radius: 999px; }
+  .hero__toggle button { min-width: 8rem; min-height: 3rem; border: 0; border-radius: 999px; background: transparent; color: #fff; text-transform: uppercase; font-size: 1rem; cursor: pointer; transition: background .4s, color .4s; }
+  .hero__toggle button[aria-pressed=true] { background: #d9d9d9; color: #111; }
+  .hero__nav { position: absolute; top: 50%; translate: 0 -50%; width: 3rem; height: 3rem; border-radius: 50%; border: 0; background: rgb(17 17 17 / .7); color: var(--sun); display: grid; place-items: center; cursor: pointer; transition: background .3s; }
+  .hero__nav:hover { background: #000; } .hero__prev { left: 1.25rem; } .hero__next { right: 1.25rem; }
+  .hero__awards { position: absolute; right: 2rem; bottom: 1.75rem; display: flex; gap: .75rem; }
+  .hero__awards img { width: 2.75rem; height: 2.75rem; object-fit: contain; }
+  @media (max-width: 40rem) { .hero__awards { display: none; } .hero__toggle button { min-width: 6.5rem; } .hero__copy { bottom: 6.5rem; } }
+</style>
+
+<script>
+  import '../scripts/home';
+</script>

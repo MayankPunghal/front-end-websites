@@ -1,0 +1,160 @@
+---
+import Base from '../../layouts/Base.astro';
+import Pic from '../../components/Pic.astro';
+import G from '../../data/gallery.json';
+const COLS = 3;
+// masonry, filled shortest-column-first so the first row reads 1-2-3 like the original
+const cols: (typeof G.gallery)[] = Array.from({ length: COLS }, () => []); const hs = Array(COLS).fill(0);
+G.gallery.forEach(g => { const k = hs.indexOf(Math.min(...hs)); cols[k].push(g); hs[k] += g.h / g.w; });
+const tabs = ['Gallery', 'Delivered Sites', 'Testimonials'];
+const yt = (u: string) => u.match(/(?:v=|youtu\.be\/)([\w-]{11})/)?.[1] ?? '';
+---
+<Base tone="night" title="Gallery" description="Delivered SUNROOOF sites across homes, offices, retail and hospitality in India and the UAE.">
+  <h1 class="gl__h">Brighter Spaces, Better Lives</h1>
+  <section class="gl" data-gallery>
+    <div class="gl__tabs" role="tablist" aria-label="Gallery sections">
+      {tabs.map((t, i) => <button type="button" role="tab" id={`gl-t${i}`} aria-controls={`gl-p${i}`} aria-selected={i === 0} tabindex={i === 0 ? 0 : -1} data-tab={i}>{t}</button>)}
+    </div>
+
+    <div class="gl__p" role="tabpanel" id="gl-p0" aria-labelledby="gl-t0">
+      <div class="gl__m">
+        {cols.map(c => <ul class="gl__col">{[0, 1, 2].map(k => c.map(g => <li aria-hidden={k ? 'true' : undefined}><button type="button" class="gl__b" tabindex={k ? -1 : undefined} data-full={g.src} data-cap="" aria-label="View photo"><Pic src={g.src} alt={k ? '' : 'SUNROOOF skylight installation'} widths={[360, 600, 900]} sizes="(min-width: 62rem) 33vw, 50vw" w={g.w} h={g.h} /></button></li>))}</ul>)}
+      </div>
+    </div>
+
+    <div class="gl__p" role="tabpanel" id="gl-p1" aria-labelledby="gl-t1" hidden>
+      <div class="gl__f">
+        <select data-k="design" aria-label="Design"><option value="">All Design</option>{G.opts.design.map(o => <option>{o}</option>)}</select>
+        <select data-k="area" aria-label="Space"><option value="">All Space</option>{G.opts.area.map(o => <option>{o}</option>)}</select>
+        <select data-k="city" aria-label="City"><option value="">All City</option>{G.opts.city.map(o => <option>{o}</option>)}</select>
+        <p id="gl-n" aria-live="polite">{G.sites.length} sites</p>
+      </div>
+      <ul class="gl__grid">
+        {G.sites.map(s => (
+          <li data-design={s.design} data-area={s.area} data-city={s.city}>
+            <button type="button" class="gl__b" data-plx data-full={s.src} data-cap={[s.alt, s.area, s.city].filter(Boolean).join(' · ')} aria-label={`View ${s.alt}`}><Pic src={s.src} alt={[s.alt, s.area, s.city].filter(Boolean).join(', ')} widths={[360, 600, 900]} sizes="(min-width: 62rem) 30vw, 50vw" w={s.w} h={s.h} /></button>
+            <h3 class="gl__n">{s.alt}</h3>
+            <p class="gl__tg">{[s.area, s.city, s.design.split(' - ')[0]].filter(Boolean).map(t => <span>{t}</span>)}</p>
+          </li>
+        ))}
+      </ul>
+    </div>
+
+    <div class="gl__p" role="tabpanel" id="gl-p2" aria-labelledby="gl-t2" hidden>
+      <ul class="gl__v">
+        {G.videos.map((v, i) => <li><button type="button" class="gl__vb" data-yt={yt(v.url)} aria-label={`Play testimonial ${i + 1}`}><Pic src={v.poster} alt="" widths={[600, 1000]} sizes="(min-width: 62rem) 48vw, 100vw" w={1240} h={680} /><span class="gl__play" aria-hidden="true"><svg viewBox="0 0 16 16" width="16" height="16"><path fill="currentColor" d="M4 2.5v11l9-5.5z"/></svg></span></button></li>)}
+      </ul>
+    </div>
+
+    <dialog class="gl__lb" aria-label="Viewer">
+      <button type="button" class="gl__x" aria-label="Close">×</button>
+      <button type="button" class="gl__nav gl__nav--p" aria-label="Previous">‹</button>
+      <figure><img alt="" /><iframe title="Testimonial video" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen hidden></iframe><figcaption></figcaption></figure>
+      <button type="button" class="gl__nav gl__nav--n" aria-label="Next">›</button>
+    </dialog>
+  </section>
+</Base>
+
+<style is:global>
+  .gl__h { font: 300 clamp(1.75rem, 1.4rem + 1.2vw, 2.5rem)/1.2 var(--font-display); margin: 0; padding: clamp(2rem, 4vw, 3.5rem) clamp(1rem, 0.5rem + 3vw, 3.25rem) 0; color: #fff; }
+  .gl { padding: clamp(1.75rem, 4vw, 3.5rem) clamp(1rem, 0.5rem + 3vw, 3.25rem) clamp(3rem, 7vw, 6rem); color: #fff; }
+  .gl__tabs { display: grid; grid-template-columns: repeat(3, 1fr); border-bottom: 1px solid rgb(255 255 255 / .4); margin-bottom: 1.5rem; }
+  .gl__tabs button { position: relative; padding: 1rem .25rem; background: none; border: 0; color: #fff; font: inherit; font-size: clamp(.8125rem, .6rem + .8vw, 1.25rem); text-transform: uppercase; cursor: pointer; }
+  .gl__tabs button::before { content: ''; position: absolute; left: 10%; right: 10%; bottom: 0; height: 2.5rem; background: radial-gradient(ellipse at 50% 100%, rgb(255 201 51 / .4), transparent 70%); opacity: 0; transition: opacity .4s; pointer-events: none; }
+  .gl__tabs button::after { content: ''; position: absolute; left: 0; right: 0; bottom: -1px; height: 3px; background: var(--sun); transform: scaleX(0); transition: transform .45s var(--ease-out); }
+  .gl__tabs button[aria-selected=true] { font-weight: 700; } .gl__tabs button[aria-selected=true]::before { opacity: 1; } .gl__tabs button[aria-selected=true]::after { transform: scaleX(1); }
+  .gl__p[hidden] { display: none; }
+  .gl__m { display: flex; gap: clamp(.5rem, 1vw, .875rem); align-items: flex-start; } .gl__col { flex: 1; min-width: 0; list-style: none; margin: 0; padding: 0; display: flow-root; } .gl__col li { margin-bottom: clamp(.5rem, 1vw, .875rem); } .gl__col li[aria-hidden] { display: none; }
+  .gl__b { display: block; width: 100%; padding: 0; border: 0; background: #222; cursor: zoom-in; overflow: hidden; }
+  .gl__b img { display: block; width: 100%; height: auto; transition: scale .8s var(--ease-out); } .gl__b:hover img { scale: 1.05; }
+  /* Photo wall: the full-length masonry, but each column is an endless ribbon (left and right stream up, middle streams down) while nobody scrolls. Page scroll freezes it, so it reads as one normal static page. */
+  @media (min-width: 40rem) and (prefers-reduced-motion: no-preference) {
+    .gl__m { height: 100svh; overflow: clip; -webkit-mask-image: linear-gradient(transparent, #000 2.5rem, #000 calc(100% - 2.5rem), transparent); mask-image: linear-gradient(transparent, #000 2.5rem, #000 calc(100% - 2.5rem), transparent); }
+    .gl__col { will-change: transform; } .gl__col li[aria-hidden] { display: list-item; }
+  }
+  .gl__f { display: flex; flex-wrap: wrap; gap: .875rem; align-items: center; margin-bottom: 1.5rem; }
+  .gl__f select { min-height: 2.75rem; padding: 0 2.25rem 0 .75rem; background: transparent url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' fill='none' stroke='%23fff' stroke-width='1.6'%3E%3Cpath d='m1 1 5 5 5-5'/%3E%3C/svg%3E") no-repeat right .75rem center; appearance: none; border: 1px solid #fff; color: #fff; font: inherit; font-size: 1.125rem; border-radius: 0; cursor: pointer; }
+  .gl__f select option { color: #111; } .gl__f select:focus-visible { outline: 2px solid var(--sun); outline-offset: 2px; }
+  .gl__f p { margin: 0 0 0 auto; font-size: .875rem; color: #9d9fa1; }
+  .gl__grid { list-style: none; padding: 0; margin: 0; display: grid; grid-template-columns: repeat(2, 1fr); gap: clamp(.75rem, 2vw, 1.5rem); } .gl__grid li[hidden] { display: none; }
+  .gl__grid { row-gap: clamp(2rem, 4vw, 3rem); } .gl__grid .gl__b { aspect-ratio: 400 / 440; } .gl__grid .gl__b img { height: 100%; object-fit: cover; }
+  .gl__n { margin: 1rem 0 .75rem; font: 400 1rem/1.3 var(--font-body); text-transform: uppercase; } .gl__tg { display: flex; flex-wrap: wrap; gap: .625rem; margin: 0; } .gl__tg span { padding: .3rem .6rem; border: 1px solid #fff; font-size: .8125rem; line-height: 1.2; text-transform: uppercase; }
+  .gl__v { list-style: none; padding: 0; margin: 0; display: grid; grid-template-columns: 1fr; gap: clamp(.75rem, 2vw, 1.875rem); }
+  .gl__vb { position: relative; display: block; width: 100%; padding: 0; border: 0; background: #222; cursor: pointer; overflow: hidden; aspect-ratio: 1240 / 680; } .gl__vb img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform .8s var(--ease-out); } .gl__vb:hover img { transform: scale(1.03); }
+  .gl__play { position: absolute; left: 50%; top: 50%; translate: -50% -50%; width: 3.25rem; height: 3.25rem; border-radius: 50%; background: rgb(17 17 17 / .6); color: var(--sun); display: grid; place-items: center; transition: background .3s, scale .3s var(--ease-out); } .gl__vb:hover .gl__play { background: rgb(17 17 17 / .85); scale: 1.08; }
+  .gl__lb { border: 0; padding: 0; background: #0b0b0b; color: #fff; width: 100vw; height: 100dvh; max-width: none; max-height: none; }
+  .gl__lb::backdrop { background: #000; }
+  .gl__lb[open] { display: grid; grid-template-columns: 3.5rem 1fr 3.5rem; align-items: center; }
+  .gl__lb figure { margin: 0; display: grid; gap: .75rem; justify-items: center; min-height: 0; padding-block: 2rem; } .gl__lb img { max-width: 100%; max-height: calc(100dvh - 8rem); object-fit: contain; } .gl__lb img[hidden], .gl__lb iframe[hidden] { display: none; }
+  .gl__lb iframe { width: min(100%, 64rem); aspect-ratio: 16 / 9; border: 0; background: #000; }
+  .gl__lb figcaption { font-size: .875rem; color: #9d9fa1; }
+  .gl__x, .gl__nav { background: none; border: 0; color: #fff; font-size: 2.25rem; cursor: pointer; width: 3rem; height: 3rem; border-radius: 50%; line-height: 1; } .gl__x:hover, .gl__nav:hover { color: var(--sun); }
+  .gl__x { position: absolute; top: .75rem; right: .75rem; z-index: 2; }
+  @media (max-width: 39.99rem) { .gl__m { display: block; columns: 2; column-gap: .5rem; } .gl__col { display: contents; } .gl__col li { break-inside: avoid; margin-bottom: .5rem; } }
+  @media (min-width: 40rem) { .gl__grid { grid-template-columns: repeat(3, 1fr); } .gl__v { grid-template-columns: 1fr 1fr; } }
+</style>
+
+<script>
+  import { swap } from '../../scripts/filter';
+  const root = document.querySelector<HTMLElement>('[data-gallery]')!;
+  // Photo wall: columns 1 and 3 stream up, column 2 streams down, at a constant speed. Each is a Web Animation (runs on the compositor, so it stays smooth even when the main thread is busy); page scroll or hovering the wall eases the playback rate to 0 and back.
+  const cols = [...root.querySelectorAll<HTMLElement>('.gl__col')], SPEED = 55; // px per second
+  const wall = root.querySelector<HTMLElement>('.gl__m')!, pane0 = root.querySelector<HTMLElement>('#gl-p0')!;
+  let anims: Animation[] = [], k = 1, goal = 1, ramp = 0, idle = 0, seen = true, hover = false, scrolling = false, last = 0;
+  const build = () => {
+    if (!cols[0].offsetParent) return;
+    const prog = anims[0] ? Number(anims[0].currentTime) / Number(anims[0].effect!.getTiming().duration) % 1 : 0;
+    anims.forEach(a => a.cancel());
+    const one = cols.map(c => c.scrollHeight / 3);
+    wall.style.height = Math.max(...one) + 'px';
+    anims = cols.map((c, i) => {
+      const y = [`translateY(0)`, `translateY(${-one[i]}px)`], dur = one[i] / SPEED * 1000;
+      const an = c.animate({ transform: i % 2 ? y.reverse() : y }, { duration: dur, iterations: Infinity, easing: 'linear' });
+      an.currentTime = prog * dur; an.updatePlaybackRate(k); return an;
+    });
+    drift();
+  };
+  const drift = () => { const on = seen && !pane0.hidden && !dlg.open; anims.forEach(an => (on ? an.play() : an.pause())); };
+  const step = (now: number) => {
+    const dt = Math.min((now - last) / 1000, 0.05); last = now; const g = hover || scrolling ? 0 : 1;
+    k += (g - k) * Math.min(1, dt * 4); if (Math.abs(g - k) < 0.002) k = g;
+    anims.forEach(an => an.updatePlaybackRate(k));
+    ramp = k === g ? 0 : requestAnimationFrame(step);
+  };
+  const retarget = () => { if (!ramp) { last = performance.now(); ramp = requestAnimationFrame(step); } };
+  if (!matchMedia('(prefers-reduced-motion: reduce)').matches && matchMedia('(min-width: 40rem)').matches) {
+    addEventListener('scroll', () => { scrolling = true; retarget(); clearTimeout(idle); idle = window.setTimeout(() => { scrolling = false; retarget(); }, 1400); }, { passive: true });
+    wall.addEventListener('pointerenter', () => { hover = true; retarget(); }); wall.addEventListener('pointerleave', () => { hover = false; retarget(); });
+    new IntersectionObserver(([e]) => { seen = e.isIntersecting; drift(); }).observe(wall);
+    setTimeout(build); addEventListener('resize', build); addEventListener('load', build);
+  } else seen = false;
+  // tabs
+  const tabs = [...root.querySelectorAll<HTMLButtonElement>('[data-tab]')], panes = [...root.querySelectorAll<HTMLElement>('.gl__p')];
+  const pick = (i: number, focus = false) => { tabs.forEach((t, k) => { t.setAttribute('aria-selected', String(k === i)); t.tabIndex = k === i ? 0 : -1; panes[k].hidden = k !== i; }); if (focus) tabs[i].focus(); dispatchEvent(new Event('resize')); drift(); };
+  tabs.forEach((t, i) => { t.addEventListener('click', () => pick(i)); t.addEventListener('keydown', e => { if (e.key === 'ArrowRight') pick((i + 1) % 3, true); if (e.key === 'ArrowLeft') pick((i + 2) % 3, true); }); });
+  // delivered-sites filters
+  const items = [...root.querySelectorAll<HTMLElement>('.gl__grid li')], f: Record<string, string> = { design: '', area: '', city: '' }, out = root.querySelector('#gl-n')!;
+  root.querySelectorAll<HTMLSelectElement>('select[data-k]').forEach(s => s.addEventListener('change', () => {
+    f[s.dataset.k!] = s.value;
+    const ok = (li: HTMLElement) => (!f.design || li.dataset.design === f.design) && (!f.area || li.dataset.area === f.area) && (!f.city || li.dataset.city === f.city);
+    const n = items.filter(ok).length; swap(items, ok); out.textContent = `${n} site${n === 1 ? '' : 's'}`; setTimeout(() => dispatchEvent(new Event('resize')), 500);
+  }));
+  // viewer: photos (with arrows inside the open pane) and YouTube testimonials
+  const dlg = root.querySelector<HTMLDialogElement>('.gl__lb')!, big = dlg.querySelector('img')!, fr = dlg.querySelector('iframe')!, cap = dlg.querySelector('figcaption')!;
+  let list: HTMLButtonElement[] = [], cur = 0;
+  const show = (i: number) => {
+    cur = (i + list.length) % list.length; const b = list[cur], v = b.dataset.yt;
+    big.hidden = !!v; fr.hidden = !v;
+    if (v) { fr.src = `https://www.youtube-nocookie.com/embed/${v}?autoplay=1&rel=0`; cap.textContent = ''; } else { fr.src = 'about:blank'; big.src = `${b.dataset.full}?width=1400`; big.alt = b.querySelector('img')?.alt ?? ''; cap.textContent = b.dataset.cap ?? ''; }
+  };
+  root.querySelectorAll<HTMLButtonElement>('.gl__b, .gl__vb').forEach(b => b.addEventListener('click', () => {
+    const pane = b.closest('.gl__p')!; list = [...pane.querySelectorAll<HTMLButtonElement>('.gl__b, .gl__vb')].filter(x => !x.closest('li')!.hidden && !x.closest('li[aria-hidden]'));
+    const key = (x: HTMLElement) => x.dataset.full ?? x.dataset.yt; dlg.showModal(); show(list.findIndex(x => key(x) === key(b)));
+  }));
+  dlg.addEventListener('close', () => { fr.src = 'about:blank'; drift(); });
+  dlg.querySelector('.gl__x')!.addEventListener('click', () => dlg.close());
+  dlg.querySelector('.gl__nav--p')!.addEventListener('click', () => show(cur - 1));
+  dlg.querySelector('.gl__nav--n')!.addEventListener('click', () => show(cur + 1));
+  dlg.addEventListener('keydown', e => { if (e.key === 'ArrowLeft') show(cur - 1); if (e.key === 'ArrowRight') show(cur + 1); });
+  dlg.addEventListener('click', e => { if (e.target === dlg) dlg.close(); });
+</script>

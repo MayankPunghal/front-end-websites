@@ -1,0 +1,8 @@
+---
+import Base from '../../layouts/Base.astro';
+import LegalDoc from '../../components/LegalDoc.astro';
+import terms from '../../data/terms.json';
+---
+<Base title="Terms and conditions" description="Terms and conditions for using sunrooof.com.">
+  <LegalDoc title="Terms and Conditions" paragraphs={terms.slice(1)} />
+</Base>

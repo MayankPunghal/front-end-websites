@@ -1,0 +1,60 @@
+/* SUNROOOF design tokens: the single source of truth. Documented in docs/design-system.md */
+:root {
+  /* colour */
+  --paper: #ffffff;
+  --paper-2: #e3dcc0;
+  --paper-3: #d3c9a4;
+  --ink: #111111;
+  --ink-2: #2b2b2b;       /* body on paper, 10.9:1 */
+  --ink-3: #5a5a5a;       /* captions on paper, 4.9:1 */
+  --night: #111111;
+  --night-2: #1b1b1b;
+  --night-3: #2a2a2a;
+  --on-night: #ffffff;
+  --on-night-2: #bdbdbd;  /* 8.9:1 on night */
+  --brass: #ffc933;       /* accent on night, 7.2:1 */
+  --brass-ink: #6d4a00;   /* accent text on paper, 5.4:1 */
+  --sun: #ffd23f;
+  --sky: #bfd6e3;
+  --ember: #e2683c;
+  --line: color-mix(in srgb, var(--ink) 16%, transparent);
+  --line-night: color-mix(in srgb, var(--on-night) 18%, transparent);
+  --danger: #a7321a;
+
+  /* type */
+  --font-display: 'Original', 'Iowan Old Style', Georgia, serif;
+  --font-body: 'DM Sans Variable', 'DM Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --w-regular: 400; --w-medium: 500; --w-semi: 600; --w-bold: 700;
+  --t-micro: 0.75rem;                               /* 12 */
+  --t-small: 0.875rem;                              /* 14 */
+  --t-body: 1rem;                                   /* 16 */
+  --t-lead: clamp(1.125rem, 1.05rem + 0.4vw, 1.375rem);
+  --t-h4: clamp(1.25rem, 1.1rem + 0.6vw, 1.625rem);
+  --t-h3: clamp(1.75rem, 1.4rem + 1.5vw, 2.75rem);
+  --t-h2: clamp(2.5rem, 1.7rem + 3.6vw, 5.25rem);
+  --t-h1: clamp(3.25rem, 1.8rem + 7vw, 9.5rem);
+  --lh-tight: 0.95; --lh-snug: 1.15; --lh-body: 1.6;
+
+  /* space (4pt) */
+  --s-1: 0.25rem; --s-2: 0.5rem; --s-3: 0.75rem; --s-4: 1rem; --s-5: 1.5rem; --s-6: 2rem;
+  --s-7: 3rem; --s-8: 4rem; --s-9: 6rem; --s-10: 9rem; --s-11: 12rem;
+  --section: clamp(5rem, 4rem + 8vw, 11rem);
+
+  /* grid */
+  --container: 1440px;
+  --gutter: clamp(1rem, 0.5rem + 2.4vw, 2.5rem);
+  --cols: 12;
+
+  /* shape */
+  --r-0: 0; --r-1: 2px; --r-2: 6px; --r-pill: 999px;
+  --border: 1px solid var(--line);
+  --shadow-soft: 0 1px 2px rgb(21 18 14 / 0.06), 0 12px 32px -12px rgb(21 18 14 / 0.18);
+  --shadow-lift: 0 2px 4px rgb(21 18 14 / 0.08), 0 30px 60px -20px rgb(21 18 14 / 0.35);
+
+  /* motion */
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --d-fast: 160ms; --d-base: 320ms; --d-slow: 640ms; --d-scene: 1100ms;
+
+  /* breakpoints (documentation; CSS uses literal values): sm 640, md 900, lg 1200, xl 1500 */
+}

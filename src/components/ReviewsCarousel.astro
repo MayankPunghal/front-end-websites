@@ -1,0 +1,73 @@
+---
+// Customer reviews: heading stays put on the left, only the review on the right slides.
+// Auto-advances every 7 s (paused on hover/focus/offscreen, off for reduced motion); arrows move it by hand.
+import reviews from '../data/reviews.json';
+const star = '<svg viewBox="0 0 20 20" width="18" height="18" aria-hidden="true"><path fill="currentColor" d="m10 1.5 2.5 5.6 6 .6-4.5 4 1.3 6-5.3-3.1-5.3 3.1 1.3-6-4.5-4 6-.6z"/></svg>';
+const G = [['G', '#4285f4'], ['o', '#ea4335'], ['o', '#fbbc05'], ['g', '#4285f4'], ['l', '#34a853'], ['e', '#ea4335']];
+---
+<section class="rc" data-rc aria-roledescription="carousel" aria-label="Customer reviews">
+  <div class="rc__l">
+    <div><p class="rc__k">Customer Reviews</p><h2>600+ customers and 800+ sites delivered</h2></div>
+    <div class="rc__n">
+      <button type="button" aria-label="Previous review" data-rc-prev><svg viewBox="0 0 12 20" width="12" height="20" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M10 1 2 10l8 9"/></svg></button>
+      <button type="button" aria-label="Next review" data-rc-next><svg viewBox="0 0 12 20" width="12" height="20" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="m2 1 8 9-8 9"/></svg></button>
+    </div>
+  </div>
+  <div class="rc__r">
+    <div class="rc__t" data-rc-track aria-live="off">
+      {reviews.map((r, i) => (
+        <figure class="rc__s" aria-roledescription="slide" aria-label={`${i + 1} of ${reviews.length}`}>
+<svg class="rc__q" viewBox="0 0 120 100" aria-hidden="true"><path fill="currentColor" d="M0 100V58C0 26 18 6 48 0l6 12C34 18 26 30 26 46h26v54zm66 0V58C66 26 84 6 114 0l6 12c-20 6-28 18-28 34h26v54z"/></svg>
+          <div class="rc__m"><span class="rc__g" aria-label="Google">{G.map(([c, k]) => <i style={`color:${k}`}>{c}</i>)}</span><span class="rc__st" role="img" aria-label="5 out of 5 stars" set:html={star.repeat(5)}></span></div>
+          <blockquote><p>{r.quote}</p></blockquote>
+          <figcaption>— {r.name}</figcaption>
+        </figure>
+      ))}
+    </div>
+  </div>
+</section>
+
+<style is:global>
+  .rc { background: #fff; color: #111; padding: clamp(2.5rem, 5vw, 5rem) clamp(1rem, 0.5rem + 3vw, 3.25rem); display: grid; gap: 2rem; }
+  .rc__k { margin: 0 0 .5rem; color: #6b6b6b; font-size: 1.125rem; }
+  .rc h2 { font: 300 clamp(1.5rem, 1.2rem + 1.2vw, 2.25rem)/1.15 var(--font-display); margin: 0; max-width: 14ch; color: #111; }
+  .rc__l { display: grid; gap: 1.5rem; align-content: space-between; }
+  .rc__n { display: flex; gap: 1.25rem; } .rc__n button { background: none; border: 0; padding: .75rem; cursor: pointer; color: #111; transition: color .3s, transform .3s var(--ease-out); } .rc__n button:hover { color: var(--brass-ink); transform: scale(1.12); }
+  .rc__r { position: relative; min-width: 0; }
+  .rc__q { position: absolute; left: 0; top: 0; width: clamp(4.5rem, 10vw, 7.5rem); height: auto; color: #111; opacity: .06; pointer-events: none; }
+  .rc__t { display: flex; overflow-x: auto; scrollbar-width: none; scroll-snap-type: x mandatory; }
+  .rc__t::-webkit-scrollbar { display: none; }
+  .rc__s { position: relative; flex: 0 0 100%; scroll-snap-align: start; margin: 0; padding: 0 0 0 clamp(0rem, 14vw, 9rem); box-sizing: border-box; min-height: 18rem; }
+  .rc__m { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; }
+  .rc__g { font: 500 1.5rem/1 var(--font-body); letter-spacing: -.02em; } .rc__g i { font-style: normal; }
+  .rc__st { display: inline-flex; gap: .125rem; color: #f4bd3d; }
+  .rc blockquote { margin: 0; } .rc blockquote p { margin: 0 0 1.5rem; font: 400 clamp(1.125rem, 1rem + .9vw, 1.75rem)/1.35 var(--font-body); text-wrap: pretty; }
+  .rc figcaption { font-size: 1rem; }
+  @media (min-width: 62rem) { .rc { grid-template-columns: .8fr 1.6fr; gap: clamp(2rem, 6vw, 6rem); } .rc__s { padding-top: 0; } }
+  @media (max-width: 61.99rem) { .rc__s { padding-left: 0; padding-top: 3.5rem; } .rc__q { width: 4rem; } }
+</style>
+
+<script>
+  document.querySelectorAll<HTMLElement>('[data-rc]').forEach(root => {
+    const tr = root.querySelector<HTMLElement>('[data-rc-track]')!, n = tr.children.length;
+    const calm = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    let i = 0, timer = 0, tween = 0, held = false, seen = false;
+    const ease = (t: number) => (t < .5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
+    const go = (to: number) => {
+      i = (to + n) % n; const from = tr.scrollLeft, dest = i * tr.clientWidth;
+      cancelAnimationFrame(tween);
+      if (calm) { tr.scrollLeft = dest; return; }
+      tr.style.scrollSnapType = 'none'; const t0 = performance.now(), dur = 900;
+      const step = (t: number) => { const k = Math.min(1, (t - t0) / dur); tr.scrollLeft = from + (dest - from) * ease(k); if (k < 1) tween = requestAnimationFrame(step); else tr.style.scrollSnapType = ''; };
+      tween = requestAnimationFrame(step);
+    };
+    const queue = () => { clearInterval(timer); if (!calm && seen && !held) timer = window.setInterval(() => go(i + 1), 7000); };
+    root.querySelector('[data-rc-prev]')!.addEventListener('click', () => { go(i - 1); queue(); });
+    root.querySelector('[data-rc-next]')!.addEventListener('click', () => { go(i + 1); queue(); });
+    tr.addEventListener('scrollend', () => { i = Math.round(tr.scrollLeft / tr.clientWidth); });
+    root.addEventListener('pointerenter', () => { held = true; queue(); }); root.addEventListener('pointerleave', () => { held = false; queue(); });
+    root.addEventListener('focusin', () => { held = true; queue(); }); root.addEventListener('focusout', () => { held = false; queue(); });
+    new IntersectionObserver(es => { seen = es[0].isIntersecting; queue(); }, { threshold: 0.4 }).observe(root);
+    addEventListener('resize', () => { tr.scrollLeft = i * tr.clientWidth; });
+  });
+</script>

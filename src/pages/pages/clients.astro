@@ -1,0 +1,60 @@
+---
+import Base from '../../layouts/Base.astro';
+import ReviewsCarousel from '../../components/ReviewsCarousel.astro';
+import GetInTouch from '../../components/GetInTouch.astro';
+import FaqBlock from '../../components/FaqBlock.astro';
+import reviews from '../../data/reviews.json';
+import { L } from '../../lib/live';
+import { portraits, logos } from '../../lib/site';
+const architects = [['Sarah Sham', 'Ar._Sarah_Sham.jpg'], ['Ar. Aparna Kaushik', 'Ar._Aparna_Kaushik.jpg'], ['Ar. Noshir Talati', 'Ar._Noshir_Talati.jpg'], ['Ar. Sonal and Bobbi Tuli', 'Ar._Sonal_and_Bobbi_Tuli.jpg'], ['Ar. Brinda Soumya', 'Ar._Brinda_Somaya.jpg'], ['Ar. Sumesh Menon', 'Ar._Sumesh_Menon.jpg'], ['Ar. Nandani Sampat', 'Ar._Nandani_Sampat.jpg']];
+const roles = ['Bollywood Actress', 'Founder of Lenskart', 'Politician', 'Bollywood Actor', 'Bollywood Movie Director', 'Interior Designer', 'Founder of Danube Properties', 'MD Dalmia Group', 'Entrepreneur & Investor', 'Owner of Good Earth'];
+---
+<Base title="Clients and reviews" description="People, brands and homeowners who chose SUNROOOF, and what they say about it.">
+  <section class="cl__hero">
+    <img src={L('Rectangle_34624351.png', 2000)} width="1440" height="413" alt="" />
+    <div><h1>Trusted by the faces you follow</h1><p>The people, brands, and rooms that made your store part of their everyday.</p></div>
+  </section>
+  <div class="cl">
+    <section class="cl__p">
+      <h2>The people who chose SUNROOOF</h2>
+      <ul>{portraits.map(([n, , f], i) => <li><img src={L(f, 500)} width="212" height="212" alt={n} loading="lazy" /><p>{n}</p><span>{roles[i]}</span></li>)}</ul>
+    </section>
+    <section class="cl__b">
+      <div class="cl__bh"><h2>Specified by brands that set the standard</h2><p>Hotels, hospitals, homes, and heritage brands. SUNROOOF is installed where light isn’t a nice to have, it’s part of the standard</p></div>
+      <ul>{['Image_Reliance_Logo_1.png', ...logos].map(l => <li><img src={L(l, 400)} width="180" height="100" alt="" loading="lazy" /></li>)}</ul>
+    </section>
+    <section class="cl__a">
+      <h2>Specified by the architects who shape how we live</h2>
+      <ul>{architects.map(([n, f]) => <li><img src={L(f, 600)} width="300" height="441" alt={n} loading="lazy" /><p>{n}</p></li>)}</ul>
+    </section>
+  </div>
+  <ReviewsCarousel />
+  <GetInTouch id="clients" />
+  <FaqBlock />
+</Base>
+
+<style>
+  .cl__hero { position: relative; height: clamp(14rem, 29vw, 25.8rem); overflow: hidden; background: #333; }
+  .cl__hero img { width: 100%; height: 100%; object-fit: cover; filter: grayscale(1) brightness(.75); }
+  .cl__hero div { position: absolute; inset: 0; display: grid; place-content: center; text-align: center; gap: .75rem; padding: 1rem; color: #fff; }
+  .cl__hero h1 { color: #fff; font: 300 clamp(1.75rem, 1.2rem + 2vw, 2.75rem)/1.1 var(--font-display); margin: 0; } .cl__hero p { margin: 0; font-size: .875rem; max-width: 22rem; justify-self: center; }
+  .cl { background: #fff; color: #111; padding-inline: clamp(1rem, 0.5rem + 3vw, 3.25rem); }
+  .cl h2 { font: 300 clamp(1.75rem, 1.2rem + 1.8vw, 2.75rem)/1.2 var(--font-display); margin: 0; }
+  .cl__p { padding-block: clamp(3rem, 7vw, 5rem); text-align: center; } .cl__p h2 { margin-bottom: 2.5rem; }
+  .cl__p ul { list-style: none; margin: 0 auto; padding: 0; display: grid; gap: 1.25rem 1rem; grid-template-columns: repeat(auto-fill, minmax(9.5rem, 1fr)); max-width: 80rem; text-align: left; }
+  .cl__p img { width: 100%; height: auto; aspect-ratio: 1; object-fit: cover; filter: grayscale(1); } .cl__p p { margin: .5rem 0 0; font-size: .8125rem; } .cl__p span { font-size: .6875rem; color: #555; }
+  .cl__bh { display: grid; gap: 1rem; padding-bottom: 2rem; } .cl__bh p { margin: 0; font-size: .875rem; max-width: 22rem; justify-self: end; text-align: right; }
+  .cl__b ul { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(2, 1fr); border-top: 1px solid #e3e3e3; border-left: 1px solid #e3e3e3; }
+  .cl__b li { display: grid; place-items: center; min-height: 7rem; padding: 1rem; border-right: 1px solid #e3e3e3; border-bottom: 1px solid #e3e3e3; } .cl__b img { max-width: 70%; max-height: 4.5rem; width: auto; height: auto; }
+  .cl__a { padding-block: clamp(4rem, 9vw, 7rem); text-align: center; } .cl__a h2 { max-width: 16ch; margin: 0 auto 3rem; }
+  .cl__a ul { display: flex; gap: .5rem; overflow-x: auto; scroll-snap-type: x mandatory; list-style: none; margin: 0; padding: 0; text-align: left; scrollbar-width: none; }
+  .cl__a li { flex: 0 0 min(18.75rem, 70vw); scroll-snap-align: start; } .cl__a img { width: 100%; height: auto; display: block; filter: grayscale(1); } .cl__a p { margin: .75rem 0 0; }
+  .cl__a.is-pinned { padding-block: 0; min-height: calc(100svh - 4.5rem); display: grid; align-content: center; overflow: hidden; } .cl__a.is-pinned ul { overflow: visible; gap: 2rem; padding-left: 4vw; will-change: transform; } .cl__a.is-pinned li { flex-basis: 18.75rem; }
+  @media (min-width: 62rem) { .cl__bh { grid-template-columns: 1fr 1fr; align-items: end; } .cl__b ul { grid-template-columns: repeat(4, 1fr); } .cl__p ul { grid-template-columns: repeat(5, 1fr); } .cl__r { grid-template-columns: 1fr 2fr; } }
+</style>
+
+<script>
+  import { hscroll } from '../../scripts/hscroll';
+  const a = document.querySelector<HTMLElement>('.cl__a');
+  if (a) hscroll(a, a.querySelector('ul')!);
+</script>
