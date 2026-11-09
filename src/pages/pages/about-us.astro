@@ -49,6 +49,7 @@ const team = [['Ishat Jain (Co-Founder)', 'Ishat.png'], ['Vinod Jain (Co-Founder
   .ab__ws > div p:last-of-type { max-width: 24rem; line-height: 1.5; margin: 0 0 2rem; font-size: 1rem; }
   .ab__ws a { color: #111; text-transform: uppercase; font-size: .75rem; text-decoration: none; border-bottom: 1px solid #111; padding: .5rem .25rem; }
   @media (min-width: 62rem) {
+    .ab__team.is-pinned li { flex: 0 0 auto; } .ab__team.is-pinned li img { width: auto; height: min(442px, calc(100svh - 24rem)); }
     .ab__team.is-pinned { padding-block: 0; min-height: calc(100svh - 4.5rem); align-content: center; overflow: hidden; } .ab__team.is-pinned ul { overflow: visible; gap: 3rem; padding-left: 28vw; will-change: transform; } .ab__team.is-pinned li { flex-basis: 18.75rem; }
     .ab__top { grid-template-columns: 40% 1fr; padding-top: 3rem; } .ab__vw { grid-column: 2; height: calc(61.9vw + 4rem); } .ab__vid { width: 19.7rem; } .ab__hw { grid-column: 1; grid-row: 1 / span 3; } .ab__h1 { position: sticky; top: 38vh; } .ab__top img, .ab__top .ab__lead, .ab__top .ab__stats { grid-column: 2; max-width: none; } .ab__top img { max-width: 54rem; } .ab__stats { grid-template-columns: 1fr 1fr; margin-top: 3rem; padding-right: 3rem; }
     .ab__team { display: grid; grid-template-columns: 40% 1fr; } .ab__team > p, .ab__team > h2 { grid-column: 1; } .ab__team ul { grid-column: 1 / -1; }

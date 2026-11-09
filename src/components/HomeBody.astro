@@ -52,8 +52,8 @@ import { mosaic, apps, designs, skyTabs, spaces, logoNames, vids, reels, centres
         <div class="vs__c vs__txt"><h2 class="h-l">Seamless Light, Anywhere</h2></div>
         <div class="vs__c vs__mid">
           <div class="cmp" data-cmp style="--pos:50%">
-            <img class="cmp__a" src={L('After_LE_upscale_prime.jpg', 1600)} width="1440" height="1000" alt="A café with SUNROOOF switched on: bright, daylit" loading="lazy" />
-            <div class="cmp__clip"><img class="cmp__b" src={L('Before_LE_upscale_prime.jpg', 1600)} width="1440" height="1000" alt="The same café with ordinary lighting: dim and brown" loading="lazy" /></div>
+            <img class="cmp__a" src={L('After_LE_upscale_prime.jpg', 1600)} srcset={LS('After_LE_upscale_prime.jpg', [1600, 3840])} sizes="100vw" width="1440" height="1000" alt="A café with SUNROOOF switched on: bright, daylit" loading="lazy" />
+            <div class="cmp__clip"><img class="cmp__b" src={L('Before_LE_upscale_prime.jpg', 1600)} srcset={LS('Before_LE_upscale_prime.jpg', [1600, 3840])} sizes="100vw" width="1440" height="1000" alt="The same café with ordinary lighting: dim and brown" loading="lazy" /></div>
             <span class="cmp__h" aria-hidden="true"><svg viewBox="0 0 28 14" width="22" height="11" fill="currentColor"><path d="M8 0 0 7l8 7V0zm12 0v14l8-7-8-7z"/></svg></span>
             <input class="cmp__r" type="range" min="0" max="100" value="50" aria-label="Compare before and after: drag to reveal" />
           </div>
