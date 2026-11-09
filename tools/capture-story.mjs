@@ -21,6 +21,6 @@ for (let i = 0; i < n; i++) {
   if (f.labels && i % 4 === 0) labels[i] = f.labels.flat().map(v => +v.toFixed(4));
   if (i % 60 === 0) console.log(i, '/', n, Math.round((Date.now() - t0) / 1000) + 's');
 }
-fs.writeFileSync(`public/sunrooof/film/${name}.json`, JSON.stringify({ n, fps: 120, tod, labels }));
+fs.writeFileSync(`public/sunrooof/film/${name}.json`, JSON.stringify({ v: Date.now(), n, fps: 120, tod, labels }));
 console.log('done', name, Math.round((Date.now() - t0) / 1000) + 's');
 await browser.close();

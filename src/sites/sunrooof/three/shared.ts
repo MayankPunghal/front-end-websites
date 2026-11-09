@@ -56,7 +56,7 @@ export const skyMaterial = new THREE.ShaderMaterial({
       // once switched on the panel is the light source: full brightness in the colour of its rays, hottest at the centre
       vec3 src = uKey / max(max(uKey.r, uKey.g), max(uKey.b, .001));
       src = mix(src, vec3(1.), .16 + .44 * smoothstep(.62, 0., length(vUv - .5)) + c * .08);
-      gl_FragColor.rgb = mix(gl_FragColor.rgb, src, uSrc);
+      gl_FragColor.rgb = mix(vec3(.3, .3, .29), src, uSrc); // switched off it is a plain white diffuser
       #include <colorspace_fragment>
     }`,
 });

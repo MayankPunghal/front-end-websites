@@ -14,8 +14,8 @@ const CAMERA: [number, [number, number, number], [number, number, number], numbe
   [.22, [-.5, 1.2, 6.2], [0, 1.9, -1.2], 50],
   [.33, [-1.3, 1.15, 6.4], [.1, 1.85, -.6], 54],
   [.41, [.9, 1.1, 6], [.2, 1.85, -.4], 56],
-  [.5, [0, 1.8, 6.2], [0, 1.85, -.4], 36],
-  [.62, [.5, 1.7, 6], [0, 1.85, -.4], 36],
+  [.5, [0, 1.8, 6.2], [0, 1.85, -.4], 47],
+  [.62, [.5, 1.7, 6], [0, 1.85, -.4], 47],
   [.71, [1.2, 1.2, 5.2], [0, 2.3, -.8], 44],
   [.79, [2.6, 1.25, 5], [-.5, 1.75, -1.4], 44],
   [.87, [-2.4, 1.4, 5.8], [.2, 1.95, -1.5], 42],
@@ -212,9 +212,10 @@ export async function createWorld(canvas: HTMLCanvasElement, capture = false, mo
     const flown = seg(p, .08, .21), dn = up(p, .43, .47) * (1 - up(p, .64, .7)), e = up(p, .47, .54) * (1 - up(p, .6, .66));
     root.visible = p > .07;
     if (flown < 1) flight.getPoint(smooth(flown), root.position); else root.position.set(0, lerp(wall ? WINY : MOUNT, STAGE_Y, dn), wall ? lerp(WZ, PZ, dn) : PZ);
-    root.rotation.x = wall ? -Math.PI / 2 * (flown < 1 ? up(flown, .45, .95) : 1 - dn) : 0;
-    spin.rotation.y = (1 - smooth(flown)) * 2.6 + up(p, .45, .67) * Math.PI * 2;
-    root.rotation.z = Math.sin(flown * Math.PI) * .1; spin.rotation.x = e * .22; product.explode(e);
+    root.rotation.x = wall ? -Math.PI / 2 * (flown < 1 ? up(flown, .4, .7) : 1 - dn) : 0;
+    spin.rotation.y = (1 - up(flown, 0, .7)) * 2.6 + // level and square before it reaches the ceiling or wall
+       up(p, .45, .67) * Math.PI * 2;
+    root.rotation.z = Math.sin(Math.min(flown / .7, 1) * Math.PI) * .1; spin.rotation.x = e * .22; product.explode(e);
 
     // day
     const ignite = up(p, .225, .29), tod = pw(TOD, p), s = sampleSky(tod), lit = 1 - stage; curTod = tod;
@@ -228,7 +229,7 @@ export async function createWorld(canvas: HTMLCanvasElement, capture = false, mo
     room.visible = stage < .995;
     sun.color.copy(s.key); sun.intensity = s.keyI * 1.7 * ignite * lit; sun.position.copy(sun.target.position).addScaledVector(s.sun, 18);
     for (const m of glossy) m.envMapIntensity = (.03 + s.amb * .2 * ignite) * lit;
-    for (const m of productMats) m.envMapIntensity = m.map ? .3 : lerp(.35, .95, Math.max(ignite, stage)); // only the wood has a map; bright reflections wash it out
+    for (const m of productMats) m.envMapIntensity = m.map ? .08 : lerp(.35, .95, Math.max(ignite, stage)); // only the wood has a map; bright reflections wash it out
     glow.color.setRGB(3.4, 2, 1).multiplyScalar(night + .06);
     const dayBeam = ignite * (.13 - .05 * up(p, .7, .8)) * lit * (1 - night) * (1 - e * .4), beam = lerp(dayBeam, wall ? .3 : .15, floorsIn);
     beamU.uBeam.value = beam; beamU.uColor.value.copy(s.key); dustU.uA.value = dayBeam * 1.1; dustU.uTime.value = time; glowU.uA.value = stage * .34;
@@ -242,7 +243,7 @@ export async function createWorld(canvas: HTMLCanvasElement, capture = false, mo
       const q = b.userData.pane; b.visible = beam > .002;
       if (wall) b.matrix.set(1, rx, 0, q.x, 0, ry, 1, WINY + q.z, 0, rz, 0, WZ, 0, 0, 0, 1); else b.matrix.set(1, rx, 0, q.x, 0, ry, 0, by, 0, rz, 1, q.z + PZ, 0, 0, 0, 1);
     }
-    if (wall) halo.position.set(0, WINY, WZ + .1); else halo.position.set(0, by - .1, PZ); halo.material.color.copy(skyUniforms.uKey.value); halo.material.opacity = skyUniforms.uSrc.value * .22 * lit * Math.max(1 - night, floorsIn); halo.visible = halo.material.opacity > .004;
+    if (wall) halo.position.set(0, WINY, WZ + .1); else halo.position.set(0, by - .1, PZ); halo.material.color.copy(skyUniforms.uKey.value); halo.material.opacity = skyUniforms.uSrc.value * .12 * lit * Math.max(1 - night, floorsIn); halo.visible = halo.material.opacity > .004;
     // the building reveal
     city.visible = skyDome.visible = p > .86;
     if (city.visible) { storeyMat.color.setScalar(5.5 * (floorsIn + .03)); paneMat.color.setScalar(3 * (floorsIn + .02)); for (const m of cityBeams) m.uniforms.uBeam.value = floorsIn * .55; for (const m of cityPatches) m.opacity = floorsIn * .8; }

@@ -1,7 +1,7 @@
 // Scroll picks a frame of the film (filmed from the 3D scene by tools/capture-story.mjs). Chapter copy, layer labels and the clock follow the same position.
 import { paceAt } from './pace';
 
-type Film = { n: number; fps: number; tod: number[]; labels: Record<string, number[]> };
+type Film = { v: number; n: number; fps: number; tod: number[]; labels: Record<string, number[]> };
 
 const story = document.querySelector<HTMLElement>('[data-story]');
 const on3d = document.documentElement.classList.contains('is-3d');
@@ -14,10 +14,10 @@ async function boot(story: HTMLElement) {
   let video = story.querySelector('video')!;
   const name = innerHeight > innerWidth ? 'portrait' : 'landscape', path = `${import.meta.env.BASE_URL.replace(/\/$/, '')}/sunrooof/film/${name}`;
   let film: Film;
-  try { film = await (await fetch(`${path}.json`)).json(); } catch { return fail(); }
+  try { film = await (await fetch(`${path}.json`, { cache: 'no-cache' })).json(); } catch { return fail(); }
   video.addEventListener('error', fail, { once: true });
   video.addEventListener('loadeddata', () => dispatchEvent(new Event('scene-ready')), { once: true });
-  video.poster = `${path}.jpg`; video.src = `${path}.mp4`;
+  video.poster = `${path}.jpg?v=${film.v}`; video.src = `${path}.mp4?v=${film.v}`;
 
   const clamp = (x: number) => Math.min(1, Math.max(0, x));
   const chapters = [...story.querySelectorAll<HTMLElement>('[data-in]')].map(el => ({ el, a: +el.dataset.in!, b: +el.dataset.out!, shown: -1 }));
@@ -77,8 +77,8 @@ async function boot(story: HTMLElement) {
     want = m; buttons.forEach(b => b.setAttribute('aria-pressed', String(b.dataset.mount === m)));
     try {
       if (!alt[m]) {
-        const v = first.cloneNode() as HTMLVideoElement, data: Film = await (await fetch(`${path}-wall.json`)).json();
-        v.style.opacity = '0'; v.removeAttribute('poster'); v.src = `${path}-wall.mp4`; first.after(v);
+        const v = first.cloneNode() as HTMLVideoElement, data: Film = await (await fetch(`${path}-wall.json`, { cache: 'no-cache' })).json();
+        v.style.opacity = '0'; v.removeAttribute('poster'); v.src = `${path}-wall.mp4?v=${data.v}`; first.after(v);
         await new Promise((ok, no) => { v.addEventListener('loadeddata', ok, { once: true }); v.addEventListener('error', no, { once: true }); });
         alt[m] = { v, film: data };
       }

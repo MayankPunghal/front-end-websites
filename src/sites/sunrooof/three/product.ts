@@ -60,8 +60,8 @@ export function createProduct() {
   add(LAYERS[5], new THREE.Mesh(new THREE.BoxGeometry(W - .02, .02, D - .02), [side, side, plate, skyMaterial, side, side]), .022, -.74);
 
   // design frame: one board per member, mitred at the corners, with the grain running along each piece
-  const wood = woodTexture([118, 70, 38], 1024);
-  const woodMat = new THREE.MeshStandardMaterial({ map: wood, bumpMap: wood, bumpScale: 1.5, roughness: .5, metalness: 0 });
+  const wood = woodTexture([92, 50, 22], 1024);
+  const woodMat = new THREE.MeshStandardMaterial({ map: wood, bumpMap: wood, bumpScale: 1.5, emissive: '#ffffff', emissiveMap: wood, emissiveIntensity: .7, roughness: .34, metalness: 0 });
   const frame = new THREE.Group(), T = .05, EDGE = MUNTIN + .085, BEV = .007, XO = W / 2 + .085, ZO = D / 2 + .085;
   const grain = (g: THREE.BufferGeometry, along: 'x' | 'z') => {
     const p = g.attributes.position, uv = g.attributes.uv, a = Math.random(), b = Math.random();
