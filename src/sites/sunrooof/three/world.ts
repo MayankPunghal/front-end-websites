@@ -36,8 +36,10 @@ const stageAt = (p: number) => up(p, .405, .45) * (1 - up(p, .665, .71));
 export async function createWorld(canvas: HTMLCanvasElement) {
   const base = import.meta.env.BASE_URL.replace(/\/$/, '');
   const [hiBuf, loBuf] = await Promise.all(['hi', 'lo'].map(n => fetch(`${base}/sunrooof/bake/${n}.bin`).then(r => { if (!r.ok) throw new Error(n); return r.arrayBuffer(); })));
-  const coarse = matchMedia('(pointer: coarse)').matches;
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: false, powerPreference: 'high-performance' });
+  const coarse = matchMedia('(pointer: coarse)').matches, gl = renderer.getContext(), info = gl.getExtension('WEBGL_debug_renderer_info');
+  // integrated graphics cannot fill a high-density screen at this shading cost
+  const weak = !!info && /intel|uhd|iris|mali|adreno|powervr|swiftshader/i.test(gl.getParameter(info.UNMASKED_RENDERER_WEBGL));
   renderer.toneMapping = THREE.AgXToneMapping; renderer.toneMappingExposure = 1.15;
   renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap; renderer.shadowMap.autoUpdate = false;
 
@@ -94,7 +96,7 @@ export async function createWorld(canvas: HTMLCanvasElement) {
 
   // ---- live sun, shaped by the panes ----
   const sun = new THREE.DirectionalLight('#ffffff', 0); sun.castShadow = true; sun.target.position.set(0, 0, PZ); scene.add(sun, sun.target);
-  sun.shadow.mapSize.set(coarse ? 1024 : 2048, coarse ? 1024 : 2048); sun.shadow.radius = 2.5; sun.shadow.bias = -.0005; sun.shadow.normalBias = .025;
+  sun.shadow.mapSize.setScalar(coarse || weak ? 1024 : 2048); sun.shadow.radius = 2.5; sun.shadow.bias = -.0005; sun.shadow.normalBias = .025;
   Object.assign(sun.shadow.camera, { left: -10, right: 10, top: 10, bottom: -10, near: 1, far: 34 });
   const shape = new THREE.Shape([[-20, -20], [20, -20], [20, 20], [-20, 20]].map(([a, b]) => new THREE.Vector2(a, b)));
   for (const p of panes()) { const h = new THREE.Path(); h.moveTo(p.x - p.w / 2, p.z - p.d / 2 + PZ); h.lineTo(p.x + p.w / 2, p.z - p.d / 2 + PZ); h.lineTo(p.x + p.w / 2, p.z + p.d / 2 + PZ); h.lineTo(p.x - p.w / 2, p.z + p.d / 2 + PZ); shape.holes.push(h); }
@@ -146,7 +148,7 @@ export async function createWorld(canvas: HTMLCanvasElement) {
   const skyDome = new THREE.Mesh(new THREE.SphereGeometry(400, 24, 16), new THREE.ShaderMaterial({ side: THREE.BackSide, depthWrite: false, uniforms: { uTop: skyUniforms.uTop, uHor: skyUniforms.uHor }, vertexShader: 'varying vec3 vP; void main(){ vP=normalize(position); gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.); }', fragmentShader: 'uniform vec3 uTop, uHor; varying vec3 vP; void main(){ gl_FragColor=vec4(mix(uHor,uTop,smoothstep(-.05,.55,vP.y))*.14,1.); }' })); skyDome.visible = false; scene.add(skyDome);
 
   // ---- post: anti-aliased HDR target, bloom at half resolution ----
-  const target = new THREE.WebGLRenderTarget(2, 2, { type: THREE.HalfFloatType, samples: 4 });
+  const target = new THREE.WebGLRenderTarget(2, 2, { type: THREE.HalfFloatType, samples: weak ? 2 : 4 });
   const composer = new EffectComposer(renderer, target);
   composer.addPass(new RenderPass(scene, camera));
   const bloom = new UnrealBloomPass(new THREE.Vector2(2, 2), .26, .55, 1.6), bloomSize = bloom.setSize.bind(bloom); bloom.setSize = (w, h) => bloomSize(Math.ceil(w / 4), Math.ceil(h / 4)); composer.addPass(bloom);
@@ -158,8 +160,8 @@ export async function createWorld(canvas: HTMLCanvasElement) {
   // ---- frame update ----
   const n = CAMERA.length, posC = new THREE.CatmullRomCurve3(CAMERA.map(k => new THREE.Vector3(...k[1]))), tgtC = new THREE.CatmullRomCurve3(CAMERA.map(k => new THREE.Vector3(...k[2])));
   const tgt = new THREE.Vector3(), mouse = { x: 0, y: 0, mx: 0, my: 0 }; addEventListener('pointermove', e => { mouse.mx = e.clientX / innerWidth - .5; mouse.my = e.clientY / innerHeight - .5; }, { passive: true });
-  // resolution never goes below native: a blurry frame reads worse than a slightly slower one
-  const dpr = Math.min(devicePixelRatio, 1.5); let width = 2, height = 2, portrait = false, time = 0, curTod = 0, lastSun = '', shadowTick = 0;
+  // never below one render pixel per CSS pixel: a blurry frame reads worse than a slightly slower one
+  const dpr = Math.min(devicePixelRatio, weak ? 1 : 1.5); let width = 2, height = 2, portrait = false, time = 0, curTod = 0, lastSun = '', shadowTick = 0;
   const v = new THREE.Vector3(), right = new THREE.Vector3(), a1 = new THREE.Vector3(), a2 = new THREE.Vector3(), dullC = new THREE.Color(.62, .68, .78), warm = new THREE.Color(1, .82, .55), sunlit = new THREE.Color(6, 5, 3.6); // the other storeys are in sunlight while the city is dark
 
   function resize() {
@@ -200,7 +202,9 @@ export async function createWorld(canvas: HTMLCanvasElement) {
     beamU.uBeam.value = beam; beamU.uColor.value.copy(s.rect).lerp(warm, stage); dustU.uA.value = beam * 2.2; dustU.uTime.value = time; glowU.uA.value = stage * .34;
     stageFloor.visible = stage > .01;
     const by = root.position.y + layers[frameIdx].obj.position.y, L = Math.max(.05, by), shear = 1 - stage;
-    const dx = clamp(s.sun.x / Math.max(.2, s.sun.y), -1.5, 1.5) * shear, dz = clamp(s.sun.z / Math.max(.2, s.sun.y), -1.5, 1.5) * shear;
+    const dx = s.sun.x / Math.max(.05, s.sun.y) * shear, dz = s.sun.z / Math.max(.05, s.sun.y) * shear;
+    // the sun mask sits at the ceiling while the panes hang lower: slide it along the ray so light through it passes exactly through the panes
+    mask.position.x = dx * (mask.position.y - by); mask.position.z = dz * (mask.position.y - by);
     for (const b of beamBits) { const q = b.userData.pane; b.visible = beam > .002; b.matrix.set(1, dx * L, 0, q.x, 0, L, 0, by, 0, dz * L, 1, q.z + PZ, 0, 0, 0, 1); }
     // the building reveal
     city.visible = skyDome.visible = p > .86;

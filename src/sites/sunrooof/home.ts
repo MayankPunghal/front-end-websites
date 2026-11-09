@@ -12,7 +12,7 @@ async function boot(story: HTMLElement) {
   try { world = await createWorld(canvas); }
   catch (err) { console.error(err); document.documentElement.classList.remove('is-3d'); dispatchEvent(new Event('scene-ready')); return; }
 
-  const clamp = (x: number) => Math.min(1, Math.max(0, x));
+  const clamp = (x: number) => Math.min(1, Math.max(0, x)), clamp2 = (x: number, m: number) => Math.min(m, Math.max(-m, x));
   const chapters = [...story.querySelectorAll<HTMLElement>('[data-in]')].map(el => ({ el, a: +el.dataset.in!, b: +el.dataset.out!, shown: -1 }));
   const labels = [...story.querySelectorAll<HTMLElement>('[data-layer]')];
   const clockT = story.querySelector<HTMLElement>('[data-clock-t]')!, clockN = story.querySelector<HTMLElement>('[data-clock-n]')!, clock = story.querySelector<HTMLElement>('[data-clock]')!;
@@ -20,9 +20,11 @@ async function boot(story: HTMLElement) {
   const NAMES = ['Dawn', 'Morning', 'Midday', 'Golden hour', 'Dusk', 'Night'];
 
   let target = 0, p = 0, last = performance.now(), since = last, drops = 0, low = 0, idle = 0, frames = 0, visible = true, lastW = -1;
-  const read = () => { target = clamp(-story.getBoundingClientRect().top / (story.offsetHeight - innerHeight)); };
+  // reads cached geometry: measuring the page on every scroll event forces a layout
+  let top = 0, span = 1;
+  const read = () => { target = clamp((scrollY - top) / span); };
   addEventListener('scroll', read, { passive: true });
-  const resize = () => { world.resize(); read(); };
+  const resize = () => { world.resize(); top = story.getBoundingClientRect().top + scrollY; span = story.offsetHeight - innerHeight; read(); };
   addEventListener('resize', resize); resize();
   new IntersectionObserver(([e]) => { visible = e.isIntersecting; }).observe(story);
 
@@ -44,7 +46,7 @@ async function boot(story: HTMLElement) {
       clockT.textContent = `${hh}:${mm}`; clockN.textContent = NAMES[Math.round(world.tod * (NAMES.length - 1))];
       // headline weight follows the height of the sun: thin at dawn, heavy at noon
       const wt = Math.round(250 + 350 * Math.sin(Math.PI * Math.min(1, world.tod / .8)));
-      if (Math.abs(wt - lastW) > 3) { lastW = wt; story.style.setProperty('--sun-w', String(wt)); }
+      if (Math.abs(wt - lastW) > 20) { lastW = wt; story.style.setProperty('--sun-w', String(wt)); }
     }
   };
 
@@ -54,7 +56,8 @@ async function boot(story: HTMLElement) {
     requestAnimationFrame(tick);
     if (!visible || document.hidden) { last = now; return; }
     const dt = Math.min(.05, (now - last) / 1000); last = now;
-    p += (target - p) * (1 - Math.exp(-dt * 5.5)); if (Math.abs(target - p) < .00002) p = target;
+    // follows the scrollbar closely, and the speed limit stops a late frame from turning into a lurch
+    p += clamp2((target - p) * (1 - Math.exp(-dt * 12)), .25 * dt); if (Math.abs(target - p) < .00002) p = target;
     const moving = Math.abs(target - p) > .00005; idle = moving ? 0 : idle + 1;
     // once the scroll settles, only the clouds and dust are moving: a third of the frames is plenty
     if (moving || idle % 3 === 0) { world.update(p, dt); world.render(); overlay(); }
