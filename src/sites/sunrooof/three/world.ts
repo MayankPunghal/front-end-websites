@@ -2,8 +2,8 @@ import * as THREE from 'three';
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { createProduct, panes, W } from './product';
-import { buildRoom, H, NO_CAST, PALETTE, PANEL, WINDOW, X, ZF, type Key, type Mount } from './room';
-import { artTexture, clamp, lerp, plasterTexture, sampleSky, seg, skyUniforms, smooth, up, weaveTexture, windowTexture, woodTexture } from './shared';
+import { buildRoom, H, NO_CAST, PALETTE, PANEL, SIDE, WINDOW, X, ZF, type Key, type Mount } from './room';
+import { artTexture, clamp, lerp, plasterTexture, sampleSky, seg, skyUniforms, smooth, up, weaveTexture, woodTexture } from './shared';
 
 const PZ = PANEL.z, MOUNT = PANEL.y, WINY = WINDOW.y, WZ = WINDOW.z, STAGE_Y = 1.84, STOREY = H + 0.85; // two 0.42 slabs plus a gap: overlapping slabs share a front face and flicker
 
@@ -35,7 +35,7 @@ const stageAt = (p: number) => up(p, .405, .45) * (1 - up(p, .665, .71));
 export async function createWorld(canvas: HTMLCanvasElement, capture = false, mount: Mount = 'ceiling') {
   const wall = mount === 'wall', cams = wall ? CAMERA_WALL : CAMERA;
   const base = import.meta.env.BASE_URL.replace(/\/$/, '');
-  const [hiBuf, loBuf, loWallBuf] = await Promise.all([wall ? 'hi-wall' : 'hi', 'lo', 'lo-wall'].map(n => fetch(`${base}/sunrooof/bake/${n}.bin`).then(r => { if (!r.ok) throw new Error(n); return r.arrayBuffer(); })));
+  const [hiBuf, loBuf, loSideBuf] = await Promise.all([wall ? 'hi-wall' : 'hi', 'lo', 'lo-side'].map(n => fetch(`${base}/sunrooof/bake/${n}.bin`).then(r => { if (!r.ok) throw new Error(n); return r.arrayBuffer(); })));
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
   const coarse = matchMedia('(pointer: coarse)').matches, gl = renderer.getContext(), info = gl.getExtension('WEBGL_debug_renderer_info');
   // integrated graphics cannot fill a high-density screen at this shading cost
@@ -131,35 +131,46 @@ export async function createWorld(canvas: HTMLCanvasElement, capture = false, mo
   // ---- the building at the end: every storey is the same furnished, pre-lit room ----
   const city = new THREE.Group(); city.visible = false; scene.add(city);
   const storeyMat = new THREE.MeshBasicMaterial({ vertexColors: true }), paneMat = new THREE.MeshBasicMaterial();
-  const allPanes = panes(), dummy = new THREE.Object3D(), y0 = layers[frameIdx].y0;
-  const FLOORS: { k: number; m: Mount; tint: string }[] = [
-    { k: -3, m: 'ceiling', tint: '#fff0dc' }, { k: -2, m: 'wall', tint: '#ffb27e' }, { k: -1, m: 'ceiling', tint: '#ff9a5a' },
-    { k: 1, m: 'wall', tint: '#ffc48a' }, { k: 2, m: 'ceiling', tint: '#dfeaff' }, { k: 3, m: 'wall', tint: '#ff8f5a' }, { k: 4, m: 'ceiling', tint: '#ffcfa0' }, { k: 5, m: 'wall', tint: '#e8f0ff' },
-  ];
-  for (const [m, buf] of [['ceiling', loBuf], ['wall', loWallBuf]] as const) {
-    const geo = mergeGeometries(buildRoom(.4, m).map(p => { p.geo.deleteAttribute('uv'); return p.geo; }), false)!, list = FLOORS.filter(x => x.m === m), scale = new DataView(buf).getFloat32(0, true);
+  const allPanes = panes(), dummy = new THREE.Object3D(), y0 = layers[frameIdx].y0, sideScale = SIDE.w / PANEL.w;
+  const TINTS = ['#fff0dc', '#ffb27e', '#ff9a5a', '#ffc48a', '#dfeaff', '#ff8f5a', '#ffcfa0', '#e8f0ff'];
+  type Floor = { k: number; m: Mount; tint: string; x: number; z: number; near: boolean };
+  const floors: Floor[] = [-3, -2, -1, 1, 2, 3, 4, 5].map((k, i) => ({ k, m: i % 2 ? 'side' : 'ceiling', tint: TINTS[i], x: 0, z: 0, near: true }));
+  // the neighbouring buildings are the same stack of lit rooms
+  [[-22, -14, 3], [22, -14, 4], [-14, -32, 9], [-40, -58, 11], [-6, -60, 13], [42, -60, 10]].forEach(([x, z, top], b) => { for (let k = -8; k <= top; k++) floors.push({ k, m: (k + b) % 2 ? 'side' : 'ceiling', tint: TINTS[((k + 8) * 3 + b * 5) % 8], x, z, near: false }); });
+  for (const [m, buf] of [['ceiling', loBuf], ['side', loSideBuf]] as const) {
+    const geo = mergeGeometries(buildRoom(.4, m).map(p => { p.geo.deleteAttribute('uv'); return p.geo; }), false)!, list = floors.filter(x => x.m === m), scale = new DataView(buf).getFloat32(0, true);
     if (4 + geo.attributes.position.count * 6 !== buf.byteLength) throw new Error('storey bake data does not match; rerun tools/bake-room.ts');
     geo.setAttribute('color', new THREE.BufferAttribute(new Uint16Array(buf.slice(4)), 3, true));
     const rooms = new THREE.InstancedMesh(geo, storeyMat, list.length); rooms.frustumCulled = false; city.add(rooms);
-    list.forEach((x, i) => { dummy.position.set(0, x.k * STOREY, 0); dummy.rotation.set(0, 0, 0); dummy.scale.setScalar(1); dummy.updateMatrix(); rooms.setMatrixAt(i, dummy.matrix); rooms.setColorAt(i, new THREE.Color(x.tint).multiplyScalar(scale)); });
+    list.forEach((x, i) => { dummy.position.set(x.x, x.k * STOREY, x.z); dummy.rotation.set(0, 0, 0, 'XYZ'); dummy.scale.setScalar(1); dummy.updateMatrix(); rooms.setMatrixAt(i, dummy.matrix); rooms.setColorAt(i, new THREE.Color(x.tint).multiplyScalar(scale * (x.near ? 1 : .6))); });
   }
-  const panesIM = new THREE.InstancedMesh(new THREE.BoxGeometry(1, .02, 1), paneMat, allPanes.length * FLOORS.length); panesIM.frustumCulled = false; city.add(panesIM);
+  const panesIM = new THREE.InstancedMesh(new THREE.BoxGeometry(1, .02, 1), paneMat, allPanes.length * floors.length); panesIM.frustumCulled = false; city.add(panesIM);
+  const shaftGeo = new THREE.BoxGeometry(1, 1, 1).translate(0, -.5, 0), patchGeo = new THREE.PlaneGeometry(1, 1), cityBeams: THREE.ShaderMaterial[] = [], cityPatches: THREE.MeshBasicMaterial[] = [];
   let pi = 0;
-  for (const x of FLOORS) {
-    const onWall = x.m === 'wall', fr = layers[frameIdx].obj.clone(), tint = new THREE.Color(x.tint);
-    fr.traverse(o => { o.castShadow = false; });
-    if (onWall) { fr.position.set(0, x.k * STOREY + WINY, WZ - y0); fr.rotation.x = -Math.PI / 2; } else fr.position.set(0, x.k * STOREY + MOUNT + y0, PZ);
-    city.add(fr);
+  for (const f of floors) {
+    const onSide = f.m === 'side', sc = onSide ? sideScale : 1, tint = new THREE.Color(f.tint), Y = f.k * STOREY;
+    if (f.near) {
+      const fr = layers[frameIdx].obj.clone(); fr.traverse(o => { o.castShadow = false; });
+      if (onSide) { fr.position.set(SIDE.x + y0 * sc, Y + SIDE.y, SIDE.z); fr.rotation.set(0, Math.PI / 2, -Math.PI / 2, 'ZYX'); fr.scale.setScalar(sc); } else fr.position.set(0, Y + MOUNT + y0, PZ);
+      city.add(fr);
+    }
+    // sunlight through each side window: a shaft per pane and the patch it lands on, at this floor's own hour
+    const S = new THREE.Vector3(.75, .42 + (f.k & 3) * .07, -.25).normalize();
+    const shaft = beamMat.clone(), patch = new THREE.MeshBasicMaterial({ color: tint, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide, toneMapped: false, fog: false });
+    if (f.near && onSide) { shaft.uniforms.uColor.value.copy(tint); cityBeams.push(shaft); cityPatches.push(patch); }
     for (const p of allPanes) {
-      if (onWall) { dummy.position.set(p.x, x.k * STOREY + WINY + p.z, WZ + .005); dummy.rotation.set(Math.PI / 2, 0, 0); } else { dummy.position.set(p.x, x.k * STOREY + MOUNT - .005, p.z + PZ); dummy.rotation.set(0, 0, 0); }
-      dummy.scale.set(p.w, 1, p.d); dummy.updateMatrix(); panesIM.setMatrixAt(pi, dummy.matrix); panesIM.setColorAt(pi++, tint);
+      if (onSide) { dummy.position.set(f.x + SIDE.x - .005, Y + SIDE.y + p.z * sc, f.z + SIDE.z - p.x * sc); dummy.rotation.set(0, Math.PI / 2, -Math.PI / 2, 'ZYX'); } else { dummy.position.set(f.x + p.x, Y + MOUNT - .005, f.z + p.z + PZ); dummy.rotation.set(0, 0, 0, 'XYZ'); }
+      dummy.scale.set(p.w * sc, 1, p.d * sc); dummy.updateMatrix(); panesIM.setMatrixAt(pi, dummy.matrix); panesIM.setColorAt(pi++, tint);
+      if (f.near && onSide) {
+        const px = SIDE.x, h = SIDE.y + p.z * sc, py = Y + h, pz = SIDE.z - p.x * sc, pw = p.w * sc, ph = p.d * sc, t = h / S.y;
+        const a = new THREE.Mesh(shaftGeo, shaft), b = new THREE.Mesh(patchGeo, patch);
+        a.matrixAutoUpdate = b.matrixAutoUpdate = a.frustumCulled = b.frustumCulled = false;
+        a.matrix.set(0, S.x * t, 0, px, 0, S.y * t, ph, py, pw, S.z * t, 0, pz, 0, 0, 0, 1);
+        b.matrix.set(0, -S.x / S.y * ph, 0, px - S.x * t, 0, 0, 1, Y + .03, pw, -S.z / S.y * ph, 0, pz - S.z * t, 0, 0, 0, 1);
+        city.add(a, b);
+      }
     }
   }
-  const winTex = windowTexture(), towerMat = new THREE.MeshBasicMaterial({ color: '#000', map: winTex, fog: false });
-  [[-30, -10, 12, 100, 14], [28, -12, 13, 96, 16], [-46, -24, 14, 130, 14], [44, -26, 15, 140, 13], [-14, -32, 13, 150, 11], [13, -38, 16, 170, 14], [-56, -40, 16, 120, 16], [58, -44, 18, 150, 16]].forEach(([x, z, w, h, d]) => {
-    const g = new THREE.BoxGeometry(w, h, d), uv = g.attributes.uv; for (let i = 0; i < uv.count; i++) uv.setXY(i, uv.getX(i) * w / 7, uv.getY(i) * h / 16);
-    const t = new THREE.Mesh(g, towerMat); t.position.set(x, h / 2 - 34, z); city.add(t);
-  });
   const skyDome = new THREE.Mesh(new THREE.SphereGeometry(400, 24, 16), new THREE.ShaderMaterial({ side: THREE.BackSide, depthWrite: false, uniforms: { uTop: { value: new THREE.Color() }, uHor: { value: new THREE.Color() } }, vertexShader: 'varying vec3 vP; void main(){ vP=normalize(position); gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.); }', fragmentShader: 'uniform vec3 uTop, uHor; varying vec3 vP; void main(){ gl_FragColor=vec4(mix(uHor,uTop,smoothstep(-.05,.55,vP.y))*.14,1.);\n#include <tonemapping_fragment>\n#include <colorspace_fragment>\n}' })); skyDome.visible = false; scene.add(skyDome);
 
   // ---- one pass straight to the screen: tone mapping happens in each material, so there are no full-screen passes to pay for; a soft sprite stands in for bloom ----
@@ -170,6 +181,12 @@ export async function createWorld(canvas: HTMLCanvasElement, capture = false, mo
   root.visible = city.visible = skyDome.visible = true; renderer.compile(scene, camera); root.visible = city.visible = skyDome.visible = false;
 
   // ---- frame update ----
+  // the camera's progress along its path is blurred, so it accelerates and brakes gently through every key
+  const uTab = (() => {
+    const N = 2048, R = 56; let a = Float32Array.from({ length: N + 1 }, (_, j) => { const q = j / N; let i = 0; while (i < cams.length - 2 && q > cams[i + 1][0]) i++; return i + clamp((q - cams[i][0]) / (cams[i + 1][0] - cams[i][0])); });
+    for (let pass = 0; pass < 3; pass++) { const b = new Float32Array(N + 1); for (let i = 0; i <= N; i++) { let t = 0; for (let j = -R; j <= R; j++) t += a[Math.min(N, Math.max(0, i + j))]; b[i] = t / (2 * R + 1); } a = b; }
+    return a;
+  })();
   const n = cams.length, posC = new THREE.CatmullRomCurve3(cams.map(k => new THREE.Vector3(...k[1]))), tgtC = new THREE.CatmullRomCurve3(cams.map(k => new THREE.Vector3(...k[2])));
   const tgt = new THREE.Vector3(), mouse = { x: 0, y: 0, mx: 0, my: 0 }; addEventListener('pointermove', e => { mouse.mx = e.clientX / innerWidth - .5; mouse.my = e.clientY / innerHeight - .5; }, { passive: true });
   // never below one render pixel per CSS pixel: a blurry frame reads worse than a slightly slower one
@@ -184,11 +201,10 @@ export async function createWorld(canvas: HTMLCanvasElement, capture = false, mo
 
   function update(p: number, dt: number) {
     time += dt;
-    let i = 0; while (i < n - 2 && p > cams[i + 1][0]) i++;
-    const u = (i + clamp((p - cams[i][0]) / (cams[i + 1][0] - cams[i][0]))) / (n - 1);
+    const ux = p * 2048, ui = Math.min(2047, ux | 0), u = (uTab[ui] + (uTab[ui + 1] - uTab[ui]) * (ux - ui)) / (n - 1);
     posC.getPoint(u, camera.position); tgtC.getPoint(u, tgt);
     const stage = stageAt(p), ki = u * (n - 1), k0 = Math.floor(ki), k1 = Math.min(n - 1, k0 + 1);
-    camera.fov = lerp(cams[k0][3], cams[k1][3], smooth(ki - k0)) * (portrait ? lerp(1.42, 2, stage) : 1);
+    camera.fov = lerp(cams[k0][3], cams[k1][3], ki - k0) * (portrait ? lerp(1.42, 2, stage) : 1);
     mouse.x += (mouse.mx - mouse.x) * .05; mouse.y += (mouse.my - mouse.y) * .05; camera.position.x += mouse.x * .16; camera.position.y -= mouse.y * .08;
     camera.position.y += Math.sin(seg(p, .205, .24) * Math.PI) * -.03; camera.lookAt(tgt); camera.updateProjectionMatrix();
 
@@ -202,7 +218,7 @@ export async function createWorld(canvas: HTMLCanvasElement, capture = false, mo
 
     // day
     const ignite = up(p, .225, .29), tod = pw(TOD, p), s = sampleSky(tod), lit = 1 - stage; curTod = tod;
-    if (wall) s.sun.set(s.sun.x * .9, Math.max(.22, s.sun.y) * .75, -.8).normalize(); // the sun stands outside the back wall and crosses it through the day
+    if (wall) s.sun.set(s.sun.x * .5, Math.min(.36, Math.max(.2, s.sun.y * .5)), -.8).normalize(); // the sun stands outside the back wall and crosses it through the day
     product.power(Math.max(ignite, stage) * (1 - e * .55)); skyUniforms.uGain.value = (s.gain * .42 * ignite + .012) * (1 - e * .6); skyUniforms.uTime.value = time;
     const night = up(p, .86, 1), floorsIn = up(p, .88, .96);
     const dome = (skyDome.material as THREE.ShaderMaterial).uniforms; dome.uTop.value.copy(s.top); dome.uHor.value.copy(s.hor);
@@ -229,7 +245,7 @@ export async function createWorld(canvas: HTMLCanvasElement, capture = false, mo
     if (wall) halo.position.set(0, WINY, WZ + .1); else halo.position.set(0, by - .1, PZ); halo.material.color.copy(s.rect).lerp(warm, .3); halo.material.opacity = clamp(skyUniforms.uGain.value * .09) * lit * (1 - night); halo.visible = halo.material.opacity > .004;
     // the building reveal
     city.visible = skyDome.visible = p > .86;
-    if (city.visible) { storeyMat.color.setScalar(5.5 * (floorsIn + .03)); paneMat.color.setScalar(3 * (floorsIn + .02)); towerMat.color.setScalar(night * .16); }
+    if (city.visible) { storeyMat.color.setScalar(5.5 * (floorsIn + .03)); paneMat.color.setScalar(3 * (floorsIn + .02)); for (const m of cityBeams) m.uniforms.uBeam.value = floorsIn * .55; for (const m of cityPatches) m.opacity = floorsIn * .8; }
     (scene.fog as THREE.FogExp2).color.copy(s.hor).multiplyScalar(.1);
     // finish
     bakeU.uSat.value = lerp(.34, 1, ignite); bakeU.uVig.value = lerp(.5, .32, ignite);

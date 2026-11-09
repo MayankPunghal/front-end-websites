@@ -5,13 +5,13 @@ import * as THREE from 'three';
 import { MeshBVH } from 'three-mesh-bvh';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import fs from 'node:fs';
-import { buildRoom, PALETTE, PANEL, WINDOW, type Key, type Mount } from '../src/sites/sunrooof/three/room.ts';
+import { buildRoom, PALETTE, PANEL, SIDE, WINDOW, type Key, type Mount } from '../src/sites/sunrooof/three/room.ts';
 
 const HI = +(process.env.HI || 0.1), LO = 0.4, OUT = 'public/sunrooof/bake';
 fs.mkdirSync(OUT, { recursive: true });
 
 function bake(d: number, panelRays: number, gather: number, mount: Mount) {
-  const t0 = Date.now(), parts = buildRoom(d, mount), onWall = mount === 'wall';
+  const t0 = Date.now(), parts = buildRoom(d, mount), onWall = mount === 'wall', onSide = mount === 'side', em = onSide ? SIDE : PANEL;
   const merged = mergeGeometries(parts.map(p => { const g = p.geo.clone(); g.deleteAttribute('uv'); return g; }), false)!;
   const N = merged.attributes.position.count, P = merged.attributes.position.array as Float32Array, Nn = merged.attributes.normal.array as Float32Array;
   const alb = new Float32Array(N * 3); let o = 0;
@@ -60,13 +60,13 @@ function bake(d: number, panelRays: number, gather: number, mount: Mount) {
   };
 
   // A0: direct light from the panel, stratified over its area
-  const E0 = new Float32Array(N), area = PANEL.w * PANEL.d, rows = Math.ceil(Math.sqrt(panelRays));
+  const E0 = new Float32Array(N), area = em.w * em.d, rows = Math.ceil(Math.sqrt(panelRays));
   let rng = 12345; const rnd = () => { rng = (rng * 1664525 + 1013904223) >>> 0; return rng / 4294967296; };
   for (let i = 0; i < N; i++) {
     const x = P[i * 3] + Nn[i * 3] * 2e-3, y = P[i * 3 + 1] + Nn[i * 3 + 1] * 2e-3, z = P[i * 3 + 2] + Nn[i * 3 + 2] * 2e-3; let e = 0;
     for (let r = 0; r < rows; r++) for (let s = 0; s < rows; s++) {
-      const lx = ((r + rnd()) / rows - 0.5) * PANEL.w, off = ((s + rnd()) / rows - 0.5) * PANEL.d, dx = lx - x, dy = (onWall ? WINDOW.y + off : PANEL.y) - y, dz = (onWall ? WINDOW.z : PANEL.z + off) - z, d2 = dx * dx + dy * dy + dz * dz, len = Math.sqrt(d2);
-      const cr = (dx * Nn[i * 3] + dy * Nn[i * 3 + 1] + dz * Nn[i * 3 + 2]) / len, ce = (onWall ? -dz : dy) / len;
+      const lx = ((r + rnd()) / rows - 0.5) * em.w, off = ((s + rnd()) / rows - 0.5) * em.d, dx = (onSide ? SIDE.x : lx) - x, dy = (onWall ? WINDOW.y + off : onSide ? SIDE.y + off : PANEL.y) - y, dz = (onWall ? WINDOW.z : onSide ? SIDE.z + lx : PANEL.z + off) - z, d2 = dx * dx + dy * dy + dz * dz, len = Math.sqrt(d2);
+      const cr = (dx * Nn[i * 3] + dy * Nn[i * 3 + 1] + dz * Nn[i * 3 + 2]) / len, ce = (onWall ? -dz : onSide ? dx : dy) / len;
       if (cr <= 0 || ce <= 0) continue;
       const hit = trace(x, y, z, dx / len, dy / len, dz / len); if (!hit || hit.distance > len - 0.01) e += cr * ce / Math.max(d2, 0.02);
     }
@@ -110,9 +110,9 @@ function bake(d: number, panelRays: number, gather: number, mount: Mount) {
 
 function maxOf(v: Float32Array) { let m = 1e-6; const s = Array.from(v).sort((a, b) => a - b); m = s[Math.floor(s.length * 0.9995)] || m; return m; }
 
-for (const [mount, tag] of [['ceiling', ''], ['wall', '-wall']] as const) {
+for (const [mount, tag] of [['ceiling', ''], ['wall', '-wall'], ['side', '-side']] as const) {
 // hi: square-root encoded, 4 bytes per vertex after an 8-byte header
-{
+if (mount !== 'side') {
   const { N, A, B } = bake(HI, 36, 64, mount);
   const maxA = maxOf(A), maxB = maxOf(B), buf = Buffer.alloc(8 + N * 4);
   buf.writeFloatLE(maxA, 0); buf.writeFloatLE(maxB, 4);
@@ -120,7 +120,7 @@ for (const [mount, tag] of [['ceiling', ''], ['wall', '-wall']] as const) {
   fs.writeFileSync(`${OUT}/hi${tag}.bin`, buf); console.log(`hi${tag}.bin`, (buf.length / 1048576).toFixed(2), 'MB', { maxA, maxB });
 }
 // lo: final surface colour for the other storeys, 16-bit linear RGB
-{
+if (mount !== 'wall') {
   const { N, A, alb } = bake(LO, 16, 36, mount);
   const c = new Float32Array(N * 3); for (let i = 0; i < N * 3; i++) c[i] = A[i] * alb[i];
   const m = maxOf(c), u = new Uint16Array(N * 3); for (let i = 0; i < N * 3; i++) u[i] = Math.min(65535, Math.round(c[i] / m * 65535));

@@ -8,11 +8,11 @@ export const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
 
 /** Six moments of one day; `tod` runs 0 (dawn) to 1 (night). */
 const KEYS = [
-  { top: '#2c2f63', hor: '#ff8f5a', gain: 1.7, sun: [0.85, 0.3, 0.25], key: '#ff9a5a', keyI: 3.0, rect: '#ffb27e', rectI: 5, amb: 0.3 },
-  { top: '#6b9be0', hor: '#ffdcb0', gain: 3.2, sun: [0.55, 0.72, 0.2], key: '#ffd9a8', keyI: 6.5, rect: '#ffe3c4', rectI: 9, amb: 0.55 },
-  { top: '#5a9bf0', hor: '#eaf3ff', gain: 5.2, sun: [0.14, 0.97, 0.16], key: '#fff3dc', keyI: 11, rect: '#fff6ea', rectI: 15, amb: 0.85 },
-  { top: '#6a6a9e', hor: '#ffa552', gain: 2.7, sun: [-0.72, 0.5, 0.12], key: '#ff9d4a', keyI: 6, rect: '#ffb877', rectI: 7, amb: 0.45 },
-  { top: '#191b44', hor: '#f2683c', gain: 1.0, sun: [-0.92, 0.2, 0.1], key: '#e2572b', keyI: 1.2, rect: '#d97a55', rectI: 2.4, amb: 0.16 },
+  { top: '#2c2f63', hor: '#ff8f5a', gain: 1.7, sun: [0.7, 0.55, -0.15], key: '#ff9a5a', keyI: 3.0, rect: '#ffb27e', rectI: 5, amb: 0.3 },
+  { top: '#6b9be0', hor: '#ffdcb0', gain: 3.2, sun: [0.5, 0.72, -0.18], key: '#ffd9a8', keyI: 6.5, rect: '#ffe3c4', rectI: 9, amb: 0.55 },
+  { top: '#5a9bf0', hor: '#eaf3ff', gain: 5.2, sun: [-0.4, 0.85, -0.2], key: '#fff3dc', keyI: 11, rect: '#fff6ea', rectI: 15, amb: 0.85 },
+  { top: '#6a6a9e', hor: '#ffa552', gain: 2.7, sun: [-0.72, 0.5, -0.2], key: '#ff9d4a', keyI: 6, rect: '#ffb877', rectI: 7, amb: 0.45 },
+  { top: '#191b44', hor: '#f2683c', gain: 1.0, sun: [-0.8, 0.42, -0.12], key: '#e2572b', keyI: 1.2, rect: '#d97a55', rectI: 2.4, amb: 0.16 },
   { top: '#070a1c', hor: '#1d2148', gain: 0.4, sun: [-0.9, -0.25, 0.1], key: '#000000', keyI: 0, rect: '#8088c0', rectI: 0.9, amb: 0.06 },
 ].map(k => ({ ...k, top: new THREE.Color(k.top), hor: new THREE.Color(k.hor), key: new THREE.Color(k.key), rect: new THREE.Color(k.rect), sun: new THREE.Vector3(...(k.sun as [number, number, number])).normalize() }));
 
@@ -81,14 +81,6 @@ export function brushedTexture() {
     for (let i = 0; i < 1600; i++) { const v = Math.random() > .5 ? 255 : 0; g.fillStyle = `rgba(${v},${v},${v},.05)`; g.fillRect(rnd(-200, 1024), rnd(0, 256), rnd(120, 700), 1); }
   });
 }
-export function windowTexture() {
-  const t = noiseCanvas(256, 512, g => {
-    g.fillStyle = '#000'; g.fillRect(0, 0, 256, 512);
-    for (let y = 6; y < 512; y += 16) for (let x = 4; x < 256; x += 12) if (Math.random() > .68) { g.fillStyle = `rgba(255,${200 + rnd(0, 40)},${140 + rnd(0, 60)},${rnd(.35, 1)})`; g.fillRect(x, y, 8, 6); }
-  });
-  t.colorSpace = THREE.SRGBColorSpace; return t;
-}
-
 /** Near-white woven cloth, multiplied over a fabric colour. */
 export function weaveTexture() {
   const t = noiseCanvas(256, 256, g => {

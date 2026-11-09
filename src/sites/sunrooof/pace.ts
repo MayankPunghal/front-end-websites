@@ -18,7 +18,7 @@ const DWELL: [number, number][] = [
 ];
 
 // Blurring the steps makes speed change gradually, so the scroll eases between stretches with no visible gear change.
-const N = 2048, R = 28;
+const N = 2048, R = 64;
 let w = Float32Array.from({ length: N }, (_, i) => { let v = 1; for (const [a, k] of DWELL) if ((i + .5) / N >= a) v = k; return v; });
 for (let pass = 0; pass < 3; pass++) {
   const b = new Float32Array(N);

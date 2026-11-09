@@ -6,7 +6,9 @@ export const H = 3.4, X = 5, ZB = -4.2, ZF = 7;
 export const PANEL = { w: 3.3, d: 2.1, y: H - 0.02, z: -0.4 };
 /** The same unit mounted in the back wall as a window; d is its height. */
 export const WINDOW = { w: 3.3, d: 2.1, y: 1.95, z: ZB + 0.02 };
-export type Mount = 'ceiling' | 'wall';
+/** A smaller window in the right-hand wall, used on the other floors of the building. d is its height. */
+export const SIDE = { w: 2.64, d: 1.68, y: 1.75, x: X - 0.02, z: 0.25 };
+export type Mount = 'ceiling' | 'wall' | 'side';
 
 export const PALETTE = {
   wall: '#cfc6b6', ceil: '#e8e2d8', floor: '#8d6443', trim: '#e3ddd1', linen: '#d6ccba', cushion: '#b5845a', slat: '#5f3c24', oak: '#7a5233', ink: '#1b1a18',
@@ -52,17 +54,10 @@ export function buildRoom(d: number, mount: Mount = 'ceiling') {
 
   // ---- shell ----
   const DEPTH = ZF - ZB, CZ = (ZF + ZB) / 2, T = 0.3;
-  add('floor', box(X * 2 + 0.6, 0.42, DEPTH), 0, -0.21, CZ); // the unit sits in an opening in the slab or wall, so only its frame shows
-  const opening = (A0: number, A1: number, B0: number, B1: number, a0: number, a1: number, b0: number, b1: number, put: (sa: number, sb: number, ca: number, cb: number) => void) => {
-    put(a0 - A0, B1 - B0, (A0 + a0) / 2, (B0 + B1) / 2); put(A1 - a1, B1 - B0, (a1 + A1) / 2, (B0 + B1) / 2);
-    put(a1 - a0, b0 - B0, (a0 + a1) / 2, (B0 + b0) / 2); put(a1 - a0, B1 - b1, (a0 + a1) / 2, (b1 + B1) / 2);
-  };
-  const OW = 1.71, OD = 1.11;
-  if (mount === 'ceiling') opening(-X - 0.3, X + 0.3, ZB, ZF, -OW, OW, PANEL.z - OD, PANEL.z + OD, (sa, sb, ca, cb) => add('ceil', box(sa, 0.42, sb), ca, H + 0.21, cb));
-  else add('ceil', box(X * 2 + 0.6, 0.42, DEPTH), 0, H + 0.21, CZ);
+  add('floor', box(X * 2 + 0.6, 0.42, DEPTH), 0, -0.21, CZ);
+  add('ceil', box(X * 2 + 0.6, 0.42, DEPTH), 0, H + 0.21, CZ);
   add('wall', box(T, H, DEPTH), -X - T / 2, H / 2, CZ); add('wall', box(T, H, DEPTH), X + T / 2, H / 2, CZ);
-  if (mount === 'wall') opening(-X, X, 0, H, -OW, OW, WINDOW.y - OD, WINDOW.y + OD, (sa, sb, ca, cb) => add('wall', box(sa, sb, T), ca, cb, ZB - T / 2));
-  else add('wall', box(X * 2, H, T), 0, H / 2, ZB - T / 2);
+  add('wall', box(X * 2, H, T), 0, H / 2, ZB - T / 2);
   // skirting and door
   add('trim', box(X * 2, 0.14, 0.025), 0, 0.07, ZB + 0.0125); add('trim', box(0.025, 0.14, DEPTH), -X + 0.0125, 0.07, CZ); add('trim', box(0.025, 0.14, DEPTH), X - 0.0125, 0.07, CZ);
   add('oak', soft(0.05, 2.4, 1.05, 0.006), X - 0.03, 1.2, 2.3); for (const s of [-1, 1]) add('trim', box(0.05, 2.455, 0.09), X - 0.03, 1.2275, 2.3 + s * 0.57); add('trim', box(0.05, 0.09, 1.23), X - 0.03, 2.5, 2.3);
@@ -104,7 +99,7 @@ export function buildRoom(d: number, mount: Mount = 'ceiling') {
 
   // ---- back wall: art and console ----
   const artY = 1.85;
-  if (mount === 'ceiling') { add('oak', soft(2.2, 1.44, 0.04, 0.008), 0.2, artY, ZB + 0.03); add('trim', soft(2.1, 1.34, 0.01, 0.002), 0.2, artY, ZB + 0.055); add('art', soft(1.7, 0.96, 0.01, 0.002), 0.2, artY, ZB + 0.063); }
+  if (mount !== 'wall') { add('oak', soft(2.2, 1.44, 0.04, 0.008), 0.2, artY, ZB + 0.03); add('trim', soft(2.1, 1.34, 0.01, 0.002), 0.2, artY, ZB + 0.055); add('art', soft(1.7, 0.96, 0.01, 0.002), 0.2, artY, ZB + 0.063); }
   add('oak', soft(3.2, 0.52, 0.46, 0.012), 0.2, 0.34, ZB + 0.26); for (const s of [-1.05, -0.35, 0.35, 1.05]) add('ink', box(0.012, 0.44, 0.005), 0.2 + s * 0.76 + 0.38 * Math.sign(s) * 0, 0.34, ZB + 0.492);
   for (const x of [-1.2, 1.6]) add('ink', rod(0.018, 0.08), x, 0, ZB + 0.26);
   if (fine) {
@@ -147,7 +142,7 @@ export function buildRoom(d: number, mount: Mount = 'ceiling') {
       g.computeVertexNormals(); add('leaf', g, x + Math.cos(a) * 0.03, base, z + Math.sin(a) * 0.03, -a + Math.PI / 2, -lean - Math.PI / 2 + 1.2);
     }
   };
-  plant(-3.55, -2.85, 1.15); plant(3.85, 4.1, 1); plant(-2.3, ZB + 0.8, 0.6);
+  plant(-3.55, -2.85, 1.15); if (mount !== 'side') plant(3.85, 4.1, 1); plant(-2.3, ZB + 0.8, 0.6);
 
   const parts = (Object.keys(PALETTE) as Key[]).filter(k => bins.has(k)).map(key => ({ key, geo: mergeGeometries(bins.get(key)!, false)! }));
   return parts;
