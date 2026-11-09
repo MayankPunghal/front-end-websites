@@ -1,10 +1,10 @@
-// Publishes the first rebuild (branch main) inside this site at /original/. Run once after main changes:
+// Publishes the first rebuild (branch main) inside this site at /sunroof/. Run once after main changes:
 //   git worktree add artifacts/_tmp/main-wt main && (cd artifacts/_tmp/main-wt && npm ci && npx astro build) && node tools/build-original.mjs
 // That site uses root-relative URLs throughout, so they are rewritten to its new home.
 import fs from 'node:fs';
 import path from 'node:path';
 
-const SRC = 'artifacts/_tmp/main-wt/dist', OUT = 'public/original', PRE = '/front-end-websites/original';
+const SRC = 'artifacts/_tmp/main-wt/dist', OUT = 'public/sunroof', PRE = '/front-end-websites/sunroof';
 const DIRS = '_astro|brand|video|img|ig|fonts|pages|products|collections|blogs|policies|favicon\\.svg';
 
 const rewrite = text => text

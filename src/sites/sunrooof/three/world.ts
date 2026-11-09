@@ -121,6 +121,8 @@ export async function createWorld(canvas: HTMLCanvasElement, capture = false, mo
   for (const p of panes()) { const h = new THREE.Path(); h.moveTo(p.x - p.w / 2, p.z - p.d / 2 + holeZ); h.lineTo(p.x + p.w / 2, p.z - p.d / 2 + holeZ); h.lineTo(p.x + p.w / 2, p.z + p.d / 2 + holeZ); h.lineTo(p.x - p.w / 2, p.z + p.d / 2 + holeZ); shape.holes.push(h); }
   const maskGeo = new THREE.ShapeGeometry(shape); if (!wall) maskGeo.rotateX(Math.PI / 2);
   const mask = new THREE.Mesh(maskGeo, new THREE.MeshBasicMaterial({ colorWrite: false, depthWrite: false, side: THREE.DoubleSide })); if (wall) mask.position.z = WZ - .03; else mask.position.y = H + .03; mask.castShadow = true; scene.add(mask);
+  // the mask sits so close to the wall tops that shadow bias lets a line of sun through; cover them from higher up
+  if (!wall) for (const s of [-1, 1]) { const cap = new THREE.Mesh(new THREE.BoxGeometry(1.4, .02, 40), mask.material); cap.position.set(s * (SIDE.x - .4), H + .6, 0); cap.castShadow = true; scene.add(cap); }
   // the shadow map draws the low-detail room: same silhouettes, a fraction of the triangles
   const casters = new THREE.Mesh(mergeGeometries(buildRoom(.4, mount).filter(p => !NO_CAST.includes(p.key)).map(p => p.geo), false)!, mask.material); casters.castShadow = true; casters.matrixAutoUpdate = false; room.add(casters);
 
@@ -148,46 +150,49 @@ export async function createWorld(canvas: HTMLCanvasElement, capture = false, mo
   // ---- the building at the end: every storey is the same furnished, pre-lit room ----
   const city = new THREE.Group(); city.visible = false; scene.add(city);
   const storeyMat = new THREE.MeshBasicMaterial({ vertexColors: true }), paneMat = new THREE.MeshBasicMaterial();
-  const allPanes = panes(), dummy = new THREE.Object3D(), y0 = layers[frameIdx].y0, sideScale = SIDE.w / PANEL.w;
-  const TINTS = ['#fff0dc', '#ffb27e', '#ff9a5a', '#ffc48a', '#dfeaff', '#ff8f5a', '#ffcfa0', '#e8f0ff'];
-  type Floor = { k: number; m: Mount; tint: string; x: number; z: number; near: boolean };
-  const floors: Floor[] = [-3, -2, -1, 1, 2, 3, 4, 5].map((k, i) => ({ k, m: i % 2 ? 'side' : 'ceiling', tint: TINTS[i], x: 0, z: 0, near: true }));
-  // the neighbouring buildings are the same stack of lit rooms
-  [[-22, -14, 3], [22, -14, 4], [-14, -32, 9], [-40, -58, 11], [-6, -60, 13], [42, -60, 10]].forEach(([x, z, top], b) => { for (let k = -8; k <= top; k++) floors.push({ k, m: (k + b) % 2 ? 'side' : 'ceiling', tint: TINTS[((k + 8) * 3 + b * 5) % 8], x, z, near: false }); });
+  const dummy = new THREE.Object3D(), frameMat = new THREE.MeshBasicMaterial();
+  storeyMat.side = THREE.DoubleSide; // some rooms are mirrored
+  const grid = (c: number, r: number, w: number, d: number) => { const M = .07, pw = (w - M * (c + 1)) / c, pd = (d - M * (r + 1)) / r, out: { x: number; z: number; w: number; d: number }[] = []; for (let i = 0; i < c; i++) for (let j = 0; j < r; j++) out.push({ x: -w / 2 + M + pw / 2 + i * (pw + M), z: -d / 2 + M + pd / 2 + j * (pd + M), w: pw, d: pd }); return out; };
+  // every room has its own colour of light, brightness, and arrangement of panels
+  const VIBES: [string, number][] = [['#fff0dc', 1], ['#ffb27e', .95], ['#7fd6cf', .85], ['#b8e0a8', .9], ['#ffb3c1', .9], ['#c8b4ff', .8], ['#cfe6ff', 1.05], ['#ff8f5a', .8], ['#ffd36e', 1], ['#e8f0ff', .75], ['#f2c6a0', 1.1], ['#9fb8ff', .85]];
+  const GRIDS = [[3, 3, 1], [2, 1, .8], [4, 1, .75], [2, 2, .7], [3, 2, .9], [1, 1, .55], [5, 2, 1], [1, 3, .6], [6, 1, .9], [2, 3, .8]];
+  type Floor = { k: number; m: Mount; x: number; z: number; near: boolean; h: number; b: number };
+  const floorAt = (k: number, x: number, z: number, near: boolean, b: number): Floor => { const h = Math.abs(k * 31 + b * 17 + 7); return { k, m: h % 5 < 2 ? 'side' : 'ceiling', x, z, near, h, b }; };
+  const floors: Floor[] = [-3, -2, -1, 1, 2, 3, 4, 5].map(k => floorAt(k, 0, 0, true, -1));
+  // the neighbouring buildings are stacks of the same kinds of room
+  [[-22, -14, 3], [22, -14, 4], [-14, -32, 9], [-40, -58, 11], [-6, -60, 13], [42, -60, 10]].forEach(([x, z, top], b) => { for (let k = -8; k <= top; k++) floors.push(floorAt(k, x, z, false, b)); });
+  const vibe = (f: Floor) => VIBES[f.h % VIBES.length], layout = (f: Floor) => { const [c, r, k] = GRIDS[(f.h * 7 + f.b + 1) % GRIDS.length], w = (f.m === 'side' ? SIDE.w : PANEL.w) * k, d = (f.m === 'side' ? SIDE.d : PANEL.d) * k; return { w, d, panes: grid(c, r, w, d) }; };
   for (const [m, buf] of [['ceiling', loBuf], ['side', loSideBuf]] as const) {
     const geo = mergeGeometries(buildRoom(.4, m).map(p => { p.geo.deleteAttribute('uv'); return p.geo; }), false)!, list = floors.filter(x => x.m === m), scale = new DataView(buf).getFloat32(0, true);
     if (4 + geo.attributes.position.count * 6 !== buf.byteLength) throw new Error('storey bake data does not match; rerun tools/bake-room.ts');
     geo.setAttribute('color', new THREE.BufferAttribute(new Uint16Array(buf.slice(4)), 3, true));
     const rooms = new THREE.InstancedMesh(geo, storeyMat, list.length); rooms.frustumCulled = false; city.add(rooms);
-    list.forEach((x, i) => { dummy.position.set(x.x, x.k * STOREY, x.z); dummy.rotation.set(0, 0, 0, 'XYZ'); dummy.scale.setScalar(1); dummy.updateMatrix(); rooms.setMatrixAt(i, dummy.matrix); rooms.setColorAt(i, new THREE.Color(x.tint).multiplyScalar(scale * (x.near ? 1 : .6))); });
+    list.forEach((x, i) => { dummy.position.set(x.x, x.k * STOREY, x.z); dummy.rotation.set(0, 0, 0, 'XYZ'); dummy.scale.set(m === 'ceiling' && x.h % 2 ? -1 : 1, 1, 1); dummy.updateMatrix(); rooms.setMatrixAt(i, dummy.matrix); rooms.setColorAt(i, new THREE.Color(vibe(x)[0]).multiplyScalar(scale * (x.near ? 1 : .6) * vibe(x)[1])); });
   }
-  const panesIM = new THREE.InstancedMesh(new THREE.BoxGeometry(1, .02, 1), paneMat, allPanes.length * floors.length); panesIM.frustumCulled = false; city.add(panesIM);
+  const paneBox = new THREE.BoxGeometry(1, .02, 1), panesIM = new THREE.InstancedMesh(paneBox, paneMat, floors.reduce((n, x) => n + layout(x).panes.length, 0)), backIM = new THREE.InstancedMesh(paneBox, frameMat, floors.length); panesIM.frustumCulled = backIM.frustumCulled = false; city.add(panesIM, backIM);
   const shaftGeo = new THREE.BoxGeometry(1, 1, 1).translate(0, -.5, 0), patchGeo = new THREE.PlaneGeometry(1, 1), cityBeams: THREE.ShaderMaterial[] = [], cityPatches: THREE.MeshBasicMaterial[] = [];
   let pi = 0;
-  for (const f of floors) {
-    const onSide = f.m === 'side', sc = onSide ? sideScale : 1, tint = new THREE.Color(f.tint), Y = f.k * STOREY;
-    if (f.near) {
-      const fr = layers[frameIdx].obj.clone(); fr.traverse(o => { o.castShadow = false; });
-      if (onSide) { fr.position.set(SIDE.x + y0 * sc, Y + SIDE.y, SIDE.z); fr.rotation.set(0, Math.PI / 2, -Math.PI / 2, 'ZYX'); fr.scale.setScalar(sc); } else fr.position.set(0, Y + MOUNT + y0, PZ);
-      city.add(fr);
-    }
-    // sunlight through each side window: a shaft per pane and the patch it lands on, at this floor's own hour
-    const S = new THREE.Vector3(.75, .42 + (f.k & 3) * .07, -.25).normalize();
+  floors.forEach((fl, fi) => {
+    const onSide = fl.m === 'side', tint = new THREE.Color(vibe(fl)[0]), Y = fl.k * STOREY, L = layout(fl);
+    // a wooden backing shows between the panes; flush with the wall or ceiling
+    if (onSide) { dummy.position.set(fl.x + SIDE.x + .008, Y + SIDE.y, fl.z + SIDE.z); dummy.rotation.set(0, Math.PI / 2, -Math.PI / 2, 'ZYX'); } else { dummy.position.set(fl.x, Y + MOUNT + .008, fl.z + PZ); dummy.rotation.set(0, 0, 0, 'XYZ'); }
+    dummy.scale.set(L.w + .16, 1, L.d + .16); dummy.updateMatrix(); backIM.setMatrixAt(fi, dummy.matrix);
+    const lit = fl.near && onSide, S = new THREE.Vector3(.75, .42 + (fl.k & 3) * .07, -.25).normalize();
     const shaft = beamMat.clone(), patch = new THREE.MeshBasicMaterial({ color: tint, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide, toneMapped: false, fog: false });
-    if (f.near && onSide) { shaft.uniforms.uColor.value.copy(tint); cityBeams.push(shaft); cityPatches.push(patch); }
-    for (const p of allPanes) {
-      if (onSide) { dummy.position.set(f.x + SIDE.x - .005, Y + SIDE.y + p.z * sc, f.z + SIDE.z - p.x * sc); dummy.rotation.set(0, Math.PI / 2, -Math.PI / 2, 'ZYX'); } else { dummy.position.set(f.x + p.x, Y + MOUNT - .005, f.z + p.z + PZ); dummy.rotation.set(0, 0, 0, 'XYZ'); }
-      dummy.scale.set(p.w * sc, 1, p.d * sc); dummy.updateMatrix(); panesIM.setMatrixAt(pi, dummy.matrix); panesIM.setColorAt(pi++, tint);
-      if (f.near && onSide) {
-        const px = SIDE.x, h = SIDE.y + p.z * sc, py = Y + h, pz = SIDE.z - p.x * sc, pw = p.w * sc, ph = p.d * sc, t = h / S.y;
+    if (lit) { shaft.uniforms.uColor.value.copy(tint); cityBeams.push(shaft); cityPatches.push(patch); }
+    for (const p of L.panes) {
+      if (onSide) { dummy.position.set(fl.x + SIDE.x - .005, Y + SIDE.y + p.z, fl.z + SIDE.z - p.x); dummy.rotation.set(0, Math.PI / 2, -Math.PI / 2, 'ZYX'); } else { dummy.position.set(fl.x + p.x, Y + MOUNT - .005, fl.z + p.z + PZ); dummy.rotation.set(0, 0, 0, 'XYZ'); }
+      dummy.scale.set(p.w, 1, p.d); dummy.updateMatrix(); panesIM.setMatrixAt(pi, dummy.matrix); panesIM.setColorAt(pi++, tint);
+      if (lit) {
+        const px = SIDE.x, h = SIDE.y + p.z, py = Y + h, pz = SIDE.z - p.x, t = h / S.y;
         const a = new THREE.Mesh(shaftGeo, shaft), b = new THREE.Mesh(patchGeo, patch);
         a.matrixAutoUpdate = b.matrixAutoUpdate = a.frustumCulled = b.frustumCulled = false;
-        a.matrix.set(0, S.x * t, 0, px, 0, S.y * t, ph, py, pw, S.z * t, 0, pz, 0, 0, 0, 1);
-        b.matrix.set(0, -S.x / S.y * ph, 0, px - S.x * t, 0, 0, 1, Y + .03, pw, -S.z / S.y * ph, 0, pz - S.z * t, 0, 0, 0, 1);
+        a.matrix.set(0, S.x * -t, 0, px, 0, S.y * -t * -1, p.d, py, p.w, S.z * -t, 0, pz, 0, 0, 0, 1);
+        b.matrix.set(0, -S.x / S.y * p.d, 0, px - S.x * t, 0, 0, 1, Y + .03, p.w, -S.z / S.y * p.d, 0, pz - S.z * t, 0, 0, 0, 1);
         city.add(a, b);
       }
     }
-  }
+  });
   const skyDome = new THREE.Mesh(new THREE.SphereGeometry(400, 24, 16), new THREE.ShaderMaterial({ side: THREE.BackSide, depthWrite: false, uniforms: { uTop: { value: new THREE.Color() }, uHor: { value: new THREE.Color() } }, vertexShader: 'varying vec3 vP; void main(){ vP=normalize(position); gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.); }', fragmentShader: 'uniform vec3 uTop, uHor; varying vec3 vP; void main(){ gl_FragColor=vec4(mix(uHor,uTop,smoothstep(-.05,.55,vP.y))*.14,1.);\n#include <tonemapping_fragment>\n#include <colorspace_fragment>\n}' })); skyDome.visible = false; scene.add(skyDome);
 
   // ---- one pass straight to the screen: tone mapping happens in each material, so there are no full-screen passes to pay for; a soft sprite stands in for bloom ----
@@ -263,7 +268,7 @@ export async function createWorld(canvas: HTMLCanvasElement, capture = false, mo
     if (wall) halo.position.set(0, WINY, WZ + .1); else halo.position.set(0, by - .1, PZ); halo.material.color.copy(skyUniforms.uKey.value); halo.material.opacity = skyUniforms.uSrc.value * .26 * lit * Math.max(1 - night, floorsIn); halo.visible = halo.material.opacity > .004;
     // the building reveal
     city.visible = skyDome.visible = p > .86;
-    if (city.visible) { storeyMat.color.setScalar(5.5 * (floorsIn + .03)); paneMat.color.setScalar(3 * (floorsIn + .02)); for (const m of cityBeams) m.uniforms.uBeam.value = floorsIn * .55; for (const m of cityPatches) m.opacity = floorsIn * .8; }
+    if (city.visible) { storeyMat.color.setScalar(5.5 * (floorsIn + .03)); paneMat.color.setScalar(3 * (floorsIn + .02)); frameMat.color.setRGB(.2, .1, .04).multiplyScalar(floorsIn + .02); for (const m of cityBeams) m.uniforms.uBeam.value = floorsIn * .35; for (const m of cityPatches) m.opacity = floorsIn * .8; }
     (scene.fog as THREE.FogExp2).color.copy(s.hor).multiplyScalar(.1);
     // finish
     bakeU.uSat.value = lerp(.34, 1, ignite); bakeU.uVig.value = lerp(.5, .32, ignite);

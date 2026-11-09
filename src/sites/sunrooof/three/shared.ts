@@ -106,7 +106,7 @@ export function weaveTexture() {
 export function wearTexture() {
   return noiseCanvas(1024, 1024, g => {
     g.fillStyle = '#7a7a7a'; g.fillRect(0, 0, 1024, 1024);
-    for (let i = 0; i < 90; i++) { const x = rnd(0, 1024), y = rnd(0, 1024), r = rnd(40, 200), v = Math.random() > .5 ? 255 : 40, gr = g.createRadialGradient(x, y, 0, x, y, r); gr.addColorStop(0, `rgba(${v},${v},${v},.22)`); gr.addColorStop(1, `rgba(${v},${v},${v},0)`); g.fillStyle = gr; g.fillRect(x - r, y - r, r * 2, r * 2); }
+    for (let i = 0; i < 90; i++) { const x = rnd(0, 1024), y = rnd(0, 1024), r = rnd(40, 200), v = Math.random() > .5 ? 255 : 40, gr = g.createRadialGradient(x, y, 0, x, y, r); gr.addColorStop(0, `rgba(${v},${v},${v},.22)`); gr.addColorStop(1, `rgba(${v},${v},${v},0)`); g.fillStyle = gr; const S = g.canvas.width; for (const dx of [-S, 0, S]) for (const dy of [-S, 0, S]) { g.setTransform(1, 0, 0, 1, dx, dy); g.fillRect(x - r, y - r, r * 2, r * 2); } g.setTransform(1, 0, 0, 1, 0, 0); /* wraps across the edges so the texture tiles without a seam */ }
     for (let i = 0; i < 520; i++) { g.strokeStyle = `rgba(255,255,255,${rnd(.08, .4)})`; g.lineWidth = rnd(.4, 1.3); const x = rnd(0, 1024), y = rnd(0, 1024), a = rnd(0, 6.3), l = rnd(12, 150); g.beginPath(); g.moveTo(x, y); g.quadraticCurveTo(x + Math.cos(a) * l * .5 + rnd(-8, 8), y + Math.sin(a) * l * .5 + rnd(-8, 8), x + Math.cos(a) * l, y + Math.sin(a) * l); g.stroke(); }
     for (let i = 0; i < 2600; i++) { const v = Math.random() > .5 ? 255 : 0; g.fillStyle = `rgba(${v},${v},${v},${rnd(.05, .3)})`; g.fillRect(rnd(0, 1024), rnd(0, 1024), rnd(1, 3), rnd(1, 3)); }
   });
@@ -114,7 +114,7 @@ export function wearTexture() {
 export function plasterTexture() {
   const t = noiseCanvas(512, 512, g => {
     g.fillStyle = '#f2f2f2'; g.fillRect(0, 0, 512, 512);
-    for (let i = 0; i < 260; i++) { const x = rnd(0, 512), y = rnd(0, 512), r = rnd(30, 110), v = Math.random() > .5 ? 255 : 150, gr = g.createRadialGradient(x, y, 0, x, y, r); gr.addColorStop(0, `rgba(${v},${v},${v},.04)`); gr.addColorStop(1, `rgba(${v},${v},${v},0)`); g.fillStyle = gr; g.fillRect(x - r, y - r, r * 2, r * 2); }
+    for (let i = 0; i < 260; i++) { const x = rnd(0, 512), y = rnd(0, 512), r = rnd(30, 110), v = Math.random() > .5 ? 255 : 150, gr = g.createRadialGradient(x, y, 0, x, y, r); gr.addColorStop(0, `rgba(${v},${v},${v},.04)`); gr.addColorStop(1, `rgba(${v},${v},${v},0)`); g.fillStyle = gr; const S = g.canvas.width; for (const dx of [-S, 0, S]) for (const dy of [-S, 0, S]) { g.setTransform(1, 0, 0, 1, dx, dy); g.fillRect(x - r, y - r, r * 2, r * 2); } g.setTransform(1, 0, 0, 1, 0, 0); /* wraps across the edges so the texture tiles without a seam */ }
   });
   t.colorSpace = THREE.SRGBColorSpace; return t;
 }
