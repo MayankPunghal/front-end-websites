@@ -1,6 +1,7 @@
-# Manual on purpose: nothing is published until someone runs this and enables Pages for the repository.
 name: Deploy to GitHub Pages
 on:
+  push:
+    branches: [main]
   workflow_dispatch:
 
 permissions:
