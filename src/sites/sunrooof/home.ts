@@ -14,7 +14,7 @@ async function boot(story: HTMLElement) {
   try { world = await createWorld(canvas); }
   catch (err) { console.error(err); document.documentElement.classList.remove('is-3d'); dispatchEvent(new Event('scene-ready')); return; }
 
-  const clamp = (x: number) => Math.min(1, Math.max(0, x)), clamp2 = (x: number, m: number) => Math.min(m, Math.max(-m, x));
+  const clamp = (x: number) => Math.min(1, Math.max(0, x));
   const chapters = [...story.querySelectorAll<HTMLElement>('[data-in]')].map(el => ({ el, a: +el.dataset.in!, b: +el.dataset.out!, shown: -1 }));
   const labels = [...story.querySelectorAll<HTMLElement>('[data-layer]')];
   const clockT = story.querySelector<HTMLElement>('[data-clock-t]')!, clockN = story.querySelector<HTMLElement>('[data-clock-n]')!, clock = story.querySelector<HTMLElement>('[data-clock]')!;
@@ -25,7 +25,6 @@ async function boot(story: HTMLElement) {
   // reads cached geometry: measuring the page on every scroll event forces a layout
   let top = 0, span = 1;
   const read = () => { target = clamp((scrollY - top) / span); };
-  addEventListener('scroll', read, { passive: true });
   const resize = () => { world.resize(); top = story.getBoundingClientRect().top + scrollY; span = story.offsetHeight - innerHeight; read(); };
   addEventListener('resize', resize); resize();
   new IntersectionObserver(([e]) => { visible = e.isIntersecting; }).observe(story);
@@ -58,10 +57,8 @@ async function boot(story: HTMLElement) {
     requestAnimationFrame(tick);
     if (!visible || document.hidden) { last = now; return; }
     const dt = Math.min(.05, (now - last) / 1000); last = now;
-    // follows the scrollbar closely, and the speed limit stops a late frame from turning into a lurch
-    s += clamp2((target - s) * (1 - Math.exp(-dt * 12)), .4 * dt); if (Math.abs(target - s) < .00002) s = target;
-    p = paceAt(s);
-    const moving = Math.abs(target - s) > .00005; idle = moving ? 0 : idle + 1;
+    // drawn from this frame's scroll position: the browser already eases wheel scrolling, and easing it again is felt as lag and then a rush to catch up
+    read(); const moving = target !== s; s = target; p = paceAt(s); idle = moving ? 0 : idle + 1;
     // once the scroll settles, only the clouds and dust are moving: a third of the frames is plenty
     if (moving || idle % 3 === 0) { world.update(p, dt); world.render(); overlay(); }
     if (!moving) { frames = 0; since = now; return; }
