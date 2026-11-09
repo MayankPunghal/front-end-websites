@@ -3,7 +3,7 @@ import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { createProduct, panes, W } from './product';
 import { buildRoom, H, NO_CAST, PALETTE, PANEL, SIDE, WINDOW, X, ZF, type Key, type Mount } from './room';
-import { artTexture, clamp, lerp, plasterTexture, sampleSky, seg, skyUniforms, smooth, up, weaveTexture, woodTexture } from './shared';
+import { artTexture, clamp, lerp, plasterTexture, sampleSky, seg, skyUniforms, smooth, up, wearTexture, weaveTexture, woodTexture } from './shared';
 
 const PZ = PANEL.z, MOUNT = PANEL.y, WINY = WINDOW.y, WZ = WINDOW.z, STAGE_Y = 1.84, STOREY = H + 0.85; // two 0.42 slabs plus a gap: overlapping slabs share a front face and flicker
 
@@ -41,14 +41,14 @@ export async function createWorld(canvas: HTMLCanvasElement, capture = false, mo
   // integrated graphics cannot fill a high-density screen at this shading cost
   const weak = !capture && !!info && /intel|uhd|iris|mali|adreno|powervr|swiftshader/i.test(gl.getParameter(info.UNMASKED_RENDERER_WEBGL));
   renderer.toneMapping = THREE.AgXToneMapping; renderer.toneMappingExposure = 1.15;
-  renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap; renderer.shadowMap.autoUpdate = false;
+  renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFShadowMap; renderer.shadowMap.autoUpdate = false;
 
   const scene = new THREE.Scene(); scene.fog = new THREE.FogExp2(0x000000, .0055);
   const camera = new THREE.PerspectiveCamera(40, 1, .1, 800);
   const envTex = new THREE.PMREMGenerator(renderer).fromScene(new RoomEnvironment(), .04).texture;
 
   // ---- room: all fill light is pre-computed per vertex (tools/bake-room.ts), so the only live light is the sun ----
-  const bakeU = { uPanel: { value: new THREE.Color(0, 0, 0) }, uAmb: { value: new THREE.Color(0, 0, 0) }, uMaxA: { value: new DataView(hiBuf).getFloat32(0, true) }, uMaxB: { value: new DataView(hiBuf).getFloat32(4, true) }, uSat: { value: .34 }, uVig: { value: .5 }, uRes: { value: new THREE.Vector2(1, 1) } };
+  const bakeU = { uPanel: { value: new THREE.Color(0, 0, 0) }, uAmb: { value: new THREE.Color(0, 0, 0) }, uMaxA: { value: new DataView(hiBuf).getFloat32(0, true) }, uMaxB: { value: new DataView(hiBuf).getFloat32(4, true) }, uSat: { value: .34 }, uVig: { value: .34 }, uRes: { value: new THREE.Vector2(1, 1) } };
   const withBake = <T extends THREE.Material>(m: T) => {
     m.dithering = true; // no film grain any more, and dark gradients would band without this
     m.onBeforeCompile = s => {
@@ -64,13 +64,14 @@ export async function createWorld(canvas: HTMLCanvasElement, capture = false, mo
   const floorMap = woodTexture([176, 128, 86]); floorMap.repeat.set(.7, .7);
   const slatMap = woodTexture([120, 78, 48]); slatMap.rotation = Math.PI / 2; slatMap.repeat.set(.6, .6);
   const oakMap = woodTexture([150, 104, 66]); oakMap.repeat.set(.9, .9);
+  const wear = wearTexture(); wear.repeat.set(.7, .7);
   const plaster = plasterTexture(), weave = weaveTexture(), rugMap = weaveTexture(); plaster.repeat.set(.4, .4); weave.repeat.set(7, 7); rugMap.repeat.set(3, 3);
   const glossy: THREE.MeshStandardMaterial[] = [], gloss = (m: THREE.MeshStandardMaterial) => { m.envMap = envTex; glossy.push(m); return m; };
   const col = (k: Key) => new THREE.Color(PALETTE[k]);
   const mats: Record<Key, THREE.Material> = {
-    wall: matte({ color: col('wall'), map: plaster }), ceil: matte({ color: col('ceil'), map: plaster }), trim: matte({ color: col('trim') }),
-    floor: gloss(baked({ map: floorMap, roughness: .38 })), rug: matte({ color: col('rug'), map: rugMap }),
-    linen: matte({ color: col('linen'), map: weave }), cushion: matte({ color: col('cushion'), map: weave }),
+    wall: baked({ color: col('wall'), map: plaster, bumpMap: plaster, bumpScale: 1.4, roughness: .94 }), ceil: baked({ color: col('ceil'), map: plaster, bumpMap: plaster, bumpScale: 1.4, roughness: .94 }), trim: matte({ color: col('trim') }),
+    floor: gloss(baked({ map: floorMap, bumpMap: floorMap, bumpScale: 1.2, roughnessMap: wear, roughness: .9 })), rug: matte({ color: col('rug'), map: rugMap }),
+    linen: baked({ color: col('linen'), map: weave, bumpMap: weave, bumpScale: 2, roughness: .96 }), cushion: baked({ color: col('cushion'), map: weave, bumpMap: weave, bumpScale: 2, roughness: .96 }),
     slat: gloss(baked({ map: slatMap, roughness: .55 })), oak: gloss(baked({ map: oakMap, roughness: .48 })), ink: gloss(baked({ color: col('ink'), roughness: .35 })),
     stone: gloss(baked({ color: col('stone'), roughness: .55 })), leaf: matte({ color: col('leaf'), side: THREE.DoubleSide }), soil: matte({ color: col('soil') }),
     art: matte({ map: artTexture() }), shade: matte({ color: col('shade'), side: THREE.DoubleSide }),
@@ -85,6 +86,21 @@ export async function createWorld(canvas: HTMLCanvasElement, capture = false, mo
   const glow = new THREE.MeshBasicMaterial({ color: new THREE.Color(0, 0, 0) });
   for (const y of [1, 1.7, 2.4]) { const b = new THREE.Mesh(new THREE.BoxGeometry(.02, .012, 2.2), glow); b.position.set(X - .32, y - .032, -2.3); room.add(b); }
 
+  // ---- hanging planters and the soft sheen of the panel on the floor ----
+  const hangers = new THREE.Group(); scene.add(hangers);
+  let seed = 11; const rn = () => (seed = seed * 16807 % 2147483647) / 2147483647;
+  const hangMats = [new THREE.MeshStandardMaterial({ color: '#a4603c', roughness: .88, envMap: envTex }), new THREE.MeshStandardMaterial({ color: '#7a6a54', roughness: .9, envMap: envTex }), new THREE.MeshStandardMaterial({ color: '#1f4a1c', roughness: .5, side: THREE.DoubleSide, envMap: envTex })], [potM, cordM, leafM] = hangMats;
+  const potG = new THREE.LatheGeometry([[0, 0], [.1, 0], [.15, .12], [.17, .24], [.18, .25], [.15, .25], [0, .2]].map(([a, b]) => new THREE.Vector2(a, b)), 28), cordG = new THREE.CylinderGeometry(.005, .005, 1, 6), leafG = new THREE.SphereGeometry(1, 8, 6).scale(.04, .004, .085), up3 = new THREE.Vector3(0, 1, 0), hold = new THREE.Object3D();
+  for (const [x, z, drop] of [[-3, -.4, 1.05], [3, -.4, .85], [-3.1, 1.7, .8], [3.1, 1.7, 1.1]]) {
+    const y = H - drop - .25, pot = new THREE.Mesh(potG, potM); pot.position.set(x, y, z); hangers.add(pot);
+    for (let i = 0; i < 3; i++) { const a = i / 3 * Math.PI * 2, from = new THREE.Vector3(x + Math.cos(a) * .17, y + .25, z + Math.sin(a) * .17), to = new THREE.Vector3(x, H, z), d = to.clone().sub(from), c = new THREE.Mesh(cordG, cordM); c.position.copy(from).addScaledVector(d, .5); c.scale.y = d.length(); c.quaternion.setFromUnitVectors(up3, d.normalize()); hangers.add(c); }
+    const leaves = new THREE.InstancedMesh(leafG, leafM, 150); let n = 0;
+    for (let v = 0; v < 9; v++) { const a = rn() * 6.28, len = .35 + rn() * .75, steps = Math.floor(150 / 9); for (let k = 0; k < steps && n < 150; k++) { const t = k / steps, r = .17 + .12 * Math.sin(Math.min(t * 4, 1) * 1.57); hold.position.set(x + Math.cos(a) * r + (rn() - .5) * .07, y + .3 - t * len - (t < .2 ? 0 : .08), z + Math.sin(a) * r + (rn() - .5) * .07); hold.rotation.set((rn() - .5) * 1.5, rn() * 6.28, (rn() - .5) * 1.5); hold.scale.setScalar(.7 + rn() * .6); hold.updateMatrix(); leaves.setMatrixAt(n++, hold.matrix); } }
+    leaves.count = n; leaves.frustumCulled = false; hangers.add(leaves);
+  }
+  const sheenCanvas = document.createElement('canvas'); sheenCanvas.width = sheenCanvas.height = 256; { const g = sheenCanvas.getContext('2d')!, gr = g.createRadialGradient(128, 128, 0, 128, 128, 128); gr.addColorStop(0, 'rgba(255,255,255,1)'); gr.addColorStop(.5, 'rgba(255,255,255,.3)'); gr.addColorStop(1, 'rgba(255,255,255,0)'); g.fillStyle = gr; g.fillRect(0, 0, 256, 256); }
+  const sheen = new THREE.Mesh(new THREE.PlaneGeometry(9, 7).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(sheenCanvas), transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, opacity: 0, toneMapped: false })); sheen.position.set(0, .004, PZ + .8); scene.add(sheen);
+
   // ---- product ----
   const product = createProduct(), { root, spin, layers } = product; scene.add(root); root.visible = false;
   const frameIdx = layers.length - 1, productMats: THREE.MeshStandardMaterial[] = [];
@@ -97,7 +113,8 @@ export async function createWorld(canvas: HTMLCanvasElement, capture = false, mo
 
   // ---- live sun, shaped by the panes ----
   const sun = new THREE.DirectionalLight('#ffffff', 0); sun.castShadow = true; sun.target.position.set(0, 0, PZ); scene.add(sun, sun.target);
-  sun.shadow.mapSize.setScalar(capture ? 4096 : coarse || weak ? 1024 : 2048); sun.shadow.radius = 2.5; sun.shadow.bias = -.0005; sun.shadow.normalBias = .025;
+  sun.shadow.mapSize.setScalar(capture ? 2048 : coarse || weak ? 1024 : 2048); sun.shadow.radius = 10; // light from a large panel has wide, soft edges
+  sun.shadow.bias = -.0005; sun.shadow.normalBias = .025;
   Object.assign(sun.shadow.camera, { left: -10, right: 10, top: 10, bottom: -10, near: 1, far: 34 });
   const shape = new THREE.Shape([[-20, -20], [20, -20], [20, 20], [-20, 20]].map(([a, b]) => new THREE.Vector2(a, b)));
   const holeZ = wall ? WINY : PZ;
@@ -111,8 +128,8 @@ export async function createWorld(canvas: HTMLCanvasElement, capture = false, mo
   const beamU = { uBeam: { value: 0 }, uColor: { value: new THREE.Color(1, .85, .6) } };
   const beamMat = new THREE.ShaderMaterial({
     uniforms: beamU, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending,
-    vertexShader: 'varying float vY; varying vec3 vN, vV; void main(){ vY=-position.y; vec4 mv=modelViewMatrix*vec4(position,1.); vN=normalize(normalMatrix*normal); vV=normalize(-mv.xyz); gl_Position=projectionMatrix*mv; }',
-    fragmentShader: 'uniform float uBeam; uniform vec3 uColor; varying float vY; varying vec3 vN, vV; void main(){ float a=pow(1.-clamp(vY,0.,1.),1.3)*pow(abs(dot(normalize(vN),normalize(vV))),1.6); gl_FragColor=vec4(uColor*a*uBeam*1.5,1.); }',
+    vertexShader: 'varying float vY; varying vec2 vE; varying vec3 vN, vV; void main(){ vY=-position.y; vE=uv; vec3 q=position; q.xz*=1.+vY*.55; vec4 mv=modelViewMatrix*vec4(q,1.); vN=normalize(normalMatrix*normal); vV=normalize(-mv.xyz); gl_Position=projectionMatrix*mv; }',
+    fragmentShader: 'uniform float uBeam; uniform vec3 uColor; varying float vY; varying vec2 vE; varying vec3 vN, vV; void main(){ float a=pow(1.-clamp(vY,0.,1.),1.1)*pow(abs(dot(normalize(vN),normalize(vV))),1.2)*smoothstep(0.,.5,min(vE.x,1.-vE.x)); gl_FragColor=vec4(uColor*a*uBeam*1.5,1.); }',
   });
   const beamBits = panes().map(p => { const g = new THREE.BoxGeometry(p.w, 1, p.d); g.translate(0, -.5, 0); const m = new THREE.Mesh(g, beamMat); m.matrixAutoUpdate = false; m.frustumCulled = false; m.userData.pane = p; scene.add(m); return m; });
   const N = coarse ? 160 : 320, pts = new Float32Array(N * 3); for (let i = 0; i < N; i++) { pts[i * 3] = Math.random() * 7 - 3.5; pts[i * 3 + 1] = Math.random() * H; pts[i * 3 + 2] = Math.random() * 6 - 3.2; }
@@ -224,14 +241,14 @@ export async function createWorld(canvas: HTMLCanvasElement, capture = false, mo
     const night = up(p, .86, 1), floorsIn = up(p, .88, .96);
     const dome = (skyDome.material as THREE.ShaderMaterial).uniforms; dome.uTop.value.copy(s.top); dome.uHor.value.copy(s.hor);
     s.top.lerp(paneSky, floorsIn); s.hor.lerp(paneSky, floorsIn); skyUniforms.uGain.value = lerp(skyUniforms.uGain.value, 2.4, floorsIn); s.key.lerp(paneSky, floorsIn); s.keyI = lerp(s.keyI, 9, floorsIn); s.sun.lerp(wall ? finalSunW : finalSun, floorsIn).normalize(); skyUniforms.uKey.value.copy(s.key); // from outside, this room's panes read like the others
-    bakeU.uPanel.value.copy(s.rect).multiplyScalar(s.rectI * ignite * lit * .38).lerp(sunlit, floorsIn);
-    bakeU.uAmb.value.copy(dullC).multiplyScalar(lerp(2.4, .2 + s.amb * .75, ignite) * lit * (1 - floorsIn * .8));
+    bakeU.uPanel.value.copy(s.rect).multiplyScalar(s.rectI * ignite * lit * .72).lerp(sunlit, floorsIn);
+    bakeU.uAmb.value.copy(dullC).multiplyScalar(lerp(2.4, .25 + s.amb * 1.3, ignite) * lit * (1 - floorsIn * .8));
     room.visible = stage < .995;
-    sun.color.copy(s.key); sun.intensity = s.keyI * 1.7 * ignite * lit; sun.position.copy(sun.target.position).addScaledVector(s.sun, 18);
+    sun.color.copy(s.key); sun.intensity = s.keyI * 2.1 * ignite * lit; hangers.visible = room.visible; for (const m of hangMats) m.envMapIntensity = lerp(.25, .3 + s.amb * .95, ignite) * lit; sheen.material.color.copy(s.key); sheen.material.opacity = ignite * lit * (1 - night) * .16; sun.position.copy(sun.target.position).addScaledVector(s.sun, 18);
     for (const m of glossy) m.envMapIntensity = (.03 + s.amb * .2 * ignite) * lit;
     for (const m of productMats) m.envMapIntensity = m.map ? .08 : lerp(.35, .95, Math.max(ignite, stage)); // only the wood has a map; bright reflections wash it out
     glow.color.setRGB(3.4, 2, 1).multiplyScalar(night + .06);
-    const dayBeam = ignite * (.13 - .05 * up(p, .7, .8)) * lit * (1 - night) * (1 - e * .4), beam = lerp(dayBeam, wall ? .3 : .15, floorsIn);
+    const dayBeam = ignite * (.17 - .05 * up(p, .7, .8)) * lit * (1 - night) * (1 - e * .4), beam = lerp(dayBeam, wall ? .3 : .15, floorsIn);
     beamU.uBeam.value = beam; beamU.uColor.value.copy(s.key); dustU.uA.value = dayBeam * 1.1; dustU.uTime.value = time; glowU.uA.value = stage * .34;
     stageFloor.visible = stage > .01;
     const by = root.position.y + layers[frameIdx].obj.position.y, dy = Math.max(.05, s.sun.y);
@@ -243,7 +260,7 @@ export async function createWorld(canvas: HTMLCanvasElement, capture = false, mo
       const q = b.userData.pane; b.visible = beam > .002;
       if (wall) b.matrix.set(1, rx, 0, q.x, 0, ry, 1, WINY + q.z, 0, rz, 0, WZ, 0, 0, 0, 1); else b.matrix.set(1, rx, 0, q.x, 0, ry, 0, by, 0, rz, 1, q.z + PZ, 0, 0, 0, 1);
     }
-    if (wall) halo.position.set(0, WINY, WZ + .1); else halo.position.set(0, by - .1, PZ); halo.material.color.copy(skyUniforms.uKey.value); halo.material.opacity = skyUniforms.uSrc.value * .12 * lit * Math.max(1 - night, floorsIn); halo.visible = halo.material.opacity > .004;
+    if (wall) halo.position.set(0, WINY, WZ + .1); else halo.position.set(0, by - .1, PZ); halo.material.color.copy(skyUniforms.uKey.value); halo.material.opacity = skyUniforms.uSrc.value * .26 * lit * Math.max(1 - night, floorsIn); halo.visible = halo.material.opacity > .004;
     // the building reveal
     city.visible = skyDome.visible = p > .86;
     if (city.visible) { storeyMat.color.setScalar(5.5 * (floorsIn + .03)); paneMat.color.setScalar(3 * (floorsIn + .02)); for (const m of cityBeams) m.uniforms.uBeam.value = floorsIn * .55; for (const m of cityPatches) m.opacity = floorsIn * .8; }

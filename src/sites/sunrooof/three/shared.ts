@@ -9,15 +9,15 @@ export const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
 /** One day by the clock; `tod` runs 0 (06:10) to 1 (21:10). Colours hold between pairs of stops. */
 const at = (h: number, m: number) => (h * 60 + m - 370) / 900;
 const KEYS = [
-  { at: 0, top: '#2c2f63', hor: '#ff8f5a', gain: 1.7, sun: [0.55, 0.62, -0.15], key: '#ff9a5a', keyI: 5.5, rect: '#ffb27e', rectI: 5, amb: 0.3 },
-  { at: at(8, 0), top: '#2c2f63', hor: '#ff8f5a', gain: 2.2, sun: [0.4, 0.72, -0.16], key: '#ff9a5a', keyI: 6, rect: '#ffb27e', rectI: 6.5, amb: 0.38 },
-  { at: at(8, 40), top: '#5f95ea', hor: '#d6e7ff', gain: 3.2, sun: [0.3, 0.76, -0.17], key: '#b9d4ff', keyI: 7.5, rect: '#cde0ff', rectI: 10, amb: 0.6 },
-  { at: at(11, 20), top: '#5a9bf0', hor: '#dcebff', gain: 4.6, sun: [-0.3, 0.85, -0.2], key: '#c4dcff', keyI: 10, rect: '#d6e6ff', rectI: 14, amb: 0.8 },
-  { at: at(12, 0), top: '#5a9bf0', hor: '#eaf3ff', gain: 5.2, sun: [-0.4, 0.85, -0.2], key: '#ffffff', keyI: 11, rect: '#fffaf3', rectI: 15, amb: 0.85 },
-  { at: at(15, 0), top: '#5a9bf0', hor: '#eaf3ff', gain: 4.8, sun: [-0.55, 0.74, -0.2], key: '#ffffff', keyI: 10, rect: '#fffaf3', rectI: 13, amb: 0.78 },
-  { at: at(15, 40), top: '#7488c8', hor: '#ffe0ae', gain: 3.6, sun: [-0.6, 0.66, -0.2], key: '#ffe7b0', keyI: 8.5, rect: '#fff0cd', rectI: 10.5, amb: 0.62 },
-  { at: at(17, 0), top: '#6a6a9e', hor: '#ffc266', gain: 2.7, sun: [-0.72, 0.5, -0.2], key: '#ffd98c', keyI: 6.5, rect: '#ffe3ad', rectI: 7.5, amb: 0.45 },
-  { at: at(18, 0), top: '#191b44', hor: '#f2683c', gain: 1.0, sun: [-0.8, 0.42, -0.12], key: '#e2572b', keyI: 3, rect: '#d97a55', rectI: 2.4, amb: 0.16 },
+  { at: 0, top: '#2c2f63', hor: '#ff8f5a', gain: 1.7, sun: [0.62, 0.62, -0.08], key: '#ff9a5a', keyI: 5.5, rect: '#ffb27e', rectI: 5, amb: 0.3 },
+  { at: at(8, 0), top: '#2c2f63', hor: '#ff8f5a', gain: 2.2, sun: [0.42, 0.74, -0.08], key: '#ff9a5a', keyI: 6, rect: '#ffb27e', rectI: 6.5, amb: 0.38 },
+  { at: at(8, 40), top: '#5f95ea', hor: '#d6e7ff', gain: 3.2, sun: [0.34, 0.8, -0.08], key: '#b9d4ff', keyI: 7.5, rect: '#cde0ff', rectI: 10, amb: 0.6 },
+  { at: at(11, 20), top: '#5a9bf0', hor: '#dcebff', gain: 4.6, sun: [0.05, 0.98, -0.08], key: '#c4dcff', keyI: 10, rect: '#d6e6ff', rectI: 14, amb: 0.8 },
+  { at: at(12, 0), top: '#5a9bf0', hor: '#eaf3ff', gain: 5.2, sun: [0, 1, -0.08], key: '#ffffff', keyI: 11, rect: '#fffaf3', rectI: 15, amb: 0.85 },
+  { at: at(15, 0), top: '#5a9bf0', hor: '#eaf3ff', gain: 4.8, sun: [-0.1, 0.98, -0.08], key: '#ffffff', keyI: 10, rect: '#fffaf3', rectI: 13, amb: 0.78 },
+  { at: at(15, 40), top: '#7488c8', hor: '#ffe0ae', gain: 3.6, sun: [-0.26, 0.92, -0.08], key: '#ffe7b0', keyI: 8.5, rect: '#fff0cd', rectI: 10.5, amb: 0.62 },
+  { at: at(17, 0), top: '#6a6a9e', hor: '#ffc266', gain: 2.7, sun: [-0.62, 0.66, -0.08], key: '#ffd98c', keyI: 6.5, rect: '#ffe3ad', rectI: 7.5, amb: 0.45 },
+  { at: at(18, 0), top: '#191b44', hor: '#f2683c', gain: 1.0, sun: [-0.8, 0.5, -0.08], key: '#e2572b', keyI: 3, rect: '#d97a55', rectI: 2.4, amb: 0.16 },
   { at: 1, top: '#070a1c', hor: '#1d2148', gain: 0.4, sun: [-0.9, -0.25, 0.1], key: '#000000', keyI: 0, rect: '#8088c0', rectI: 0.9, amb: 0.06 },
 ].map(k => ({ ...k, top: new THREE.Color(k.top), hor: new THREE.Color(k.hor), key: new THREE.Color(k.key), rect: new THREE.Color(k.rect), sun: new THREE.Vector3(...(k.sun as [number, number, number])).normalize() }));
 
@@ -102,10 +102,19 @@ export function weaveTexture() {
   t.colorSpace = THREE.SRGBColorSpace; return t;
 }
 /** Very soft trowelled mottling for walls and ceiling. */
+/** Grey map of scuffs, hairline scratches and dust: lighter means rougher. */
+export function wearTexture() {
+  return noiseCanvas(1024, 1024, g => {
+    g.fillStyle = '#7a7a7a'; g.fillRect(0, 0, 1024, 1024);
+    for (let i = 0; i < 90; i++) { const x = rnd(0, 1024), y = rnd(0, 1024), r = rnd(40, 200), v = Math.random() > .5 ? 255 : 40, gr = g.createRadialGradient(x, y, 0, x, y, r); gr.addColorStop(0, `rgba(${v},${v},${v},.22)`); gr.addColorStop(1, `rgba(${v},${v},${v},0)`); g.fillStyle = gr; g.fillRect(x - r, y - r, r * 2, r * 2); }
+    for (let i = 0; i < 520; i++) { g.strokeStyle = `rgba(255,255,255,${rnd(.08, .4)})`; g.lineWidth = rnd(.4, 1.3); const x = rnd(0, 1024), y = rnd(0, 1024), a = rnd(0, 6.3), l = rnd(12, 150); g.beginPath(); g.moveTo(x, y); g.quadraticCurveTo(x + Math.cos(a) * l * .5 + rnd(-8, 8), y + Math.sin(a) * l * .5 + rnd(-8, 8), x + Math.cos(a) * l, y + Math.sin(a) * l); g.stroke(); }
+    for (let i = 0; i < 2600; i++) { const v = Math.random() > .5 ? 255 : 0; g.fillStyle = `rgba(${v},${v},${v},${rnd(.05, .3)})`; g.fillRect(rnd(0, 1024), rnd(0, 1024), rnd(1, 3), rnd(1, 3)); }
+  });
+}
 export function plasterTexture() {
   const t = noiseCanvas(512, 512, g => {
     g.fillStyle = '#f2f2f2'; g.fillRect(0, 0, 512, 512);
-    for (let i = 0; i < 260; i++) { const x = rnd(0, 512), y = rnd(0, 512), r = rnd(30, 110), v = Math.random() > .5 ? 255 : 150, gr = g.createRadialGradient(x, y, 0, x, y, r); gr.addColorStop(0, `rgba(${v},${v},${v},.014)`); gr.addColorStop(1, `rgba(${v},${v},${v},0)`); g.fillStyle = gr; g.fillRect(x - r, y - r, r * 2, r * 2); }
+    for (let i = 0; i < 260; i++) { const x = rnd(0, 512), y = rnd(0, 512), r = rnd(30, 110), v = Math.random() > .5 ? 255 : 150, gr = g.createRadialGradient(x, y, 0, x, y, r); gr.addColorStop(0, `rgba(${v},${v},${v},.04)`); gr.addColorStop(1, `rgba(${v},${v},${v},0)`); g.fillStyle = gr; g.fillRect(x - r, y - r, r * 2, r * 2); }
   });
   t.colorSpace = THREE.SRGBColorSpace; return t;
 }
