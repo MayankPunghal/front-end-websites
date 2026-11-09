@@ -8,9 +8,9 @@ else dispatchEvent(new Event('scene-ready'));
 async function boot(story: HTMLElement) {
   const { createWorld } = await import('./three/world');
   const canvas = story.querySelector<HTMLCanvasElement>('canvas')!;
-  let world: ReturnType<typeof createWorld>;
-  try { world = createWorld(canvas); }
-  catch { document.documentElement.classList.remove('is-3d'); dispatchEvent(new Event('scene-ready')); return; }
+  let world: Awaited<ReturnType<typeof createWorld>>;
+  try { world = await createWorld(canvas); }
+  catch (err) { console.error(err); document.documentElement.classList.remove('is-3d'); dispatchEvent(new Event('scene-ready')); return; }
 
   const clamp = (x: number) => Math.min(1, Math.max(0, x));
   const chapters = [...story.querySelectorAll<HTMLElement>('[data-in]')].map(el => ({ el, a: +el.dataset.in!, b: +el.dataset.out!, shown: -1 }));
@@ -19,7 +19,7 @@ async function boot(story: HTMLElement) {
   const fine = matchMedia('(min-width: 48rem)').matches;
   const NAMES = ['Dawn', 'Morning', 'Midday', 'Golden hour', 'Dusk', 'Night'];
 
-  let target = 0, p = 0, last = performance.now(), since = last, drops = 0, low = 0, frames = 0, visible = true, lastW = -1;
+  let target = 0, p = 0, last = performance.now(), since = last, drops = 0, low = 0, idle = 0, frames = 0, visible = true, lastW = -1;
   const read = () => { target = clamp(-story.getBoundingClientRect().top / (story.offsetHeight - innerHeight)); };
   addEventListener('scroll', read, { passive: true });
   const resize = () => { world.resize(); read(); };
@@ -55,7 +55,10 @@ async function boot(story: HTMLElement) {
     if (!visible || document.hidden) { last = now; return; }
     const dt = Math.min(.05, (now - last) / 1000); last = now;
     p += (target - p) * (1 - Math.exp(-dt * 5.5)); if (Math.abs(target - p) < .00002) p = target;
-    world.update(p, dt); world.render(); overlay();
+    const moving = Math.abs(target - p) > .00005; idle = moving ? 0 : idle + 1;
+    // once the scroll settles, only the clouds and dust are moving: a third of the frames is plenty
+    if (moving || idle % 3 === 0) { world.update(p, dt); world.render(); overlay(); }
+    if (!moving) { frames = 0; since = now; return; }
     // drop quality if the machine cannot hold about 35 fps
     frames++; if (now - since > 1200) { low = frames / (now - since) * 1000 < 34 ? low + 1 : 0; if (low > 1) { drops += +world.degrade(); low = 0; } document.documentElement.dataset.q = String(drops); frames = 0; since = now; }
   };

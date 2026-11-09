@@ -20,6 +20,7 @@ const planned = ['The machine first', 'Architecture monograph'];
       a.row:hover { color: var(--sun); } a.row:focus-visible { outline: 2px solid var(--sun); outline-offset: 4px; }
       .name { font-size: clamp(3rem, 1rem + 9vw, 9rem); line-height: .95; font-weight: 300; font-stretch: 112%; letter-spacing: -.035em; overflow-wrap: break-word; min-width: 0; }
       .next { display: flex; justify-content: space-between; gap: 1.5rem; padding-block: 1rem; color: var(--mute); }
+      a.next { color: var(--fg); text-decoration: none; transition: color .25s; } a.next:hover { color: var(--sun); } a.next:focus-visible { outline: 2px solid var(--sun); outline-offset: 4px; }
       .meta { color: var(--mute); }
     </style>
   </head>
@@ -29,7 +30,7 @@ const planned = ['The machine first', 'Architecture monograph'];
       <ol>
         <li><a class="row" href={`${base}/sunrooof/`}><span class="name">Sunrooof</span><span class="meta">One day, one scroll</span></a></li>
         {planned.map(p => <li class="next"><span>Sunrooof: {p}</span><span>Not built yet</span></li>)}
-        <li class="next"><span>Sunrooof: original rebuild</span><span>On the main branch</span></li>
+        <li><a class="next" href={`${base}/original/`}><span>Sunrooof: original</span><span>Open site</span></a></li>
       </ol>
     </main>
   </body>

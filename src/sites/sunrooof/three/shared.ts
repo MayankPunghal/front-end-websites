@@ -35,7 +35,7 @@ export const skyMaterial = new THREE.ShaderMaterial({
     uniform vec3 uTop, uHor, uSun; uniform float uGain, uTime; varying vec3 vW;
     float h(vec2 p){ return fract(sin(dot(p, vec2(127.1,311.7))) * 43758.5453); }
     float n(vec2 p){ vec2 i=floor(p), f=fract(p); f=f*f*(3.-2.*f); return mix(mix(h(i),h(i+vec2(1,0)),f.x), mix(h(i+vec2(0,1)),h(i+vec2(1,1)),f.x), f.y); }
-    float fbm(vec2 p){ float a=.5, s=0.; for(int i=0;i<5;i++){ s+=a*n(p); p=p*2.03+vec2(1.7,9.2); a*=.5; } return s; }
+    float fbm(vec2 p){ float a=.5, s=0.; for(int i=0;i<3;i++){ s+=a*n(p); p=p*2.03+vec2(1.7,9.2); a*=.5; } return s; }
     void main(){
       vec3 d = normalize(vW - cameraPosition);
       float y = clamp(d.y, .02, 1.);
@@ -83,6 +83,35 @@ export function windowTexture() {
   const t = noiseCanvas(256, 512, g => {
     g.fillStyle = '#000'; g.fillRect(0, 0, 256, 512);
     for (let y = 6; y < 512; y += 16) for (let x = 4; x < 256; x += 12) if (Math.random() > .68) { g.fillStyle = `rgba(255,${200 + rnd(0, 40)},${140 + rnd(0, 60)},${rnd(.35, 1)})`; g.fillRect(x, y, 8, 6); }
+  });
+  t.colorSpace = THREE.SRGBColorSpace; return t;
+}
+
+/** Near-white woven cloth, multiplied over a fabric colour. */
+export function weaveTexture() {
+  const t = noiseCanvas(256, 256, g => {
+    g.fillStyle = '#f4f4f4'; g.fillRect(0, 0, 256, 256);
+    for (let i = 0; i < 256; i += 4) { g.fillStyle = `rgba(0,0,0,${rnd(.05, .13)})`; g.fillRect(i, 0, 1.5, 256); g.fillStyle = `rgba(0,0,0,${rnd(.05, .13)})`; g.fillRect(0, i, 256, 1.5); }
+    for (let i = 0; i < 2400; i++) { g.fillStyle = `rgba(255,255,255,${rnd(.04, .2)})`; g.fillRect(rnd(0, 256), rnd(0, 256), rnd(1, 7), 1); }
+  });
+  t.colorSpace = THREE.SRGBColorSpace; return t;
+}
+/** Very soft trowelled mottling for walls and ceiling. */
+export function plasterTexture() {
+  const t = noiseCanvas(512, 512, g => {
+    g.fillStyle = '#f2f2f2'; g.fillRect(0, 0, 512, 512);
+    for (let i = 0; i < 260; i++) { const x = rnd(0, 512), y = rnd(0, 512), r = rnd(30, 110), v = Math.random() > .5 ? 255 : 150, gr = g.createRadialGradient(x, y, 0, x, y, r); gr.addColorStop(0, `rgba(${v},${v},${v},.014)`); gr.addColorStop(1, `rgba(${v},${v},${v},0)`); g.fillStyle = gr; g.fillRect(x - r, y - r, r * 2, r * 2); }
+  });
+  t.colorSpace = THREE.SRGBColorSpace; return t;
+}
+/** An abstract painting for the back wall. */
+export function artTexture() {
+  const t = noiseCanvas(512, 512, g => {
+    g.fillStyle = '#d9c8ab'; g.fillRect(0, 0, 512, 512);
+    g.fillStyle = '#8c4f2c'; g.beginPath(); g.ellipse(180, 300, 150, 210, .3, 0, 7); g.fill();
+    g.fillStyle = '#2f2a26'; g.beginPath(); g.ellipse(330, 210, 110, 170, -.5, 0, 7); g.fill();
+    g.fillStyle = '#e9b866'; g.beginPath(); g.arc(120, 130, 58, 0, 7); g.fill();
+    for (let i = 0; i < 3000; i++) { const v = Math.random() > .5 ? 255 : 0; g.fillStyle = `rgba(${v},${v},${v},.05)`; g.fillRect(rnd(0, 512), rnd(0, 512), rnd(4, 40), 1); }
   });
   t.colorSpace = THREE.SRGBColorSpace; return t;
 }
