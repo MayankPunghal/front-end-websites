@@ -33,6 +33,7 @@ const LAYERS = ['Housing', 'Thermal fins', 'Light source', 'Advanced optics', 'S
       <article class="ch ch--right ch--br" data-in=".825" data-out=".895"><h2>We were never meant to be living under false ceilings</h2><p>We were meant to live under the sun.</p></article>
       <article class="ch ch--end" data-in=".945" data-out="1"><h2>Bring the sun experience to any room, any floor</h2><a class="film__cta" href="/pages/contact-us" data-lead>Book a call</a></article>
       <ul class="labels" aria-hidden="true">{LAYERS.map(l => <li data-layer>{l}</li>)}</ul>
+      <div class="mount" role="group" aria-label="Show SUNROOOF mounted in"><button type="button" data-mount="ceiling" aria-pressed="true">Ceiling</button><button type="button" data-mount="wall" aria-pressed="false">Window</button></div>
       <p class="clock" data-clock aria-hidden="true"><span data-clock-t>06:10</span> <span data-clock-n>Dawn</span></p>
     </div>
   </section>
@@ -76,6 +77,12 @@ const LAYERS = ['Housing', 'Thermal fins', 'Light source', 'Advanced optics', 'S
     .is-film .film .labels li { padding-left: 1.5rem; } .is-film .film .labels li::before { width: 1.1rem; }
     .is-film .film__awards { display: none; }
   }
+  .is-film .film video { transition: opacity .35s; }
+  .is-film .mount { display: flex; position: absolute; left: 50%; translate: -50% 0; bottom: 1.25rem; padding: .25rem; border-radius: 99px; background: rgb(0 0 0 / .55); }
+  .mount { display: none; } .mount button { min-height: 2.75rem; padding-inline: 1.25rem; border: 0; border-radius: 99px; background: none; color: #fff; font: inherit; font-size: .9375rem; cursor: pointer; transition: background-color .25s, color .25s; }
+  .mount button[aria-pressed=true] { background: #fff; color: #111; } .mount button:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+  @media (max-width: 48rem) { .is-film .clock { bottom: auto; top: 1rem; } }
+  @media (max-width: 48rem) { .is-film .film .ch--low, .is-film .film .ch--end { bottom: 5.5rem; } }
 </style>
 
 <script>
