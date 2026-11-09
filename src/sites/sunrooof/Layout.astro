@@ -1,0 +1,53 @@
+---
+import '@fontsource-variable/mona-sans/wdth.css';
+import './site.css';
+import { BOOK } from './content';
+interface Props { title: string; description: string }
+const { title, description } = Astro.props;
+const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+const home = `${base}/sunrooof/`;
+---
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <link rel="icon" href={`${base}/favicon.svg`} />
+    <script is:inline>
+      (function () {
+        var d = document.documentElement, gl = null;
+        try { gl = document.createElement('canvas').getContext('webgl2'); } catch (e) {}
+        if (gl && !matchMedia('(prefers-reduced-motion: reduce)').matches) d.classList.add('is-3d');
+        try { if (!sessionStorage.getItem('sr-seen')) { d.classList.add('loading'); sessionStorage.setItem('sr-seen', '1'); } } catch (e) {}
+      })();
+    </script>
+    <noscript><style>.loader { display: none !important; }</style></noscript>
+  </head>
+  <body>
+    <div class="loader" aria-hidden="true" data-loader data-src={`${base}/brand/loader.json`}><div data-loader-anim></div></div>
+    <a class="skip" href="#main">Skip to content</a>
+    <header class="top">
+      <a href={home} aria-label="SUNROOOF home"><img src={`${base}/brand/logo-light.svg`} alt="SUNROOOF" width="150" height="20" /></a>
+      <nav aria-label="Main">
+        <a href={`${home}how-it-works/`}>How it works</a>
+        <a href={BOOK}>Book a call</a>
+      </nav>
+    </header>
+    <main id="main"><slot /></main>
+    <script>
+      const el = document.querySelector<HTMLElement>('[data-loader]')!, root = document.documentElement;
+      if (root.classList.contains('loading')) {
+        const calm = matchMedia('(prefers-reduced-motion: reduce)').matches;
+        import('lottie-web/build/player/lottie_light').then(({ default: lottie }) => {
+          const a = lottie.loadAnimation({ container: el.firstElementChild as Element, renderer: 'svg', loop: false, autoplay: !calm, path: el.dataset.src! });
+          if (calm) a.addEventListener('DOMLoaded', () => a.goToAndStop(a.totalFrames - 1, true));
+        }).catch(() => {});
+        const t0 = performance.now(); let gone = false;
+        const done = () => { if (gone) return; gone = true; setTimeout(() => { el.classList.add('done'); root.classList.remove('loading'); }, Math.max(0, 3800 - (performance.now() - t0))); };
+        addEventListener('scene-ready', done, { once: true }); setTimeout(done, 7000);
+      }
+    </script>
+  </body>
+</html>

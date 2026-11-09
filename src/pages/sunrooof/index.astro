@@ -1,0 +1,86 @@
+---
+import Layout from '../../sites/sunrooof/Layout.astro';
+import Footer from '../../sites/sunrooof/Footer.astro';
+import { L, LS, BOOK, awards, compare, designs, spaces, uses } from '../../sites/sunrooof/content';
+const LAYERS = ['Housing', 'Thermal fins', 'Light source', 'Advanced optics', 'Special lenses', 'Sky surface', 'Design frame'];
+const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+---
+<Layout title="SUNROOOF: Bring sunlight to spaces where it is not possible to have it" description="SUNROOOF is a wellness lighting technology that brings the experience and benefits of sunlight inside any space through advanced optics, special lenses and AI.">
+  <section class="story" data-story aria-label="One day under SUNROOOF">
+    <div class="story__pin">
+      <canvas aria-hidden="true"></canvas>
+      <img class="story__poster" src={L(compare.after, 1600)} srcset={LS(compare.after, [800, 1200, 1600, 2200])} sizes="100vw" width="1440" height="720" alt={compare.alt} />
+      <article class="ch ch--hero" data-in="0" data-out=".075">
+        <h1>Bring Sunlight to Spaces Where it is Not Possible to Have it</h1>
+        <p>through technology, innovation and design</p>
+      </article>
+      <article class="ch ch--mid" data-in=".1" data-out=".2"><h2>Transforming dull, dark and lifeless areas</h2></article>
+      <article class="ch ch--left" data-in=".25" data-out=".335"><h2>Changes colours &amp; brightness just like the sky</h2></article>
+      <article class="ch ch--right" data-in=".345" data-out=".415"><h2>Feel the light coming from far away</h2></article>
+      <article class="ch ch--left ch--low" data-in=".47" data-out=".62">
+        <h2>Engineered to bring Sun Indoors</h2>
+        <p>Advanced optics, special lenses and AI.</p>
+        <a class="link" href={`${base}/sunrooof/how-it-works/`}>See how it works</a>
+      </article>
+      <article class="ch ch--left" data-in=".72" data-out=".815">
+        <h2>Lighting that brings health and wellness</h2>
+        <p>We spend 90% of our time indoors, missing all the vital benefits of sunlight.</p>
+      </article>
+      <article class="ch ch--right" data-in=".825" data-out=".895"><h2>We were never meant to be living under false ceilings</h2><p>We were meant to live under the sun.</p></article>
+      <article class="ch ch--end" data-in=".945" data-out="1">
+        <h2>Bring the sun experience to any room, any floor</h2>
+        <a class="btn" href={BOOK}>Book a call</a>
+      </article>
+      <ul class="labels" aria-hidden="true">{LAYERS.map(l => <li data-layer>{l}</li>)}</ul>
+      <p class="clock" data-clock aria-hidden="true"><span data-clock-t>06:10</span> <span data-clock-n>Dawn</span></p>
+    </div>
+  </section>
+
+  <section class="compare" data-compare style="--pos:50%" aria-label="Before and after SUNROOOF">
+    <img src={L(compare.after, 1600)} srcset={LS(compare.after, [800, 1200, 1600, 2200])} sizes="100vw" width="1440" height="720" alt={compare.alt} loading="lazy" />
+    <img class="compare__b" src={L(compare.before, 1600)} srcset={LS(compare.before, [800, 1200, 1600, 2200])} sizes="100vw" width="1440" height="720" alt="The same room before SUNROOOF, dark" loading="lazy" />
+    <span class="compare__rule"></span><span class="compare__knob" aria-hidden="true"></span>
+    <input type="range" min="0" max="100" value="50" aria-label="Drag to compare the room before and after SUNROOOF" />
+    <p class="compare__t compare__t--a">Before</p><p class="compare__t compare__t--z">After</p>
+  </section>
+
+  <section class="future wrap">
+    <h2>The Future of Indoor Lighting.</h2>
+    <p>SUNROOOF is the worlds first wellness lighting technology that brings the experience and benefits of sunlight inside any space through advanced optics, special lenses and AI.</p>
+  </section>
+
+  <section class="spaces wrap">
+    <div class="spaces__head">
+      <h2>Courtyard experience anywhere</h2>
+      <dl>{Object.entries(uses).map(([k, v]) => <div><dt>{k}</dt><dd>{v.join(', ')}</dd></div>)}</dl>
+    </div>
+    <div class="spaces__grid">{spaces.map((s, i) => <img src={L(s, 1100)} srcset={LS(s, [600, 900, 1400])} sizes={i === 0 || i === 3 ? '(min-width: 48rem) 60vw, 100vw' : '(min-width: 48rem) 36vw, 100vw'} width="1100" height="800" alt="SUNROOOF installed in a real space" loading="lazy" />)}</div>
+  </section>
+
+  <section class="designs wrap" data-designs>
+    <div class="designs__list">
+      <h2>Choose the design you love</h2>
+      <div role="group" aria-label="Designs">{designs.map(([n], i) => <button type="button" aria-pressed={i === 0 ? 'true' : 'false'} data-i={i}>{n}</button>)}</div>
+    </div>
+    <div class="designs__stage">{designs.map(([n, f], i) => <img src={L(f, 1400)} srcset={LS(f, [700, 1000, 1400])} sizes="(min-width: 48rem) 62vw, 100vw" width="1100" height="1100" alt={`${n} SUNROOOF ceiling`} loading="lazy" data-on={i === 0 ? '' : undefined} />)}</div>
+  </section>
+
+  <section class="voice wrap">
+    <blockquote>
+      <p>I specified SUNROOOF for a high-end residence where I did the interiors. The quality was amazing and it gave a near-perfect daylight effect.</p>
+      <footer>Kundan Save</footer>
+    </blockquote>
+    <ul class="awards">{awards.map(([f, n]) => <li><img src={L(f, 160)} width="56" height="56" alt={n} loading="lazy" /></li>)}</ul>
+  </section>
+
+  <Footer />
+</Layout>
+
+<script>
+  import '../../sites/sunrooof/home';
+  document.querySelectorAll<HTMLElement>('[data-designs]').forEach(d => {
+    const bs = [...d.querySelectorAll('button')], im = [...d.querySelectorAll('img')];
+    const go = (i: number) => { bs.forEach((b, k) => b.setAttribute('aria-pressed', String(k === i))); im.forEach((m, k) => m.toggleAttribute('data-on', k === i)); };
+    bs.forEach((b, i) => { b.addEventListener('click', () => go(i)); b.addEventListener('pointerenter', () => go(i)); });
+  });
+</script>
