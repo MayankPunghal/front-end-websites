@@ -4,35 +4,36 @@ import HomeBody from '../components/HomeBody.astro';
 import '../styles/home.css';
 import { L, LS } from '../lib/live';
 import { slides } from '../lib/homeData';
+const LAYERS = ['Housing', 'Thermal fins', 'Light source', 'Advanced optics', 'Special lenses', 'Sky surface', 'Design frame'];
 ---
 <Base
   title="SUNROOOF: Sun Lighting Solutions for Modern Interiors"
   description="SUNROOOF brings the feel of natural daylight indoors with sun lighting for homes, offices, hotels, retail spaces and premium interiors."
   image={L(slides[0].after, 1200)}
 >
-  <!-- 1 · HERO: before / after slideshow -->
-  <section class="hero" data-hero aria-roledescription="carousel" aria-label="Before and after SUNROOOF">
-    {slides.map((s, i) => (
-      <div class="hs" data-slide data-on={i === 0 ? '' : undefined} aria-hidden={i === 0 ? undefined : 'true'}>
-        <img class="hs__img hs__before" src={L(s.before, 1600)} srcset={LS(s.before, [800, 1200, 1600, 2200])} sizes="100vw" width="1440" height="720" alt="" loading={i === 0 ? 'eager' : 'lazy'} decoding="async" />
-        <img class="hs__img hs__after" src={L(s.after, 1600)} srcset={LS(s.after, [800, 1200, 1600, 2200])} sizes="100vw" width="1440" height="720" alt={s.alt} loading={i === 0 ? 'eager' : 'lazy'} decoding="async" fetchpriority={i === 0 ? 'high' : undefined} />
-      </div>
-    ))}
-    <div class="hero__shade"></div>
-    <div class="hero__copy">
-      <h1>Bring Sunlight to Spaces Where it is Not Possible to Have it</h1>
-      <p>through technology, innovation and design</p>
-    </div>
-    <div class="hero__toggle" role="group" aria-label="Show before or after">
-      <button type="button" data-state="before" aria-pressed="false">Before</button>
-      <button type="button" data-state="after" aria-pressed="true">After</button>
-    </div>
-    <button class="hero__nav hero__prev" type="button" aria-label="Previous slide" data-prev><svg viewBox="0 0 11 18" width="11" height="18" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M10 1 2 9l8 8"/></svg></button>
-    <button class="hero__nav hero__next" type="button" aria-label="Next slide" data-next><svg viewBox="0 0 11 18" width="11" height="18" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M1 1l8 8-8 8"/></svg></button>
-    <div class="hero__awards">
-      <img src={L('ba-logo-1.png', 120)} width="44" height="44" alt="The Economic Times" loading="lazy" />
-      <img src={L('ba-logo-2.png', 120)} width="44" height="44" alt="iF Design Award" loading="lazy" />
-      <img src={L('ba-logo-3.png', 120)} width="44" height="44" alt="Good Design Award" loading="lazy" />
+  <!-- 1 · HERO: one day under SUNROOOF, a film scrubbed by scroll -->
+  <section class="film" data-film="/film" aria-label="One day under SUNROOOF">
+    <div class="film__pin">
+      <video aria-hidden="true" muted playsinline preload="auto" tabindex="-1"></video>
+      <img class="film__poster" src={L(slides[0].after, 1600)} srcset={LS(slides[0].after, [800, 1200, 1600, 2200])} sizes="100vw" width="1440" height="720" alt={slides[0].alt} />
+      <article class="ch ch--hero" data-in="0" data-out=".075">
+        <h1>Bring Sunlight to Spaces Where it is Not Possible to Have it</h1>
+        <p>through technology, innovation and design</p>
+        <div class="film__awards">
+          <img src={L('ba-logo-1.png', 120)} width="44" height="44" alt="The Economic Times" />
+          <img src={L('ba-logo-2.png', 120)} width="44" height="44" alt="iF Design Award" />
+          <img src={L('ba-logo-3.png', 120)} width="44" height="44" alt="Good Design Award" />
+        </div>
+      </article>
+      <article class="ch ch--mid" data-in=".1" data-out=".2"><h2>Transforming dull, dark and lifeless areas</h2></article>
+      <article class="ch ch--left" data-in=".25" data-out=".335"><h2>Changes colours &amp; brightness just like the sky</h2></article>
+      <article class="ch ch--left ch--low" data-in=".345" data-out=".415"><h2>Feel the light coming from far away</h2></article>
+      <article class="ch ch--left ch--low" data-in=".47" data-out=".62"><h2>Engineered to bring Sun Indoors</h2><p>Advanced optics, special lenses and AI.</p></article>
+      <article class="ch ch--left" data-in=".72" data-out=".815"><h2>Lighting that brings health and wellness</h2><p>We spend 90% of our time indoors, missing all the vital benefits of sunlight.</p></article>
+      <article class="ch ch--right ch--br" data-in=".825" data-out=".895"><h2>We were never meant to be living under false ceilings</h2><p>We were meant to live under the sun.</p></article>
+      <article class="ch ch--end" data-in=".945" data-out="1"><h2>Bring the sun experience to any room, any floor</h2><a class="film__cta" href="/pages/contact-us" data-lead>Book a call</a></article>
+      <ul class="labels" aria-hidden="true">{LAYERS.map(l => <li data-layer>{l}</li>)}</ul>
+      <p class="clock" data-clock aria-hidden="true"><span data-clock-t>06:10</span> <span data-clock-n>Dawn</span></p>
     </div>
   </section>
 
@@ -40,26 +41,44 @@ import { slides } from '../lib/homeData';
 </Base>
 
 <style is:global>
-  /* ---- hero ---- */
-  .hero { position: relative; height: calc(100svh - 4.5rem); min-height: 34rem; overflow: hidden; background: #000; color: #fff; }
-  .hs { position: absolute; inset: 0; opacity: 0; transition: opacity .9s var(--ease-in-out); }
-  .hs[data-on] { opacity: 1; }
-  .hs__img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; transition: opacity .9s var(--ease-in-out); will-change: opacity; }
-  .hero[data-state=before] .hs__after { opacity: 0; }
-  .hero__shade { position: absolute; inset: 0; background: linear-gradient(to top, rgb(0 0 0 / .62), rgb(0 0 0 / 0) 55%); pointer-events: none; }
-  .hero__copy { position: absolute; left: 50%; bottom: 7.5rem; translate: calc(-50% + var(--cx, 0) * 1px) calc(var(--cy, 0) * 1px); width: min(62rem, 90%); text-align: center; text-shadow: 0 2px 20px rgb(0 0 0 / .35); }
-  .hero h1 { color: #fff; font-size: clamp(1.75rem, 1.2rem + 1.5vw, 2.5rem); line-height: 1.25; max-width: 24ch; margin-inline: auto; letter-spacing: -.01em; }
-  .hero__copy p { margin-top: var(--s-3); font-size: 1.0625rem; }
-  .hero__toggle { position: absolute; left: 50%; bottom: 1.75rem; translate: -50% 0; display: flex; padding: .4rem; background: rgb(17 17 17 / .86); border-radius: 999px; }
-  .hero__toggle button { min-width: 8rem; min-height: 3rem; border: 0; border-radius: 999px; background: transparent; color: #fff; text-transform: uppercase; font-size: 1rem; cursor: pointer; transition: background .4s, color .4s; }
-  .hero__toggle button[aria-pressed=true] { background: #d9d9d9; color: #111; }
-  .hero__nav { position: absolute; top: 50%; translate: 0 -50%; width: 3rem; height: 3rem; border-radius: 50%; border: 0; background: rgb(17 17 17 / .7); color: var(--sun); display: grid; place-items: center; cursor: pointer; transition: background .3s; }
-  .hero__nav:hover { background: #000; } .hero__prev { left: 1.25rem; } .hero__next { right: 1.25rem; }
-  .hero__awards { position: absolute; right: 2rem; bottom: 1.75rem; display: flex; gap: .75rem; }
-  .hero__awards img { width: 2.75rem; height: 2.75rem; object-fit: contain; }
-  @media (max-width: 40rem) { .hero__awards { display: none; } .hero__toggle button { min-width: 6.5rem; } .hero__copy { bottom: 6.5rem; } }
+  /* ---- hero: a complete stacked section by default, a pinned film with .is-film ---- */
+  .film { background: #000; color: #fff; --gx: clamp(1rem, .4rem + 2.6vw, 4.5rem); }
+  .film h1, .film h2 { color: #fff; }
+  .film__pin { position: relative; } .film video, .film .labels, .film .clock { display: none; }
+  .film__poster { width: 100%; height: 70svh; object-fit: cover; }
+  .film .ch { padding: 2.5rem var(--gx); } .film .ch h1, .film .ch h2 { font-size: clamp(2.25rem, 1.2rem + 4vw, 5.5rem); line-height: 1.06; letter-spacing: -.02em; } .film .ch p { margin-top: 1rem; font-size: clamp(1.0625rem, 1rem + .4vw, 1.375rem); }
+  .film__awards { display: flex; gap: .75rem; margin-top: 1.5rem; } .film__awards img { width: 2.75rem; height: 2.75rem; object-fit: contain; }
+  .film__cta { display: inline-block; margin-top: 1.5rem; padding: .95rem 1.75rem; border-radius: 99px; background: var(--sun); color: #111; font-weight: 500; text-decoration: none; }
+
+  .is-film .film { height: 1500svh; }
+  .is-film .film__pin { position: sticky; top: 4.5rem; height: calc(100svh - 4.5rem); overflow: clip; background: #000; }
+  .is-film .film video { display: block; position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+  .is-film .film__poster { display: none; }
+  .is-film .film .ch { position: absolute; padding: 0; opacity: 0; visibility: hidden; will-change: opacity, transform; text-shadow: 0 1px 30px rgb(0 0 0 / .45); pointer-events: none; }
+  .is-film .film .ch[data-live] a { pointer-events: auto; }
+  .is-film .film .ch--hero { opacity: 1; visibility: visible; left: var(--gx); right: var(--gx); bottom: clamp(3rem, 9svh, 5.5rem); }
+  .is-film .film .ch--hero h1 { font-size: clamp(2.5rem, 1rem + 4.6vw, 6rem); max-width: 16ch; }
+  .is-film .film__awards { position: absolute; right: 0; bottom: 0; margin: 0; }
+  .is-film .film .ch--mid { left: 0; right: 0; bottom: 14svh; text-align: center; padding-inline: var(--gx); } .is-film .film .ch--mid h2 { max-width: 18ch; margin-inline: auto; }
+  .is-film .film .ch--left { left: var(--gx); top: 50%; translate: 0 -50%; width: min(34rem, 44vw); }
+  .is-film .film .ch--low { top: auto; bottom: clamp(3rem, 10svh, 6rem); translate: none; width: min(26rem, 34vw); } .is-film .film .ch--low h2 { font-size: clamp(2rem, 1.2rem + 2.4vw, 3.75rem); }
+  .is-film .film .ch--right { right: var(--gx); top: 50%; translate: 0 -50%; width: min(34rem, 44vw); text-align: right; }
+  .is-film .film .ch--br { top: auto; bottom: clamp(3rem, 10svh, 6rem); translate: none; }
+  .is-film .film .ch--end { left: var(--gx); bottom: clamp(3rem, 10svh, 6rem); width: min(40rem, 52vw); }
+  .is-film .film .labels { display: block; position: absolute; inset: 0; margin: 0; padding: 0; list-style: none; pointer-events: none; }
+  .is-film .film .labels li { position: absolute; left: 0; top: 0; opacity: 0; font-size: clamp(.8125rem, .75rem + .3vw, 1rem); white-space: nowrap; padding-left: 3.25rem; margin-top: -.7em; will-change: transform, opacity; }
+  .is-film .film .labels li::before { content: ''; position: absolute; left: 0; top: .72em; width: 2.75rem; height: 1px; background: currentColor; opacity: .55; }
+  .is-film .film .clock { display: flex; gap: .75rem; margin: 0; position: absolute; right: var(--gx); bottom: 1.5rem; font-size: .9375rem; font-variant-numeric: tabular-nums; opacity: 0; transition: opacity .4s; }
+  @media (max-width: 48rem) {
+    .is-film .film .ch--left, .is-film .film .ch--right { left: var(--gx); right: var(--gx); width: auto; top: auto; bottom: 12svh; translate: none; text-align: left; }
+    .is-film .film .ch--end { width: auto; right: var(--gx); }
+    .is-film .film .ch--low { width: auto; right: var(--gx); bottom: 3.5rem; } .is-film .film .ch--low p { display: none; }
+    .is-film .film .labels li { padding-left: 1.5rem; } .is-film .film .labels li::before { width: 1.1rem; }
+    .is-film .film__awards { display: none; }
+  }
 </style>
 
 <script>
   import '../scripts/home';
+  import '../scripts/film';
 </script>
