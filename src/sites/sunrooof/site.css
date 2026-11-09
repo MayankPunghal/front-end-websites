@@ -59,6 +59,13 @@ html.loading .loader { display: grid; } .loader.done { opacity: 0; visibility: h
   .is-3d .labels li { padding-left: 1.5rem; } .is-3d .labels li::before { width: 1.1rem; }
 }
 
+.is-3d .story video { transition: opacity .35s; }
+.is-3d .mount { display: flex; position: absolute; left: 50%; translate: -50% 0; bottom: 1.25rem; padding: .25rem; border-radius: 99px; background: rgb(0 0 0 / .55); }
+.mount { display: none; } .mount button { min-height: 2.75rem; padding-inline: 1.25rem; border: 0; border-radius: 99px; background: none; color: #fff; font: inherit; font-size: .9375rem; cursor: pointer; transition: background-color .25s, color .25s; }
+.mount button[aria-pressed=true] { background: #fff; color: #111; } .mount button:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+@media (max-width: 48rem) { .is-3d .clock { bottom: auto; top: 5.5rem; } }
+@media (max-width: 48rem) { .is-3d .ch--low, .is-3d .ch--end { bottom: 5.5rem; } }
+
 /* before / after */
 .compare { position: relative; height: 100svh; min-height: 30rem; overflow: clip; touch-action: pan-y; }
 .compare img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }

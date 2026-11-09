@@ -3,7 +3,10 @@ import * as THREE from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 
 export const H = 3.4, X = 5, ZB = -4.2, ZF = 7;
-export const PANEL = { w: 3.3, d: 2.1, y: 3.04, z: -0.4 };
+export const PANEL = { w: 3.3, d: 2.1, y: H - 0.02, z: -0.4 };
+/** The same unit mounted in the back wall as a window; d is its height. */
+export const WINDOW = { w: 3.3, d: 2.1, y: 1.95, z: ZB + 0.02 };
+export type Mount = 'ceiling' | 'wall';
 
 export const PALETTE = {
   wall: '#cfc6b6', ceil: '#e8e2d8', floor: '#8d6443', trim: '#e3ddd1', linen: '#d6ccba', cushion: '#b5845a', slat: '#5f3c24', oak: '#7a5233', ink: '#1b1a18',
@@ -14,7 +17,7 @@ export type Key = keyof typeof PALETTE;
 export const NO_CAST: Key[] = ['wall', 'ceil', 'floor', 'trim', 'rug', 'slat', 'ink', 'art', 'soil', 'shade'];
 
 /** @param d target edge length in metres. Large values give the low-detail version used for the other storeys. */
-export function buildRoom(d: number) {
+export function buildRoom(d: number, mount: Mount = 'ceiling') {
   let seed = 7; const rnd = (a = 0, b = 1) => { seed = (seed * 1664525 + 1013904223) >>> 0; return a + (seed / 4294967296) * (b - a); };
   const fine = d < 0.2, bins = new Map<Key, THREE.BufferGeometry[]>();
   const m = new THREE.Matrix4(), q = new THREE.Quaternion(), e = new THREE.Euler(), one = new THREE.Vector3(1, 1, 1);
@@ -36,10 +39,11 @@ export function buildRoom(d: number) {
       dir.subVectors(v, c); const face = new THREE.Vector3(n.getX(i), n.getY(i), n.getZ(i));
       if (dir.lengthSq() < 1e-9) dir.copy(face); dir.normalize();
       const out = c.clone().addScaledVector(dir, r);
-      if (puff) { const k = (1 - (c.x / half[0]) ** 2 * (face.x ? 0 : 1)) * (1 - (c.y / half[1]) ** 2 * (face.y ? 0 : 1)) * (1 - (c.z / half[2]) ** 2 * (face.z ? 0 : 1)); out.addScaledVector(face, puff * Math.max(0, k)); }
+      // the bulge fades to zero where the rounded edge starts, so neighbouring faces stay joined
+      if (puff) { const k = (1 - (c.x / (half[0] - r)) ** 2 * (face.x ? 0 : 1)) * (1 - (c.y / (half[1] - r)) ** 2 * (face.y ? 0 : 1)) * (1 - (c.z / (half[2] - r)) ** 2 * (face.z ? 0 : 1)); out.addScaledVector(face, puff * Math.max(0, k)); }
       p.setXYZ(i, out.x, out.y, out.z); n.setXYZ(i, dir.x, dir.y, dir.z);
     }
-    if (puff) g.computeVertexNormals();
+    if (puff) { g.computeVertexNormals(); smoothSeams(g); }
     return g;
   }
   const box = (w: number, h: number, z: number) => new THREE.BoxGeometry(w, h, z, Math.max(1, Math.ceil(w / d)), Math.max(1, Math.ceil(h / d)), Math.max(1, Math.ceil(z / d)));
@@ -48,8 +52,17 @@ export function buildRoom(d: number) {
 
   // ---- shell ----
   const DEPTH = ZF - ZB, CZ = (ZF + ZB) / 2, T = 0.3;
-  add('floor', box(X * 2 + 0.6, 0.42, DEPTH), 0, -0.21, CZ); add('ceil', box(X * 2 + 0.6, 0.42, DEPTH), 0, H + 0.21, CZ);
-  add('wall', box(T, H, DEPTH), -X - T / 2, H / 2, CZ); add('wall', box(T, H, DEPTH), X + T / 2, H / 2, CZ); add('wall', box(X * 2, H, T), 0, H / 2, ZB - T / 2);
+  add('floor', box(X * 2 + 0.6, 0.42, DEPTH), 0, -0.21, CZ); // the unit sits in an opening in the slab or wall, so only its frame shows
+  const opening = (A0: number, A1: number, B0: number, B1: number, a0: number, a1: number, b0: number, b1: number, put: (sa: number, sb: number, ca: number, cb: number) => void) => {
+    put(a0 - A0, B1 - B0, (A0 + a0) / 2, (B0 + B1) / 2); put(A1 - a1, B1 - B0, (a1 + A1) / 2, (B0 + B1) / 2);
+    put(a1 - a0, b0 - B0, (a0 + a1) / 2, (B0 + b0) / 2); put(a1 - a0, B1 - b1, (a0 + a1) / 2, (b1 + B1) / 2);
+  };
+  const OW = 1.71, OD = 1.11;
+  if (mount === 'ceiling') opening(-X - 0.3, X + 0.3, ZB, ZF, -OW, OW, PANEL.z - OD, PANEL.z + OD, (sa, sb, ca, cb) => add('ceil', box(sa, 0.42, sb), ca, H + 0.21, cb));
+  else add('ceil', box(X * 2 + 0.6, 0.42, DEPTH), 0, H + 0.21, CZ);
+  add('wall', box(T, H, DEPTH), -X - T / 2, H / 2, CZ); add('wall', box(T, H, DEPTH), X + T / 2, H / 2, CZ);
+  if (mount === 'wall') opening(-X, X, 0, H, -OW, OW, WINDOW.y - OD, WINDOW.y + OD, (sa, sb, ca, cb) => add('wall', box(sa, sb, T), ca, cb, ZB - T / 2));
+  else add('wall', box(X * 2, H, T), 0, H / 2, ZB - T / 2);
   // skirting and door
   add('trim', box(X * 2, 0.14, 0.025), 0, 0.07, ZB + 0.0125); add('trim', box(0.025, 0.14, DEPTH), -X + 0.0125, 0.07, CZ); add('trim', box(0.025, 0.14, DEPTH), X - 0.0125, 0.07, CZ);
   add('oak', soft(0.05, 2.4, 1.05, 0.006), X - 0.03, 1.2, 2.3); for (const s of [-1, 1]) add('trim', box(0.05, 2.455, 0.09), X - 0.03, 1.2275, 2.3 + s * 0.57); add('trim', box(0.05, 0.09, 1.23), X - 0.03, 2.5, 2.3);
@@ -59,12 +72,20 @@ export function buildRoom(d: number) {
   add('rug', soft(5.6, 0.024, 4.2, 0.01), 0.3, 0.012, 0.9);
 
   // ---- sofa ----
-  const sofaBase = (w: number, z: number, x: number, c: number) => { add('linen', soft(w, 0.2, z, 0.04), x, 0.2, c); for (const sx of [-1, 1]) for (const sz of [-1, 1]) add('ink', rod(0.018, 0.1), x + sx * (w / 2 - 0.08), 0, c + sz * (z / 2 - 0.08)); };
-  sofaBase(1.02, 3.5, 2.3, 0.8); sofaBase(1.5, 1.02, 1.05, -0.74);
-  add('linen', soft(0.2, 0.74, 3.5, 0.06), 2.74, 0.47, 0.8); add('linen', soft(2.54, 0.74, 0.2, 0.06), 1.05 + 0.45, 0.47, -1.16); add('linen', soft(0.98, 0.44, 0.18, 0.08), 2.3, 0.42, 2.46);
-  for (const z of [-0.08, 0.84, 1.76]) { add('linen', soft(0.84, 0.2, 0.9, 0.07, 0.03), 2.2, 0.41, z); add('linen', soft(0.2, 0.52, 0.88, 0.09, 0.05), 2.56, 0.75, z, 0, 0, -0.14); }
-  for (const x of [0.28, 1.2]) { add('linen', soft(0.9, 0.2, 0.84, 0.07, 0.03), x, 0.41, -0.66); add('linen', soft(0.88, 0.52, 0.2, 0.09, 0.05), x, 0.75, -1.02, 0, 0.14); }
-  add('cushion', soft(0.5, 0.5, 0.14, 0.06, 0.07), 0.3, 0.76, -0.82, 0.12, 0.28, 0.1); add('cushion', soft(0.14, 0.46, 0.46, 0.06, 0.06), 2.36, 0.76, -0.1, 0.2, 0, -0.3); add('rug', soft(0.14, 0.42, 0.42, 0.05, 0.06), 2.38, 0.74, 1.9, -0.2, 0, -0.34);
+  // one L-shaped body with cushions fitted against each other
+  const SX0 = 1.76, SX1 = 2.84, SZ0 = -1.26, SZ1 = 2.55, RX0 = -0.6, DEEP = 1.04;
+  const blk = (x0: number, x1: number, y0: number, y1: number, z0: number, z1: number, r = 0.05, puff = 0) => add('linen', soft(x1 - x0, y1 - y0, z1 - z0, r, puff), (x0 + x1) / 2, (y0 + y1) / 2, (z0 + z1) / 2);
+  blk(SX0, SX1 - 0.01, 0.1, 0.38, SZ0 + 0.01, SZ1 - 0.01); blk(RX0 + 0.01, SX0 + 0.05, 0.1, 0.38, SZ0 + 0.01, SZ0 + DEEP);
+  blk(SX1 - 0.2, SX1, 0.1, 0.86, SZ0, SZ1, 0.06); blk(RX0, SX1 - 0.19, 0.1, 0.86, SZ0, SZ0 + 0.2, 0.06);
+  blk(SX0, SX1 - 0.005, 0.1, 0.64, SZ1 - 0.2, SZ1, 0.07); blk(RX0, RX0 + 0.2, 0.1, 0.64, SZ0 + 0.005, SZ0 + DEEP, 0.07);
+  for (const [x, z] of [[SX0 + 0.08, SZ1 - 0.08], [SX1 - 0.08, SZ1 - 0.08], [SX1 - 0.08, SZ0 + 0.08], [RX0 + 0.08, SZ0 + 0.08], [RX0 + 0.08, SZ0 + DEEP - 0.08], [SX0 + 0.08, SZ0 + DEEP - 0.08]]) add('ink', rod(0.018, 0.1), x, 0, z);
+  const seat = (x0: number, x1: number, z0: number, z1: number) => blk(x0, x1, 0.37, 0.58, z0, z1, 0.07, 0.03);
+  seat(SX0, SX1 - 0.2, SZ0 + 0.2, SZ0 + DEEP);
+  const longZ0 = SZ0 + DEEP, longL = (SZ1 - 0.2 - longZ0) / 3, shortX0 = RX0 + 0.2, shortL = (SX0 - shortX0) / 2;
+  for (let i = 0; i < 3; i++) { seat(SX0, SX1 - 0.2, longZ0 + i * longL, longZ0 + (i + 1) * longL); add('linen', soft(0.2, 0.5, longL, 0.09, 0.05), 2.53, 0.82, longZ0 + (i + 0.5) * longL, 0, 0, -0.14); }
+  for (let i = 0; i < 2; i++) { seat(shortX0 + i * shortL, shortX0 + (i + 1) * shortL, SZ0 + 0.2, SZ0 + DEEP); add('linen', soft(shortL, 0.5, 0.2, 0.09, 0.05), shortX0 + (i + 0.5) * shortL, 0.82, SZ0 + 0.31, 0, 0.14); }
+  add('linen', soft(0.2, 0.5, DEEP - 0.22, 0.09, 0.05), 2.53, 0.82, SZ0 + 0.2 + (DEEP - 0.2) / 2, 0, 0, -0.14);
+  add('cushion', soft(0.5, 0.5, 0.14, 0.06, 0.07), 0.3, 0.84, -0.72, 0.12, 0.28, 0.1); add('cushion', soft(0.14, 0.46, 0.46, 0.06, 0.06), 2.3, 0.84, -0.1, 0.2, 0, -0.3); add('rug', soft(0.14, 0.42, 0.42, 0.05, 0.06), 2.3, 0.82, 1.9, -0.2, 0, -0.34);
 
   // ---- coffee table, with objects ----
   add('oak', lathe([[0, 0.02], [0.72, 0.02], [0.7, 0.05], [0.62, 0.34], [0.84, 0.36], [0.86, 0.39], [0.84, 0.42], [0, 0.42]]), -0.2, 0, 0.95);
@@ -83,7 +104,7 @@ export function buildRoom(d: number) {
 
   // ---- back wall: art and console ----
   const artY = 1.85;
-  add('oak', soft(2.2, 1.44, 0.04, 0.008), 0.2, artY, ZB + 0.03); add('trim', soft(2.1, 1.34, 0.01, 0.002), 0.2, artY, ZB + 0.055); add('art', soft(1.7, 0.96, 0.01, 0.002), 0.2, artY, ZB + 0.063);
+  if (mount === 'ceiling') { add('oak', soft(2.2, 1.44, 0.04, 0.008), 0.2, artY, ZB + 0.03); add('trim', soft(2.1, 1.34, 0.01, 0.002), 0.2, artY, ZB + 0.055); add('art', soft(1.7, 0.96, 0.01, 0.002), 0.2, artY, ZB + 0.063); }
   add('oak', soft(3.2, 0.52, 0.46, 0.012), 0.2, 0.34, ZB + 0.26); for (const s of [-1.05, -0.35, 0.35, 1.05]) add('ink', box(0.012, 0.44, 0.005), 0.2 + s * 0.76 + 0.38 * Math.sign(s) * 0, 0.34, ZB + 0.492);
   for (const x of [-1.2, 1.6]) add('ink', rod(0.018, 0.08), x, 0, ZB + 0.26);
   if (fine) {
@@ -133,6 +154,13 @@ export function buildRoom(d: number) {
 }
 
 /** Texture space in metres, projected along each face's main axis, so grain and weave keep one scale everywhere. */
+/** BoxGeometry repeats vertices along its edges; averaging their normals hides the crease between faces. */
+function smoothSeams(g: THREE.BufferGeometry) {
+  const p = g.attributes.position, n = g.attributes.normal, sum = new Map<string, number[]>(), key = (i: number) => `${p.getX(i).toFixed(4)},${p.getY(i).toFixed(4)},${p.getZ(i).toFixed(4)}`;
+  for (let i = 0; i < p.count; i++) { const v = sum.get(key(i)) ?? [0, 0, 0]; v[0] += n.getX(i); v[1] += n.getY(i); v[2] += n.getZ(i); sum.set(key(i), v); }
+  for (let i = 0; i < p.count; i++) { const [x, y, z] = sum.get(key(i))!, l = Math.hypot(x, y, z) || 1; n.setXYZ(i, x / l, y / l, z / l); }
+}
+
 function worldUV(g: THREE.BufferGeometry) {
   const p = g.attributes.position, n = g.attributes.normal, uv = g.attributes.uv;
   for (let i = 0; i < p.count; i++) {

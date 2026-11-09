@@ -32,6 +32,7 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, '');
         <a class="btn" href={BOOK}>Book a call</a>
       </article>
       <ul class="labels" aria-hidden="true">{LAYERS.map(l => <li data-layer>{l}</li>)}</ul>
+      <div class="mount" role="group" aria-label="Show SUNROOOF mounted in"><button type="button" data-mount="ceiling" aria-pressed="true">Ceiling</button><button type="button" data-mount="wall" aria-pressed="false">Window</button></div>
       <p class="clock" data-clock aria-hidden="true"><span data-clock-t>06:10</span> <span data-clock-n>Dawn</span></p>
     </div>
   </section>

@@ -11,7 +11,7 @@ else dispatchEvent(new Event('scene-ready'));
 
 async function boot(story: HTMLElement) {
   const fail = () => { document.documentElement.classList.remove('is-3d'); dispatchEvent(new Event('scene-ready')); };
-  const video = story.querySelector('video')!;
+  let video = story.querySelector('video')!;
   const name = innerHeight > innerWidth ? 'portrait' : 'landscape', path = `${import.meta.env.BASE_URL.replace(/\/$/, '')}/sunrooof/film/${name}`;
   let film: Film;
   try { film = await (await fetch(`${path}.json`)).json(); } catch { return fail(); }
@@ -70,6 +70,26 @@ async function boot(story: HTMLElement) {
     // a new seek only starts once the last one has finished, so the video never falls behind the scrollbar
     if (frame !== shown && !video.seeking && video.readyState >= 1) { shown = frame; video.currentTime = (frame + .5) / film.fps; }
   };
+  // switching mounts: the other film loads on first use and takes over at the same moment of the story
+  const first = video, alt: Record<string, { v: HTMLVideoElement; film: Film }> = { ceiling: { v: video, film } }, buttons = [...story.querySelectorAll<HTMLButtonElement>('[data-mount]')];
+  let want = 'ceiling';
+  const choose = async (m: string) => {
+    want = m; buttons.forEach(b => b.setAttribute('aria-pressed', String(b.dataset.mount === m)));
+    try {
+      if (!alt[m]) {
+        const v = first.cloneNode() as HTMLVideoElement, data: Film = await (await fetch(`${path}-wall.json`)).json();
+        v.style.opacity = '0'; v.removeAttribute('poster'); v.src = `${path}-wall.mp4`; first.after(v);
+        await new Promise((ok, no) => { v.addEventListener('loadeddata', ok, { once: true }); v.addEventListener('error', no, { once: true }); });
+        alt[m] = { v, film: data };
+      }
+      const next = alt[m]; if (want !== m) return;
+      next.v.currentTime = (frame + .5) / next.film.fps; await new Promise(ok => next.v.addEventListener('seeked', ok, { once: true }));
+      if (want !== m) return;
+      video.style.opacity = '0'; next.v.style.opacity = '1'; video = next.v; film = next.film; shown = -1;
+    } catch { if (want === m && m !== 'ceiling') choose('ceiling'); }
+  };
+  buttons.forEach(b => b.addEventListener('click', () => choose(b.dataset.mount!)));
+
   requestAnimationFrame(tick);
 }
 
