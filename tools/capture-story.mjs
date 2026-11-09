@@ -10,7 +10,7 @@ const dir = `artifacts/_tmp/frames/${name}`; fs.mkdirSync(dir, { recursive: true
 const browser = await chromium.launch({ headless: false, args: ['--use-angle=d3d11', '--ignore-gpu-blocklist'] });
 const page = await (await browser.newContext({ viewport: { width, height }, deviceScaleFactor: 1.5 })).newPage();
 page.on('pageerror', e => console.log('page error', e.message));
-await page.goto('http://localhost:4323/front-end-websites/sunrooof/scene/' + (wall ? '?mount=wall' : ''));
+await page.goto('http://localhost:4322/front-end-websites/sunrooof/scene/' + (wall ? '?mount=wall' : ''));
 await page.waitForFunction(() => window.frameAt, null, { timeout: 60000 });
 
 const tod = [], labels = {}; const t0 = Date.now();

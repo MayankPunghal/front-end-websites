@@ -57,16 +57,30 @@ export function createProduct() {
 
   // sky surface: top reads as a glowing plate, underside is the live sky
   const plate = new THREE.MeshBasicMaterial({ color: new THREE.Color(1.5, 1.4, 1.25), toneMapped: false }), side = new THREE.MeshStandardMaterial({ color: '#efe9de' });
-  add(LAYERS[5], new THREE.Mesh(new THREE.BoxGeometry(W - .02, .02, D - .02), [side, side, plate, skyMaterial, side, side]), .055, -.74);
+  add(LAYERS[5], new THREE.Mesh(new THREE.BoxGeometry(W - .02, .02, D - .02), [side, side, plate, skyMaterial, side, side]), .022, -.74);
 
-  // design frame
-  const wood = woodTexture([146, 94, 58]); wood.repeat.set(1.2, .4);
-  const woodMat = new THREE.MeshStandardMaterial({ map: wood, roughness: .62, metalness: 0 });
-  const frame = new THREE.Group(), T = .05;
-  const bar = (w: number, d: number, x: number, z: number) => { const b = box(w, T, d, woodMat, .01); b.position.set(x, 0, z); frame.add(b); };
-  bar(W + .1, MUNTIN + .05, 0, -D / 2 - .025); bar(W + .1, MUNTIN + .05, 0, D / 2 + .025); bar(MUNTIN + .05, D, -W / 2 - .025, 0); bar(MUNTIN + .05, D, W / 2 + .025, 0);
+  // design frame: one board per member, mitred at the corners, with the grain running along each piece
+  const wood = woodTexture([118, 70, 38], 1024);
+  const woodMat = new THREE.MeshStandardMaterial({ map: wood, bumpMap: wood, bumpScale: 1.5, roughness: .5, metalness: 0 });
+  const frame = new THREE.Group(), T = .05, EDGE = MUNTIN + .085, BEV = .007, XO = W / 2 + .085, ZO = D / 2 + .085;
+  const grain = (g: THREE.BufferGeometry, along: 'x' | 'z') => {
+    const p = g.attributes.position, uv = g.attributes.uv, a = Math.random(), b = Math.random();
+    for (let i = 0; i < p.count; i++) { const l = along === 'x' ? p.getX(i) : p.getZ(i), c = along === 'x' ? p.getZ(i) : p.getX(i); uv.setXY(i, l / 2 + a, (c + p.getY(i)) / .5 + b); }
+    return g;
+  };
+  const member = (L: number, x: number, z: number, ry: number) => {
+    const outline = new THREE.Shape([new THREE.Vector2(-L / 2, 0), new THREE.Vector2(L / 2, 0), new THREE.Vector2(L / 2 - EDGE, EDGE), new THREE.Vector2(-L / 2 + EDGE, EDGE)]);
+    const g = new THREE.ExtrudeGeometry(outline, { depth: T - 2 * BEV, bevelEnabled: true, bevelThickness: BEV, bevelSize: BEV, bevelOffset: -BEV, bevelSegments: 2, steps: 1 });
+    g.rotateX(Math.PI / 2); g.translate(0, T / 2 - BEV, 0);
+    const m = new THREE.Mesh(grain(g, 'x'), woodMat); m.position.set(x, 0, z); m.rotation.y = ry; m.castShadow = true; frame.add(m);
+  };
+  member(XO * 2, 0, -ZO, 0); member(XO * 2, 0, ZO, Math.PI); member(ZO * 2, -XO, 0, Math.PI / 2); member(ZO * 2, XO, 0, -Math.PI / 2);
+  const stick = (w: number, d: number, x: number, z: number, along: 'x' | 'z') => { const b = box(w, T * .8, d, woodMat, .01); grain(b.geometry, along); b.position.set(x, 0, z); frame.add(b); };
   const pw = (W - MUNTIN * 4) / 3, pd = (D - MUNTIN * 4) / 3;
-  for (const s of [-1, 1]) { bar(MUNTIN, D, s * (pw + MUNTIN) / 2, 0); bar(W, MUNTIN, 0, s * (pd + MUNTIN) / 2); }
+  for (const s of [-1, 1]) {
+    stick(MUNTIN, D - MUNTIN * 2 + .01, s * (pw + MUNTIN) / 2, 0, 'z');
+    for (const k of [-1, 0, 1]) stick(pw + .01, MUNTIN, k * (pw + MUNTIN), s * (pd + MUNTIN) / 2, 'x');
+  }
   add(LAYERS[6], frame, T / 2, -1.28);
 
   return {

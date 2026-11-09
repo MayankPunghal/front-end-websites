@@ -11,9 +11,9 @@ const PZ = PANEL.z, MOUNT = PANEL.y, WINY = WINDOW.y, WZ = WINDOW.z, STAGE_Y = 1
 const CAMERA: [number, [number, number, number], [number, number, number], number][] = [
   [0, [0, 1.3, 6.5], [0, 1.95, -2], 40],
   [.1, [0, 1.3, 6.3], [0, 2.05, -2], 40],
-  [.22, [-.5, 1.2, 5.6], [0, 2.4, -1.2], 42],
-  [.33, [-1.5, 1.05, 4.5], [0, 2.75, -.4], 46],
-  [.41, [.8, .95, 3.1], [0, 3, -.4], 50],
+  [.22, [-.5, 1.2, 6.2], [0, 1.9, -1.2], 50],
+  [.33, [-1.3, 1.15, 6.4], [.1, 1.85, -.6], 54],
+  [.41, [.9, 1.1, 6], [.2, 1.85, -.4], 56],
   [.5, [0, 1.8, 6.2], [0, 1.85, -.4], 36],
   [.62, [.5, 1.7, 6], [0, 1.85, -.4], 36],
   [.71, [1.2, 1.2, 5.2], [0, 2.3, -.8], 44],
@@ -191,7 +191,7 @@ export async function createWorld(canvas: HTMLCanvasElement, capture = false, mo
   const tgt = new THREE.Vector3(), mouse = { x: 0, y: 0, mx: 0, my: 0 }; addEventListener('pointermove', e => { mouse.mx = e.clientX / innerWidth - .5; mouse.my = e.clientY / innerHeight - .5; }, { passive: true });
   // never below one render pixel per CSS pixel: a blurry frame reads worse than a slightly slower one
   let dpr = Math.min(devicePixelRatio, weak ? 1 : 1.5), width = 2, height = 2, portrait = false, time = 0, curTod = 0, lastSun = '';
-  const v = new THREE.Vector3(), right = new THREE.Vector3(), a1 = new THREE.Vector3(), a2 = new THREE.Vector3(), dullC = new THREE.Color(.62, .68, .78), warm = new THREE.Color(1, .82, .55), paneSky = new THREE.Color(1, .86, .66), sunlit = new THREE.Color(6, 5, 3.6); // the other storeys are in sunlight while the city is dark
+  const v = new THREE.Vector3(), right = new THREE.Vector3(), a1 = new THREE.Vector3(), a2 = new THREE.Vector3(), dullC = new THREE.Color(.62, .68, .78), warm = new THREE.Color(1, .82, .55), paneSky = new THREE.Color(1, .86, .66), finalSun = new THREE.Vector3(.35, .62, -.2), finalSunW = new THREE.Vector3(.1, .34, -.8), sunlit = new THREE.Color(6, 5, 3.6); // the other storeys are in sunlight while the city is dark
 
   function resize() {
     width = canvas.clientWidth; height = canvas.clientHeight; portrait = width < height;
@@ -219,19 +219,19 @@ export async function createWorld(canvas: HTMLCanvasElement, capture = false, mo
     // day
     const ignite = up(p, .225, .29), tod = pw(TOD, p), s = sampleSky(tod), lit = 1 - stage; curTod = tod;
     if (wall) s.sun.set(s.sun.x * .5, Math.min(.36, Math.max(.2, s.sun.y * .5)), -.8).normalize(); // the sun stands outside the back wall and crosses it through the day
-    product.power(Math.max(ignite, stage) * (1 - e * .55)); skyUniforms.uGain.value = (s.gain * .42 * ignite + .012) * (1 - e * .6); skyUniforms.uTime.value = time;
+    product.power(Math.max(ignite, stage) * (1 - e * .55)); skyUniforms.uGain.value = (s.gain * .42 * ignite + .012) * (1 - e * .6); skyUniforms.uTime.value = time; skyUniforms.uSrc.value = Math.max(ignite, stage) * (1 - e * .35);
     const night = up(p, .86, 1), floorsIn = up(p, .88, .96);
     const dome = (skyDome.material as THREE.ShaderMaterial).uniforms; dome.uTop.value.copy(s.top); dome.uHor.value.copy(s.hor);
-    s.top.lerp(paneSky, floorsIn); s.hor.lerp(paneSky, floorsIn); skyUniforms.uGain.value = lerp(skyUniforms.uGain.value, 2.4, floorsIn); // from outside, this room's panes read like the others
+    s.top.lerp(paneSky, floorsIn); s.hor.lerp(paneSky, floorsIn); skyUniforms.uGain.value = lerp(skyUniforms.uGain.value, 2.4, floorsIn); s.key.lerp(paneSky, floorsIn); s.keyI = lerp(s.keyI, 9, floorsIn); s.sun.lerp(wall ? finalSunW : finalSun, floorsIn).normalize(); skyUniforms.uKey.value.copy(s.key); // from outside, this room's panes read like the others
     bakeU.uPanel.value.copy(s.rect).multiplyScalar(s.rectI * ignite * lit * .38).lerp(sunlit, floorsIn);
     bakeU.uAmb.value.copy(dullC).multiplyScalar(lerp(2.4, .2 + s.amb * .75, ignite) * lit * (1 - floorsIn * .8));
     room.visible = stage < .995;
     sun.color.copy(s.key); sun.intensity = s.keyI * 1.7 * ignite * lit; sun.position.copy(sun.target.position).addScaledVector(s.sun, 18);
     for (const m of glossy) m.envMapIntensity = (.03 + s.amb * .2 * ignite) * lit;
-    for (const m of productMats) m.envMapIntensity = lerp(.35, .95, Math.max(ignite, stage));
+    for (const m of productMats) m.envMapIntensity = m.map ? .3 : lerp(.35, .95, Math.max(ignite, stage)); // only the wood has a map; bright reflections wash it out
     glow.color.setRGB(3.4, 2, 1).multiplyScalar(night + .06);
-    const beam = ignite * (.13 - .05 * up(p, .7, .8)) * lit * (1 - night) * (1 - e * .4);
-    beamU.uBeam.value = beam; beamU.uColor.value.copy(s.key); dustU.uA.value = beam * 1.1; dustU.uTime.value = time; glowU.uA.value = stage * .34;
+    const dayBeam = ignite * (.13 - .05 * up(p, .7, .8)) * lit * (1 - night) * (1 - e * .4), beam = lerp(dayBeam, wall ? .3 : .15, floorsIn);
+    beamU.uBeam.value = beam; beamU.uColor.value.copy(s.key); dustU.uA.value = dayBeam * 1.1; dustU.uTime.value = time; glowU.uA.value = stage * .34;
     stageFloor.visible = stage > .01;
     const by = root.position.y + layers[frameIdx].obj.position.y, dy = Math.max(.05, s.sun.y);
     // the sun mask sits behind the panes: slide it along the ray so light through it passes exactly through them
@@ -242,7 +242,7 @@ export async function createWorld(canvas: HTMLCanvasElement, capture = false, mo
       const q = b.userData.pane; b.visible = beam > .002;
       if (wall) b.matrix.set(1, rx, 0, q.x, 0, ry, 1, WINY + q.z, 0, rz, 0, WZ, 0, 0, 0, 1); else b.matrix.set(1, rx, 0, q.x, 0, ry, 0, by, 0, rz, 1, q.z + PZ, 0, 0, 0, 1);
     }
-    if (wall) halo.position.set(0, WINY, WZ + .1); else halo.position.set(0, by - .1, PZ); halo.material.color.copy(s.rect).lerp(warm, .3); halo.material.opacity = clamp(skyUniforms.uGain.value * .09) * lit * (1 - night); halo.visible = halo.material.opacity > .004;
+    if (wall) halo.position.set(0, WINY, WZ + .1); else halo.position.set(0, by - .1, PZ); halo.material.color.copy(skyUniforms.uKey.value); halo.material.opacity = skyUniforms.uSrc.value * .22 * lit * Math.max(1 - night, floorsIn); halo.visible = halo.material.opacity > .004;
     // the building reveal
     city.visible = skyDome.visible = p > .86;
     if (city.visible) { storeyMat.color.setScalar(5.5 * (floorsIn + .03)); paneMat.color.setScalar(3 * (floorsIn + .02)); for (const m of cityBeams) m.uniforms.uBeam.value = floorsIn * .55; for (const m of cityPatches) m.opacity = floorsIn * .8; }
