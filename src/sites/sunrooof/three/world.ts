@@ -83,7 +83,7 @@ export async function createWorld(canvas: HTMLCanvasElement, capture = false, mo
   let off = 8;
   for (const { key, geo } of buildRoom(.1, mount)) {
     const n = geo.attributes.position.count; geo.setAttribute('aBake', new THREE.BufferAttribute(new Uint8Array(hiBuf, off, n * 4), 4, true)); off += n * 4;
-    const m = new THREE.Mesh(geo, mats[key]); m.receiveShadow = true; m.matrixAutoUpdate = false; room.add(m);
+    const m = new THREE.Mesh(geo, mats[key]); m.name = key; m.receiveShadow = true; m.matrixAutoUpdate = false; room.add(m);
   }
   if (off !== hiBuf.byteLength) throw new Error('bake data does not match the room; rerun tools/bake-room.ts');
   const glow = new THREE.MeshBasicMaterial({ color: new THREE.Color(0, 0, 0) });
@@ -102,9 +102,9 @@ export async function createWorld(canvas: HTMLCanvasElement, capture = false, mo
   }
   // scanned plants: photo textures, cut-out leaves that also cut their shadows
   const gltf = new GLTFLoader(), model = (id: string, dir = 'plants') => gltf.loadAsync(`${base}/sunrooof/${dir}/${id}/${id}_2k.gltf`).then(g => { g.scene.traverse(o => { const m = o as THREE.Mesh; if (!m.isMesh) return; m.castShadow = m.receiveShadow = true; const mt = m.material as THREE.MeshStandardMaterial; mt.envMap = envTex; if (mt.alphaTest) mt.side = THREE.DoubleSide; if (!hangMats.includes(mt)) hangMats.push(mt); }); return g.scene; });
-  const [fern, ...pots] = await Promise.all(['fern_02', ...PLANTS.filter(p => mount !== 'side' || p[2] !== 'potted_plant_02').map(p => p[2])].map(id => model(id)));
+  const [fern, ...pots] = await Promise.all(['potted_plant_02', ...PLANTS.filter(p => mount !== 'side' || p[2] !== 'potted_plant_02').map(p => p[2])].map(id => model(id)));
   pots.forEach((g, i) => { const [x, z, id, k, ry] = PLANTS.filter(p => mount !== 'side' || p[2] !== 'potted_plant_02')[i]; g.position.set(x, 0, z); if (id === 'calathea_orbifolia_01') { const pot = new THREE.Mesh(potG, potM); pot.scale.setScalar(2.2); pot.position.set(x, 0, z); pot.castShadow = pot.receiveShadow = true; room.add(pot); g.position.y = .5; } g.scale.setScalar(k); g.rotation.y = ry; room.add(g); });
-  baskets.forEach(([x, y, z], i) => { for (let j = 0; j < 3; j++) { const g = fern.clone(); g.position.set(x, y + .2 - j * .05, z); g.scale.setScalar(.7 + i * .04 - j * .08); g.rotation.set(j * .25, i * 1.9 + j * 2.1, 0); hangers.add(g); } });
+  baskets.forEach(([x, y, z], i) => { const g = fern.clone(); g.position.set(x, y + .1, z); g.scale.setScalar(.48 + i * .03); g.rotation.y = i * 1.9; hangers.add(g); });
   // the light bake predates the furniture, so each piece gets a soft contact shadow
   const blobCanvas = document.createElement('canvas'); blobCanvas.width = blobCanvas.height = 128; { const g = blobCanvas.getContext('2d')!, gr = g.createRadialGradient(64, 64, 8, 64, 64, 64); gr.addColorStop(0, 'rgba(0,0,0,.75)'); gr.addColorStop(.6, 'rgba(0,0,0,.35)'); gr.addColorStop(1, 'rgba(0,0,0,0)'); g.fillStyle = gr; g.fillRect(0, 0, 128, 128); }
   const blobMat = new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(blobCanvas), transparent: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2 }), box3 = new THREE.Box3(), size3 = new THREE.Vector3();
@@ -269,7 +269,7 @@ export async function createWorld(canvas: HTMLCanvasElement, capture = false, mo
     bakeU.uPanel.value.copy(s.rect).multiplyScalar(s.rectI * ignite * lit * .72).lerp(sunlit, floorsIn);
     bakeU.uAmb.value.copy(dullC).multiplyScalar(lerp(2.4, .25 + s.amb * 1.3, ignite) * lit * (1 - floorsIn * .8));
     room.visible = stage < .995;
-    sun.color.copy(s.key); sun.intensity = s.keyI * 2.1 * ignite * lit; hangers.visible = room.visible; for (const m of hangMats) m.envMapIntensity = lerp(.25, .3 + s.amb * .95, ignite) * lit; sheen.material.color.copy(s.key); sheen.material.opacity = ignite * lit * (1 - night) * .16; sun.position.copy(sun.target.position).addScaledVector(s.sun, 18);
+    sun.color.copy(s.key); sun.intensity = s.keyI * 2.1 * ignite * lit; hangers.visible = room.visible; for (const m of hangMats) m.envMapIntensity = lerp(.04, .3 + s.amb * .95, ignite) * lit; sheen.material.color.copy(s.key); sheen.material.opacity = ignite * lit * (1 - night) * .16; sun.position.copy(sun.target.position).addScaledVector(s.sun, 18);
     for (const m of glossy) m.envMapIntensity = (.03 + s.amb * .2 * ignite) * lit;
     for (const m of productMats) m.envMapIntensity = m.map ? .08 : lerp(.35, .95, Math.max(ignite, stage)); // only the wood has a map; bright reflections wash it out
     glow.color.setRGB(3.4, 2, 1).multiplyScalar(night + .06);
@@ -307,6 +307,8 @@ export async function createWorld(canvas: HTMLCanvasElement, capture = false, mo
 
   return {
     update, resize, labelAt, layers,
+    /** For exporting the room to Blender. */
+    parts: { scene, camera, room, hangers, root, sun },
     get tod() { return curTod; },
     render: () => { renderer.render(scene, camera); finish?.(); },
     /** Step down on slow machines, never below one render pixel per CSS pixel. Returns false when nothing is left to drop. */

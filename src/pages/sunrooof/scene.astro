@@ -9,9 +9,18 @@
     <script>
       import { createWorld } from '../../sites/sunrooof/three/world';
       import { paceAt } from '../../sites/sunrooof/pace';
+      import { GLTFExporter } from 'three/examples/jsm/exporters/GLTFExporter.js';
       const canvas = document.querySelector('canvas')!;
       const world = await createWorld(canvas, true, new URLSearchParams(location.search).get('mount') === 'wall' ? 'wall' : 'ceiling');
       world.resize();
+      // Hands the room as it stands at frame i, plus camera and sun, to tools/room-to-blender.mjs.
+      (window as any).exportRoom = async (i: number, n: number) => {
+        world.update(paceAt(i / (n - 1)), 1 / 120); world.render();
+        const { room, hangers, root, camera, sun } = world.parts;
+        const glb = await new GLTFExporter().parseAsync([room, hangers, root].filter(o => o.visible), { binary: true, onlyVisible: true }) as ArrayBuffer;
+        let b = ''; const u = new Uint8Array(glb); for (let k = 0; k < u.length; k += 32768) b += String.fromCharCode(...u.subarray(k, k + 32768));
+        return { glb: btoa(b), camera: { p: camera.position.toArray(), q: camera.quaternion.toArray(), fov: camera.fov, aspect: camera.aspect }, sun: { dir: sun.position.clone().sub(sun.target.position).normalize().toArray(), color: sun.color.toArray(), intensity: sun.intensity }, tod: world.tod };
+      };
       (window as any).frameAt = (i: number, n: number) => {
         const p = paceAt(i / (n - 1));
         world.update(p, 1 / 120); world.render();

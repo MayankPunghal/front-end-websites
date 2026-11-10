@@ -20,10 +20,10 @@ export const NO_CAST: Key[] = ['wall', 'ceil', 'floor', 'trim', 'rug', 'slat', '
 
 /** @param d target edge length in metres. Large values give the low-detail version used for the other storeys. */
 /** Where the main room's plants stand: x, z, model, scale, turn. */
-export const PLANTS: [number, number, string, number, number][] = [[-3.55, -2.85, 'potted_plant_01', 1.45, .6], [3.85, 4.1, 'potted_plant_02', 1.7, 2.1], [-2.3, -3.4, 'calathea_orbifolia_01', 1.5, 1.2]];
+export const PLANTS: [number, number, string, number, number][] = [[-3.55, -2.85, 'potted_plant_01', 1.45, .6], [3.85, 4.1, 'potted_plant_02', 1.7, 2.1], [-2.3, -3.4, 'potted_plant_02', 1.35, 1.2]];
 
 /** Scanned furniture in the main room: model, x, z, turn. */
-export const FURNITURE: [string, number, number, number][] = [['throw_pillows_01', .25, -.62, .15], ['mid_century_lounge_chair', -2.9, 2, .9]];
+export const FURNITURE: [string, number, number, number][] = [['mid_century_lounge_chair', -2.9, 2, .9]];
 
 export function buildRoom(d: number, mount: Mount = 'ceiling') {
   let seed = 7; const rnd = (a = 0, b = 1) => { seed = (seed * 1664525 + 1013904223) >>> 0; return a + (seed / 4294967296) * (b - a); };
