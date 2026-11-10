@@ -1,6 +1,5 @@
 ---
 // Sections below the hero, shared by every home-page variant. Styles live in src/styles/home.css; variants skin them with their own CSS.
-import ReasonsCarousel from './ReasonsCarousel.astro';
 import ReviewsCarousel from './ReviewsCarousel.astro';
 import ig from '../data/instagram.json';
 import { SITE, portraits } from '../lib/site';
@@ -16,8 +15,6 @@ import { mosaic, apps, designs, skyTabs, spaces, logoNames, vids, reels, centres
     </div>
     <div class="about__f" data-reveal data-plx><img class="about__img" src={L('future-light.webp', 900)} srcset={LS('future-light.webp', [480, 700, 900])} sizes="(min-width: 62rem) 46vw, 100vw" width="642" height="642" alt="A timber-framed corridor with a SUNROOOF skylight, a plant and a woman walking through" loading="lazy" /></div>
   </section>
-
-  <ReasonsCarousel />
 
   <!-- 5 · HEALTH & WELLNESS (sun gradient) -->
   <section class="sun" data-sun>
