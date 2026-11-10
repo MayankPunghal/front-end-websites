@@ -32,7 +32,7 @@
 
   /* ---- mosaic ---- */
   .vs { height: 100svh; background: #fff; } .vs__pin { height: 100svh; overflow: hidden; }
-  .vs__grid { height: 100%; display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(3, 1fr); gap: .35rem; padding: .35rem; transform-origin: 50% 50%; will-change: transform; }
+  .vs__grid { height: 100%; display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(3, 1fr); gap: .35rem; padding: .35rem; transform-origin: 50% 50%; } /* no will-change: it froze the zoomed photo at its small raster size */
   .vs__c { position: relative; margin: 0; min-height: 0; overflow: hidden; } .vs__c > img { width: 100%; height: 100%; object-fit: cover; }
   .vs__c figcaption { position: absolute; left: 1rem; bottom: .75rem; color: #fff; font: 300 clamp(1.1rem, .8rem + 1vw, 2rem)/1 var(--font-display); text-shadow: 0 1px 14px rgb(0 0 0 / .6); }
   .vs__txt { display: grid; align-content: center; padding: 1rem 1.25rem; background: #fff; } .vs__end p { text-align: right; font-size: clamp(.75rem, .5rem + .6vw, 1.125rem); margin-left: auto; max-width: 28rem; }
