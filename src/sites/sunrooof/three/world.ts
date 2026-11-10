@@ -1,8 +1,9 @@
 import * as THREE from 'three';
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { createProduct, panes, W } from './product';
-import { buildRoom, H, NO_CAST, PALETTE, PANEL, SIDE, WINDOW, X, ZF, type Key, type Mount } from './room';
+import { buildRoom, H, NO_CAST, PALETTE, PLANTS, FURNITURE, PANEL, SIDE, WINDOW, X, ZF, type Key, type Mount } from './room';
 import { artTexture, clamp, lerp, plasterTexture, sampleSky, seg, skyUniforms, smooth, up, wearTexture, weaveTexture, woodTexture } from './shared';
 
 const PZ = PANEL.z, MOUNT = PANEL.y, WINY = WINDOW.y, WZ = WINDOW.z, STAGE_Y = 1.84, STOREY = H + 0.85; // two 0.42 slabs plus a gap: overlapping slabs share a front face and flicker
@@ -66,12 +67,14 @@ export async function createWorld(canvas: HTMLCanvasElement, capture = false, mo
   const oakMap = woodTexture([150, 104, 66]); oakMap.repeat.set(.9, .9);
   const wear = wearTexture(); wear.repeat.set(.7, .7);
   const plaster = plasterTexture(), weave = weaveTexture(), rugMap = weaveTexture(); plaster.repeat.set(.4, .4); weave.repeat.set(7, 7); rugMap.repeat.set(3, 3);
+  const texLoader = new THREE.TextureLoader(), scan = (id: string, tile: number) => Promise.all(['diff', 'nor', 'rough'].map(n => texLoader.loadAsync(`${base}/sunrooof/tex/${id}_${n}.jpg`))).then(([map, normalMap, roughnessMap]) => { map.colorSpace = THREE.SRGBColorSpace; for (const t of [map, normalMap, roughnessMap]) { t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.setScalar(1 / tile); t.anisotropy = 8; } return { map, normalMap, roughnessMap, roughness: 1 }; });
+  const [plasterScan, woodScan, linenScan, velvetScan] = await Promise.all([scan('painted_plaster_wall', 2.5), scan('wood_floor', 2.2), scan('rough_linen', .6), scan('velour_velvet', .5)]);
   const glossy: THREE.MeshStandardMaterial[] = [], gloss = (m: THREE.MeshStandardMaterial) => { m.envMap = envTex; glossy.push(m); return m; };
   const col = (k: Key) => new THREE.Color(PALETTE[k]);
   const mats: Record<Key, THREE.Material> = {
-    wall: baked({ color: col('wall'), map: plaster, bumpMap: plaster, bumpScale: 1.4, roughness: .94 }), ceil: baked({ color: col('ceil'), map: plaster, bumpMap: plaster, bumpScale: 1.4, roughness: .94 }), trim: matte({ color: col('trim') }),
-    floor: gloss(baked({ map: floorMap, bumpMap: floorMap, bumpScale: 1.2, roughnessMap: wear, roughness: .9 })), rug: matte({ color: col('rug'), map: rugMap }),
-    linen: baked({ color: col('linen'), map: weave, bumpMap: weave, bumpScale: 2, roughness: .96 }), cushion: baked({ color: col('cushion'), map: weave, bumpMap: weave, bumpScale: 2, roughness: .96 }),
+    wall: baked({ color: col('wall'), normalMap: plasterScan.normalMap, normalScale: new THREE.Vector2(.45, .45), roughnessMap: plasterScan.roughnessMap, roughness: .95 }), ceil: baked({ color: col('ceil'), normalMap: plasterScan.normalMap, normalScale: new THREE.Vector2(.3, .3), roughnessMap: plasterScan.roughnessMap, roughness: .95 }), trim: matte({ color: col('trim') }),
+    floor: gloss(baked({ ...woodScan })), rug: baked({ color: '#efe4d2', ...linenScan }),
+    linen: baked({ color: '#f2e2c8', ...linenScan }), cushion: baked({ color: col('cushion'), ...velvetScan }),
     slat: gloss(baked({ map: slatMap, roughness: .55 })), oak: gloss(baked({ map: oakMap, roughness: .48 })), ink: gloss(baked({ color: col('ink'), roughness: .35 })),
     stone: gloss(baked({ color: col('stone'), roughness: .55 })), leaf: matte({ color: col('leaf'), side: THREE.DoubleSide }), soil: matte({ color: col('soil') }),
     art: matte({ map: artTexture() }), shade: matte({ color: col('shade'), side: THREE.DoubleSide }),
@@ -91,13 +94,23 @@ export async function createWorld(canvas: HTMLCanvasElement, capture = false, mo
   let seed = 11; const rn = () => (seed = seed * 16807 % 2147483647) / 2147483647;
   const hangMats = [new THREE.MeshStandardMaterial({ color: '#a4603c', roughness: .88, envMap: envTex }), new THREE.MeshStandardMaterial({ color: '#7a6a54', roughness: .9, envMap: envTex }), new THREE.MeshStandardMaterial({ color: '#1f4a1c', roughness: .5, side: THREE.DoubleSide, envMap: envTex })], [potM, cordM, leafM] = hangMats;
   const potG = new THREE.LatheGeometry([[0, 0], [.1, 0], [.15, .12], [.17, .24], [.18, .25], [.15, .25], [0, .2]].map(([a, b]) => new THREE.Vector2(a, b)), 28), cordG = new THREE.CylinderGeometry(.005, .005, 1, 6), leafG = new THREE.SphereGeometry(1, 8, 6).scale(.04, .004, .085), up3 = new THREE.Vector3(0, 1, 0), hold = new THREE.Object3D();
+  const baskets: number[][] = [];
   for (const [x, z, drop] of [[-3, -.4, 1.05], [3, -.4, .85], [-3.1, 1.7, .8], [3.1, 1.7, 1.1]]) {
     const y = H - drop - .25, pot = new THREE.Mesh(potG, potM); pot.position.set(x, y, z); hangers.add(pot);
     for (let i = 0; i < 3; i++) { const a = i / 3 * Math.PI * 2, from = new THREE.Vector3(x + Math.cos(a) * .17, y + .25, z + Math.sin(a) * .17), to = new THREE.Vector3(x, H, z), d = to.clone().sub(from), c = new THREE.Mesh(cordG, cordM); c.position.copy(from).addScaledVector(d, .5); c.scale.y = d.length(); c.quaternion.setFromUnitVectors(up3, d.normalize()); hangers.add(c); }
-    const leaves = new THREE.InstancedMesh(leafG, leafM, 150); let n = 0;
-    for (let v = 0; v < 9; v++) { const a = rn() * 6.28, len = .35 + rn() * .75, steps = Math.floor(150 / 9); for (let k = 0; k < steps && n < 150; k++) { const t = k / steps, r = .17 + .12 * Math.sin(Math.min(t * 4, 1) * 1.57); hold.position.set(x + Math.cos(a) * r + (rn() - .5) * .07, y + .3 - t * len - (t < .2 ? 0 : .08), z + Math.sin(a) * r + (rn() - .5) * .07); hold.rotation.set((rn() - .5) * 1.5, rn() * 6.28, (rn() - .5) * 1.5); hold.scale.setScalar(.7 + rn() * .6); hold.updateMatrix(); leaves.setMatrixAt(n++, hold.matrix); } }
-    leaves.count = n; leaves.frustumCulled = false; hangers.add(leaves);
+    baskets.push([x, y, z]);
   }
+  // scanned plants: photo textures, cut-out leaves that also cut their shadows
+  const gltf = new GLTFLoader(), model = (id: string, dir = 'plants') => gltf.loadAsync(`${base}/sunrooof/${dir}/${id}/${id}_2k.gltf`).then(g => { g.scene.traverse(o => { const m = o as THREE.Mesh; if (!m.isMesh) return; m.castShadow = m.receiveShadow = true; const mt = m.material as THREE.MeshStandardMaterial; mt.envMap = envTex; if (mt.alphaTest) mt.side = THREE.DoubleSide; if (!hangMats.includes(mt)) hangMats.push(mt); }); return g.scene; });
+  const [fern, ...pots] = await Promise.all(['fern_02', ...PLANTS.filter(p => mount !== 'side' || p[2] !== 'potted_plant_02').map(p => p[2])].map(id => model(id)));
+  pots.forEach((g, i) => { const [x, z, id, k, ry] = PLANTS.filter(p => mount !== 'side' || p[2] !== 'potted_plant_02')[i]; g.position.set(x, 0, z); if (id === 'calathea_orbifolia_01') { const pot = new THREE.Mesh(potG, potM); pot.scale.setScalar(2.2); pot.position.set(x, 0, z); pot.castShadow = pot.receiveShadow = true; room.add(pot); g.position.y = .5; } g.scale.setScalar(k); g.rotation.y = ry; room.add(g); });
+  baskets.forEach(([x, y, z], i) => { for (let j = 0; j < 3; j++) { const g = fern.clone(); g.position.set(x, y + .2 - j * .05, z); g.scale.setScalar(.7 + i * .04 - j * .08); g.rotation.set(j * .25, i * 1.9 + j * 2.1, 0); hangers.add(g); } });
+  // the light bake predates the furniture, so each piece gets a soft contact shadow
+  const blobCanvas = document.createElement('canvas'); blobCanvas.width = blobCanvas.height = 128; { const g = blobCanvas.getContext('2d')!, gr = g.createRadialGradient(64, 64, 8, 64, 64, 64); gr.addColorStop(0, 'rgba(0,0,0,.75)'); gr.addColorStop(.6, 'rgba(0,0,0,.35)'); gr.addColorStop(1, 'rgba(0,0,0,0)'); g.fillStyle = gr; g.fillRect(0, 0, 128, 128); }
+  const blobMat = new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(blobCanvas), transparent: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2 }), box3 = new THREE.Box3(), size3 = new THREE.Vector3();
+  const ground = (g: THREE.Object3D) => { g.updateMatrixWorld(true); box3.setFromObject(g).getSize(size3); const c = box3.getCenter(new THREE.Vector3()), b = new THREE.Mesh(new THREE.PlaneGeometry(size3.x * 1.25, size3.z * 1.25).rotateX(-Math.PI / 2), blobMat); b.position.set(c.x, .028, c.z); room.add(b); };
+  (await Promise.all(FURNITURE.map(([id]) => model(id, 'models')))).forEach((g, i) => { const [id, x, z, ry] = FURNITURE[i]; g.rotation.y = ry; room.add(g); if (id === 'throw_pillows_01') { g.position.set(x, .66, z); return; } g.position.set(x, .024, z); ground(g); });
+  pots.forEach(ground);
   const sheenCanvas = document.createElement('canvas'); sheenCanvas.width = sheenCanvas.height = 256; { const g = sheenCanvas.getContext('2d')!, gr = g.createRadialGradient(128, 128, 0, 128, 128, 128); gr.addColorStop(0, 'rgba(255,255,255,1)'); gr.addColorStop(.5, 'rgba(255,255,255,.3)'); gr.addColorStop(1, 'rgba(255,255,255,0)'); g.fillStyle = gr; g.fillRect(0, 0, 256, 256); }
   const sheen = new THREE.Mesh(new THREE.PlaneGeometry(9, 7).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(sheenCanvas), transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, opacity: 0, toneMapped: false })); sheen.position.set(0, .004, PZ + .8); scene.add(sheen);
 
@@ -124,7 +137,7 @@ export async function createWorld(canvas: HTMLCanvasElement, capture = false, mo
   // the mask sits so close to the wall tops that shadow bias lets a line of sun through; cover them from higher up
   if (!wall) for (const s of [-1, 1]) { const cap = new THREE.Mesh(new THREE.BoxGeometry(1.4, .02, 40), mask.material); cap.position.set(s * (SIDE.x - .4), H + .6, 0); cap.castShadow = true; scene.add(cap); }
   // the shadow map draws the low-detail room: same silhouettes, a fraction of the triangles
-  const casters = new THREE.Mesh(mergeGeometries(buildRoom(.4, mount).filter(p => !NO_CAST.includes(p.key)).map(p => p.geo), false)!, mask.material); casters.castShadow = true; casters.matrixAutoUpdate = false; room.add(casters);
+  const casters = new THREE.Mesh(mergeGeometries(buildRoom(.1, mount).filter(p => !NO_CAST.includes(p.key)).map(p => p.geo), false)!, mask.material); casters.castShadow = true; casters.matrixAutoUpdate = false; room.add(casters);
 
   // ---- light shafts, dust, stage glow ----
   const beamU = { uBeam: { value: 0 }, uColor: { value: new THREE.Color(1, .85, .6) } };
@@ -215,6 +228,13 @@ export async function createWorld(canvas: HTMLCanvasElement, capture = false, mo
   let dpr = Math.min(devicePixelRatio, weak ? 1 : 1.5), width = 2, height = 2, portrait = false, time = 0, curTod = 0, lastSun = '';
   const v = new THREE.Vector3(), right = new THREE.Vector3(), a1 = new THREE.Vector3(), a2 = new THREE.Vector3(), dullC = new THREE.Color(.62, .68, .78), warm = new THREE.Color(1, .82, .55), paneSky = new THREE.Color(1, .86, .66), finalSun = new THREE.Vector3(.35, .62, -.2), finalSunW = new THREE.Vector3(.1, .34, -.8), sunlit = new THREE.Color(6, 5, 3.6); // the other storeys are in sunlight while the city is dark
 
+  // film finish for the captured frames: gentle bloom, a filmic curve, split toning and slight lens fringing
+  let finish: (() => void) | null = null;
+  if (capture) {
+    const size = new THREE.Vector2(), quad = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), new THREE.ShaderMaterial({ uniforms: { tDiffuse: { value: null } }, depthTest: false, depthWrite: false, vertexShader: 'varying vec2 vUv; void main(){ vUv=uv; gl_Position=vec4(position.xy,0.,1.); }', fragmentShader: 'uniform sampler2D tDiffuse; varying vec2 vUv; void main(){ vec2 d=vUv-.5; vec3 c=texture2D(tDiffuse,vUv).rgb; c.r=texture2D(tDiffuse,vUv-d*.0012).r; c.b=texture2D(tDiffuse,vUv+d*.0012).b; c=mix(c,c*c*(3.-2.*c),.2); float l=dot(c,vec3(.2126,.7152,.0722)); c+=mix(vec3(-.008,0.,.014),vec3(.016,.006,-.012),smoothstep(.15,.85,l)); c=c*.97+.012; gl_FragColor=vec4(clamp(c,0.,1.),1.); }' })), quadScene = new THREE.Scene(), quadCam = new THREE.Camera();
+    quadScene.add(quad); let fb: THREE.FramebufferTexture | null = null;
+    finish = () => { renderer.getDrawingBufferSize(size); if (!fb || fb.image.width !== size.x || fb.image.height !== size.y) { fb?.dispose(); fb = new THREE.FramebufferTexture(size.x, size.y); quad.material.uniforms.tDiffuse.value = fb; } renderer.copyFramebufferToTexture(fb); renderer.render(quadScene, quadCam); };
+  }
   function resize() {
     width = canvas.clientWidth; height = canvas.clientHeight; portrait = width < height;
     renderer.setPixelRatio(dpr); renderer.setSize(width, height, false); bakeU.uRes.value.set(width * dpr, height * dpr);
@@ -288,7 +308,7 @@ export async function createWorld(canvas: HTMLCanvasElement, capture = false, mo
   return {
     update, resize, labelAt, layers,
     get tod() { return curTod; },
-    render: () => renderer.render(scene, camera),
+    render: () => { renderer.render(scene, camera); finish?.(); },
     /** Step down on slow machines, never below one render pixel per CSS pixel. Returns false when nothing is left to drop. */
     degrade() {
       if (dpr > 1) { dpr = 1; resize(); return true; }

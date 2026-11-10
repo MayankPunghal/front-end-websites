@@ -19,6 +19,12 @@ export type Key = keyof typeof PALETTE;
 export const NO_CAST: Key[] = ['wall', 'ceil', 'floor', 'trim', 'rug', 'slat', 'ink', 'art', 'soil', 'shade'];
 
 /** @param d target edge length in metres. Large values give the low-detail version used for the other storeys. */
+/** Where the main room's plants stand: x, z, model, scale, turn. */
+export const PLANTS: [number, number, string, number, number][] = [[-3.55, -2.85, 'potted_plant_01', 1.45, .6], [3.85, 4.1, 'potted_plant_02', 1.7, 2.1], [-2.3, -3.4, 'calathea_orbifolia_01', 1.5, 1.2]];
+
+/** Scanned furniture in the main room: model, x, z, turn. */
+export const FURNITURE: [string, number, number, number][] = [['throw_pillows_01', .25, -.62, .15], ['mid_century_lounge_chair', -2.9, 2, .9]];
+
 export function buildRoom(d: number, mount: Mount = 'ceiling') {
   let seed = 7; const rnd = (a = 0, b = 1) => { seed = (seed * 1664525 + 1013904223) >>> 0; return a + (seed / 4294967296) * (b - a); };
   const fine = d < 0.2, bins = new Map<Key, THREE.BufferGeometry[]>();
@@ -90,12 +96,15 @@ export function buildRoom(d: number, mount: Mount = 'ceiling') {
     for (let i = 0; i < 5; i++) add('ink', new THREE.SphereGeometry(0.04, 10, 8), -0.3 + rnd(-0.08, 0.08), 0.49, 0.85 + rnd(-0.08, 0.08));
   }
 
-  // ---- lounge chair ----
+  // ---- lounge chair: the main room uses a scanned model instead (FURNITURE) ----
+  if (!fine) {
   const cx = -3, cz = 2.3, cr = 0.55, at = (lx: number, lz: number): [number, number] => [cx + lx * Math.cos(cr) + lz * Math.sin(cr), cz - lx * Math.sin(cr) + lz * Math.cos(cr)];
   for (const [lx, lz] of [[-0.4, 0.38], [0.4, 0.38], [-0.4, -0.38], [0.4, -0.38]]) { const [ax, az] = at(lx, lz); add('oak', soft(0.05, 0.36, 0.05, 0.015), ax, 0.18, az, cr); }
   for (const s of [-1, 1]) { const [ax, az] = at(0, s * 0.42); add('oak', soft(0.9, 0.05, 0.06, 0.015), ax, 0.56, az, cr); }
   let [ax, az] = at(0, 0); add('cushion', soft(0.8, 0.15, 0.78, 0.06, 0.03), ax, 0.42, az, cr);
   [ax, az] = at(-0.4, 0); add('cushion', soft(0.14, 0.62, 0.76, 0.06, 0.04), ax, 0.76, az, cr, 0, 0.2);
+
+  }
 
   // ---- back wall: art and console ----
   const artY = 1.85;
@@ -142,7 +151,7 @@ export function buildRoom(d: number, mount: Mount = 'ceiling') {
       g.computeVertexNormals(); add('leaf', g, x + Math.cos(a) * 0.03, base, z + Math.sin(a) * 0.03, -a + Math.PI / 2, -lean - Math.PI / 2 + 1.2);
     }
   };
-  plant(-3.55, -2.85, 1.15); if (mount !== 'side') plant(3.85, 4.1, 1); plant(-2.3, ZB + 0.8, 0.6);
+  if (!fine) { plant(-3.55, -2.85, 1.15); if (mount !== 'side') plant(3.85, 4.1, 1); plant(-2.3, ZB + 0.8, 0.6); }
 
   const parts = (Object.keys(PALETTE) as Key[]).filter(k => bins.has(k)).map(key => ({ key, geo: mergeGeometries(bins.get(key)!, false)! }));
   return parts;
