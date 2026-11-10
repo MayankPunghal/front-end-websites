@@ -199,7 +199,9 @@ export async function createWorld(canvas: HTMLCanvasElement, capture = false, mo
   // the mask sits so close to the wall tops that shadow bias lets a line of sun through; cover them from higher up
   if (!wall) for (const s of [-1, 1]) { const cap = new THREE.Mesh(new THREE.BoxGeometry(1.4, .02, 40), mask.material); cap.position.set(s * (SIDE.x - .4), H + .6, 0); cap.castShadow = true; scene.add(cap); }
   // the shadow map draws the low-detail room: same silhouettes, a fraction of the triangles
-  const casters = new THREE.Mesh(mergeGeometries(buildRoom(.1, mount).filter(p => !NO_CAST.includes(p.key)).map(p => p.geo), false)!, mask.material); casters.castShadow = true; casters.matrixAutoUpdate = false; room.add(casters);
+  // most of the main room is models now; with the window mount there may be nothing left to cast
+  const castGeos = buildRoom(.1, mount).filter(p => !NO_CAST.includes(p.key)).map(p => p.geo);
+  if (castGeos.length) { const casters = new THREE.Mesh(mergeGeometries(castGeos, false)!, mask.material); casters.castShadow = true; casters.matrixAutoUpdate = false; room.add(casters); }
 
   // ---- light shafts, dust, stage glow ----
   const beamU = { uBeam: { value: 0 }, uColor: { value: new THREE.Color(1, .85, .6) } };
