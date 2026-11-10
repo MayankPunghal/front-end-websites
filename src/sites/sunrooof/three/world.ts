@@ -10,7 +10,7 @@ import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { createProduct, panes, W } from './product';
 import { buildRoom, H, NO_CAST, PALETTE, PLANTS, FURNITURE, PANEL, SIDE, WINDOW, X, ZB, ZF, type Key, type Mount } from './room';
-import { artTexture, clamp, lerp, plasterTexture, sampleSky, seg, skyUniforms, smooth, up, wearTexture, weaveTexture, woodTexture } from './shared';
+import { clamp, lerp, plasterTexture, sampleSky, seg, skyUniforms, smooth, up, wearTexture, weaveTexture, woodTexture } from './shared';
 
 const PZ = PANEL.z, MOUNT = PANEL.y, WINY = WINDOW.y, WZ = WINDOW.z, STAGE_Y = 1.84, STOREY = H + 0.85; // two 0.42 slabs plus a gap: overlapping slabs share a front face and flicker
 
@@ -73,22 +73,22 @@ export async function createWorld(canvas: HTMLCanvasElement, capture = false, mo
   const oakMap = woodTexture([150, 104, 66]); oakMap.repeat.set(.9, .9);
   const wear = wearTexture(); wear.repeat.set(.7, .7);
   const plaster = plasterTexture(), weave = weaveTexture(), rugMap = weaveTexture(); plaster.repeat.set(.4, .4); weave.repeat.set(7, 7); rugMap.repeat.set(3, 3);
-  const texLoader = new THREE.TextureLoader(), scan = (id: string, tile: number) => Promise.all(['diff', 'nor', 'rough'].map(n => texLoader.loadAsync(`${base}/sunrooof/tex/${id}_${n}.jpg`))).then(([map, normalMap, roughnessMap]) => { map.colorSpace = THREE.SRGBColorSpace; for (const t of [map, normalMap, roughnessMap]) { t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.setScalar(1 / tile); t.anisotropy = 8; } return { map, normalMap, roughnessMap, roughness: 1 }; });
+  const texLoader = new THREE.TextureLoader(), scan = (id: string, tile: number) => Promise.all(['diff', 'nor', 'rough'].map(n => texLoader.loadAsync(`${base}/sunrooof/tex/${id}_${n}.jpg`))).then(([map, normalMap, roughnessMap]) => { map.colorSpace = THREE.SRGBColorSpace; for (const t of [map, normalMap, roughnessMap]) { t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.setScalar(1 / tile); t.anisotropy = 16; } return { map, normalMap, roughnessMap, roughness: 1 }; });
   const [plasterScan, woodScan, linenScan, velvetScan] = await Promise.all([scan('painted_plaster_wall', 2.5), scan('wood_floor', 2.2), scan('rough_linen', .6), scan('velour_velvet', .5)]);
   const stripeCanvas = document.createElement('canvas'); stripeCanvas.width = 256; stripeCanvas.height = 4; { const g = stripeCanvas.getContext('2d')!; g.fillStyle = '#ffffff'; g.fillRect(0, 0, 256, 4); g.fillStyle = '#f5f1ea'; g.fillRect(128, 0, 128, 4); g.fillStyle = '#ebe5db'; g.fillRect(127, 0, 2, 4); g.fillRect(255, 0, 1, 4); }
   const stripes = new THREE.CanvasTexture(stripeCanvas); stripes.colorSpace = THREE.SRGBColorSpace; stripes.wrapS = stripes.wrapT = THREE.RepeatWrapping; stripes.repeat.set(1 / .9, 1); stripes.anisotropy = 8;
-  const walnutScan = await scan('wood_floor', .5);
-  // the painting: a canvas weave under painterly strokes
-  const art = artTexture(); { const c = art.image as HTMLCanvasElement, g = c.getContext('2d')!, px = g.getImageData(0, 0, c.width, c.height).data; for (let i = 0; i < 2600; i++) { const x = Math.random() * c.width, y = Math.random() * c.height, k = (Math.floor(y) * c.width + Math.floor(x)) * 4, d = (Math.random() - .5) * 46, a = Math.random() * Math.PI; g.strokeStyle = `rgba(${px[k] + d},${px[k + 1] + d},${px[k + 2] + d},.55)`; g.lineWidth = 2 + Math.random() * 7; g.lineCap = 'round'; g.beginPath(); g.moveTo(x, y); g.lineTo(x + Math.cos(a) * (8 + Math.random() * 26), y + Math.sin(a) * (4 + Math.random() * 10)); g.stroke(); } art.needsUpdate = true; }
+  const [walnutScan, clayScan, boucleScan, painting] = await Promise.all([scan('wood_floor', .5), scan('clay_plaster', .8), scan('wool_boucle', .35), texLoader.loadAsync(`${base}/sunrooof/tex/art_painting.jpg`)]);
+  painting.colorSpace = THREE.SRGBColorSpace; painting.anisotropy = 8;
+  // the painting: Monet, Impression, Sunrise (1872, public domain), on a canvas weave
   const glossy: THREE.MeshStandardMaterial[] = [], gloss = (m: THREE.MeshStandardMaterial) => { m.envMap = envTex; glossy.push(m); return m; };
   const col = (k: Key) => new THREE.Color(PALETTE[k]);
   const mats: Record<Key, THREE.Material> = {
     wall: baked({ color: col('wall'), map: stripes, normalMap: plasterScan.normalMap, normalScale: new THREE.Vector2(.45, .45), roughnessMap: plasterScan.roughnessMap, roughness: .95 }), ceil: baked({ color: col('ceil'), normalMap: plasterScan.normalMap, normalScale: new THREE.Vector2(.3, .3), roughnessMap: plasterScan.roughnessMap, roughness: .95 }), trim: matte({ color: col('trim') }),
     floor: gloss(baked({ ...woodScan })), rug: baked({ color: '#efe4d2', ...linenScan }),
     linen: baked({ color: '#f2e2c8', ...linenScan }), cushion: baked({ color: col('cushion'), ...velvetScan }),
-    slat: gloss(baked({ map: slatMap, roughness: .55 })), oak: gloss(baked({ ...walnutScan, color: '#a9805c' })), ink: gloss(baked({ color: col('ink'), roughness: .35 })),
+    slat: gloss(baked({ map: slatMap, roughness: .55 })), oak: baked({ ...walnutScan, color: '#3a2a20', normalScale: new THREE.Vector2(.3, .3), roughness: .9, roughnessMap: null }), ink: gloss(baked({ color: col('ink'), roughness: .35 })),
     stone: gloss(baked({ color: col('stone'), roughness: .55 })), leaf: matte({ color: col('leaf'), side: THREE.DoubleSide }), soil: matte({ color: col('soil') }),
-    art: baked({ map: art, bumpMap: art, bumpScale: 1.5, normalMap: linenScan.normalMap, normalScale: new THREE.Vector2(.5, .5), roughness: .88 }), shade: matte({ color: col('shade'), side: THREE.DoubleSide }),
+    art: baked({ map: painting, bumpMap: painting, bumpScale: 2, normalMap: linenScan.normalMap, normalScale: new THREE.Vector2(.35, .35), roughness: .82 }), shade: matte({ color: col('shade'), side: THREE.DoubleSide }),
   };
   const room = new THREE.Group(); scene.add(room);
   let off = 8;
@@ -106,21 +106,25 @@ export async function createWorld(canvas: HTMLCanvasElement, capture = false, mo
   const hangMats = [new THREE.MeshStandardMaterial({ color: '#a4603c', roughness: .88, envMap: envTex }), new THREE.MeshStandardMaterial({ color: '#7a6a54', roughness: .9, envMap: envTex }), new THREE.MeshStandardMaterial({ color: '#1f4a1c', roughness: .5, side: THREE.DoubleSide, envMap: envTex })], [potM, cordM, leafM] = hangMats;
   const potG = new THREE.LatheGeometry([[0, 0], [.1, 0], [.15, .12], [.17, .24], [.18, .25], [.15, .25], [0, .2]].map(([a, b]) => new THREE.Vector2(a, b)), 28), cordG = new THREE.CylinderGeometry(.005, .005, 1, 6), leafG = new THREE.SphereGeometry(1, 8, 6).scale(.04, .004, .085), up3 = new THREE.Vector3(0, 1, 0), hold = new THREE.Object3D();
   const baskets: number[][] = [];
-  for (const [x, z, drop] of [[-3, -.4, 1.05], [3, -.4, .85], [-3.1, 1.7, .8], [3.1, 1.7, 1.1]]) {
+  for (const [x, z, drop] of [] as number[][]) {
     const y = H - drop - .25, pot = new THREE.Mesh(potG, potM); pot.position.set(x, y, z); hangers.add(pot);
     for (let i = 0; i < 3; i++) { const a = i / 3 * Math.PI * 2, from = new THREE.Vector3(x + Math.cos(a) * .17, y + .25, z + Math.sin(a) * .17), to = new THREE.Vector3(x, H, z), d = to.clone().sub(from), c = new THREE.Mesh(cordG, cordM); c.position.copy(from).addScaledVector(d, .5); c.scale.y = d.length(); c.quaternion.setFromUnitVectors(up3, d.normalize()); hangers.add(c); }
     baskets.push([x, y, z]);
   }
   // scanned plants: photo textures, cut-out leaves that also cut their shadows
   const gltf = new GLTFLoader(), model = (id: string, dir = 'plants') => gltf.loadAsync(id.includes('/') ? `${base}/sunrooof/models/${id}.glb` : `${base}/sunrooof/${dir}/${id}/${id}_2k.gltf`).then(g => { g.scene.traverse(o => { const m = o as THREE.Mesh; if (!m.isMesh) return; m.castShadow = m.receiveShadow = true; const mt = m.material as THREE.MeshStandardMaterial; mt.envMap = envTex; if (id.includes('/')) { mt.metalness = 0; mt.metalnessMap = null; } if (mt.alphaTest) mt.side = THREE.DoubleSide; if (!hangMats.includes(mt)) hangMats.push(mt); }); return g.scene; });
-  const [fern, ...pots] = await Promise.all(['potted_plant_02', ...PLANTS.filter(p => mount !== 'side' || p[2] !== 'potted_plant_02').map(p => p[2])].map(id => model(id)));
+  const pots = await Promise.all([...PLANTS.filter(p => mount !== 'side' || p[2] !== 'potted_plant_02').map(p => p[2])].map(id => model(id)));
   pots.forEach((g, i) => { const [x, z, id, k, ry] = PLANTS.filter(p => mount !== 'side' || p[2] !== 'potted_plant_02')[i]; g.position.set(x, 0, z); if (id === 'calathea_orbifolia_01') { const pot = new THREE.Mesh(potG, potM); pot.scale.setScalar(2.2); pot.position.set(x, 0, z); pot.castShadow = pot.receiveShadow = true; room.add(pot); g.position.y = .5; } g.scale.setScalar(k); g.rotation.y = ry; room.add(g); });
-  baskets.forEach(([x, y, z], i) => { const g = fern.clone(); g.position.set(x, y + .1, z); g.scale.setScalar(.48 + i * .03); g.rotation.y = i * 1.9; hangers.add(g); });
   // the light bake predates the furniture, so each piece gets a soft contact shadow
   const blobCanvas = document.createElement('canvas'); blobCanvas.width = blobCanvas.height = 128; { const g = blobCanvas.getContext('2d')!, gr = g.createRadialGradient(64, 64, 8, 64, 64, 64); gr.addColorStop(0, 'rgba(0,0,0,.75)'); gr.addColorStop(.6, 'rgba(0,0,0,.35)'); gr.addColorStop(1, 'rgba(0,0,0,0)'); g.fillStyle = gr; g.fillRect(0, 0, 128, 128); }
   const blobMat = new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(blobCanvas), transparent: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2 }), box3 = new THREE.Box3(), size3 = new THREE.Vector3();
   const ground = (g: THREE.Object3D) => { g.updateMatrixWorld(true); box3.setFromObject(g).getSize(size3); const c = box3.getCenter(new THREE.Vector3()), b = new THREE.Mesh(new THREE.PlaneGeometry(size3.x * 1.25, size3.z * 1.25).rotateX(-Math.PI / 2), blobMat); b.position.set(c.x, .028, c.z); room.add(b); };
   (await Promise.all(FURNITURE.map(([id]) => model(id, 'models')))).forEach((g, i) => { const [, x, z, ry, w] = FURNITURE[i]; g.scale.setScalar(w); g.rotation.y = ry; g.position.set(x, 0, z); g.updateMatrixWorld(true); g.position.y -= box3.setFromObject(g).min.y - .024; room.add(g); ground(g); });
+  // round boucle rug and a pair of plaster drum tables, after the living room in the SUNROOOF gallery
+  const rugMat = new THREE.MeshStandardMaterial({ ...boucleScan, color: '#e9e0d0', envMap: envTex, envMapIntensity: .2 }), clay = new THREE.MeshStandardMaterial({ ...clayScan, color: '#efe6d8', envMap: envTex, envMapIntensity: .35 }); hangMats.push(rugMat, clay);
+  const rug = new THREE.Mesh(new THREE.CylinderGeometry(2, 2, .022, 128), rugMat); rug.position.set(.6, .011, -.9); rug.receiveShadow = true; room.add(rug);
+  const drum = (r: number, h: number) => new THREE.LatheGeometry([[0, 0], [r - .01, 0], [r, .01], [r, h - .025], [r - .025, h], [0, h]].map(([a, b]) => new THREE.Vector2(a, b)), 96);
+  for (const [r, h, x, z] of [[.52, .36, .45, -.95], [.3, .46, 1.07, -.55]]) { const o = new THREE.Mesh(drum(r, h), clay); o.position.set(x, .022, z); o.castShadow = o.receiveShadow = true; room.add(o); ground(o); }
 
   // ---- walnut console with scanned ceramic vases ----
   const walnut = new THREE.MeshStandardMaterial({ ...walnutScan, color: '#7a5236', envMap: envTex, envMapIntensity: .4 }), darkMetal = new THREE.MeshStandardMaterial({ color: '#1c1a18', metalness: .8, roughness: .35, envMap: envTex });
@@ -131,6 +135,11 @@ export async function createWorld(canvas: HTMLCanvasElement, capture = false, mo
   for (const [dx, dz] of [[-1.3, -.15], [1.3, -.15], [-1.3, .15], [1.3, .15]]) piece(new THREE.BoxGeometry(.03, .08, .03), darkMetal, .2 + dx, .04, ZB + .24 + dz);
   const [vaseA, vaseB] = await Promise.all(['ceramic_vase_02', 'ceramic_vase_03'].map(id => model(id, 'models')));
   vaseA.position.set(-.75, .58, ZB + .24); vaseA.scale.setScalar(1.2); vaseB.position.set(1.15, .58, ZB + .22); vaseB.scale.setScalar(1.4); vaseB.rotation.y = 1; room.add(vaseA, vaseB);
+  // the painting: Monet, Impression, Sunrise, in a thin walnut frame with a linen mat (lit live: baked corners sparkled)
+  if (mount !== 'wall') {
+    const canvasMat = new THREE.MeshStandardMaterial({ map: painting, bumpMap: painting, bumpScale: 2, normalMap: linenScan.normalMap, color: new THREE.Color(.62, .6, .58), normalScale: new THREE.Vector2(.35, .35), roughness: .82, envMap: envTex, envMapIntensity: .2 }), matMat = new THREE.MeshStandardMaterial({ ...linenScan, color: '#b8b0a4', envMap: envTex, envMapIntensity: .2 }); hangMats.push(canvasMat, matMat);
+    piece(new THREE.BoxGeometry(1.86, 1.5, .04), walnut, .2, 1.85, ZB + .02); piece(new THREE.BoxGeometry(1.76, 1.4, .01), matMat, .2, 1.85, ZB + .045); piece(new THREE.BoxGeometry(1.5, 1.16, .012), canvasMat, .2, 1.85, ZB + .052);
+  }
   for (let i = 0; i < 3; i++) piece(new THREE.BoxGeometry(.32 - i * .03, .035, .24 - i * .02), new THREE.MeshStandardMaterial({ color: ['#3b4a56', '#c9b79c', '#7d3b2c'][i], roughness: .8, envMap: envTex }), .35, .6 + i * .036, ZB + .24).rotation.y = i * .12;
 
   // ---- library: the whole right wall in dark walnut, filled with books, a brass rail and a ladder ----
@@ -155,12 +164,12 @@ export async function createWorld(canvas: HTMLCanvasElement, capture = false, mo
       const y0 = .06 + r * rh + T / 2, zs = Z0 + c * cw + T / 2 + .02, ze = Z0 + (c + 1) * cw - T / 2 - .02; let z = zs;
       while (z < ze - .05 && n < 2590) {
         const pick = rr();
-        if (pick < .08) { // a small stack lying flat
+        if (pick < .08 && z + .3 < ze) { // a small stack lying flat
           const k = 2 + Math.floor(rr() * 4); let y = y0; for (let i = 0; i < k; i++) { const t = .03 + rr() * .03, w = .2 + rr() * .06; hold.position.set(LX - D / 2 - .02, y + t / 2, z + .13); hold.rotation.set(0, rr() * .2 - .1, Math.PI / 2); hold.scale.set(t, w, .26); hold.updateMatrix(); books.setMatrixAt(n, hold.matrix); books.setColorAt(n++, col.set(COLS[Math.floor(rr() * COLS.length)])); y += t; } z += .3;
-        } else if (pick < .13) { z += .1 + rr() * .12; // a gap
+        } else if (pick < .13 || z + .06 > ze) { z += .1 + rr() * .12; // a gap
         } else {
-          const t = .022 + rr() * .035, h = Math.min(rh - .05, .2 + rr() * .14), d = .18 + rr() * .09, lean = z + t > ze - .1 && rr() < .5 ? .25 : 0;
-          hold.position.set(LX - D + d / 2 + .04, y0 + h / 2, z + t / 2); hold.rotation.set(lean, 0, 0); hold.scale.set(d, h, t); hold.updateMatrix(); books.setMatrixAt(n, hold.matrix);
+          const t = .022 + rr() * .035, h = Math.min(rh - .05, .2 + rr() * .14), d = .18 + rr() * .09, lean = z + t + h * .2 > ze - .06 || z + t > ze - .1 || rr() > .5 ? 0 : -.2;
+          if (z + t > ze) break; hold.position.set(LX - D + d / 2 + .04, y0 + h / 2 * Math.cos(lean), z + t / 2 - h / 2 * Math.sin(lean)); hold.rotation.set(lean, 0, 0); if (lean) z -= h * Math.sin(lean); hold.scale.set(d, h, t); hold.updateMatrix(); books.setMatrixAt(n, hold.matrix);
           books.setColorAt(n++, col.set(COLS[Math.floor(rr() * COLS.length)]).multiplyScalar(.8 + rr() * .4)); z += t + .002;
         }
       }
@@ -168,7 +177,7 @@ export async function createWorld(canvas: HTMLCanvasElement, capture = false, mo
     books.count = n; books.castShadow = books.receiveShadow = true; room.add(books);
     const brass = new THREE.MeshStandardMaterial({ color: '#b08a4a', metalness: 1, roughness: .3, envMap: envTex }); hangMats.push(brass);
     const rail = piece(new THREE.CylinderGeometry(.012, .012, Z1 - Z0, 12), brass, LX - D - .06, 2.55, (Z0 + Z1) / 2); rail.rotation.x = Math.PI / 2;
-    const ladder = new THREE.Group(); ladder.position.set(LX - D - .55, 0, .4); ladder.rotation.z = .2; room.add(ladder);
+    const ladder = new THREE.Group(); ladder.position.set(LX - D - .6, 0, 2.3); ladder.rotation.z = -.2; room.add(ladder);
     for (const dz of [-.22, .22]) { const o = new THREE.Mesh(new THREE.BoxGeometry(.045, 2.75, .035), dark); o.position.set(0, 1.37, dz); o.castShadow = true; ladder.add(o); }
     for (let i = 0; i < 9; i++) { const o = new THREE.Mesh(new THREE.CylinderGeometry(.014, .014, .44, 10), brass); o.rotation.x = Math.PI / 2; o.position.set(0, .28 + i * .29, 0); ladder.add(o); }
   }
@@ -290,10 +299,10 @@ export async function createWorld(canvas: HTMLCanvasElement, capture = false, mo
   const n = cams.length, posC = new THREE.CatmullRomCurve3(cams.map(k => new THREE.Vector3(...k[1]))), tgtC = new THREE.CatmullRomCurve3(cams.map(k => new THREE.Vector3(...k[2])));
   const tgt = new THREE.Vector3(), mouse = { x: 0, y: 0, mx: 0, my: 0 }; addEventListener('pointermove', e => { mouse.mx = e.clientX / innerWidth - .5; mouse.my = e.clientY / innerHeight - .5; }, { passive: true });
   // never below one render pixel per CSS pixel: a blurry frame reads worse than a slightly slower one
-  let dpr = Math.min(devicePixelRatio, weak ? 1 : 1.5), width = 2, height = 2, portrait = false, time = 0, curTod = 0, lastSun = '';
+  let dpr = capture ? devicePixelRatio : Math.min(devicePixelRatio, weak ? 1 : 1.5), width = 2, height = 2, portrait = false, time = 0, curTod = 0, lastSun = '';
   const v = new THREE.Vector3(), right = new THREE.Vector3(), a1 = new THREE.Vector3(), a2 = new THREE.Vector3(), dullC = new THREE.Color(.74, .71, .67), warm = new THREE.Color(1, .82, .55), paneSky = new THREE.Color(1, .86, .66), finalSun = new THREE.Vector3(.35, .62, -.2), finalSunW = new THREE.Vector3(.1, .34, -.8), sunlit = new THREE.Color(6, 5, 3.6); // the other storeys are in sunlight while the city is dark
 
-  // film finish for the captured frames: gentle bloom, a filmic curve, split toning and slight lens fringing
+  // film finish for the captured frames: gentle bloom, a filmic curve, split toning; no grain or fringing, so it stays crisp
   beamMat.fragmentShader = managed(beamMat.fragmentShader); beamMat.needsUpdate = true; for (const m of cityBeams) { m.fragmentShader = beamMat.fragmentShader; m.needsUpdate = true; }
   for (const m of [dust.material, stageFloor.material, skyDome.material] as THREE.ShaderMaterial[]) { m.fragmentShader = managed(m.fragmentShader); m.needsUpdate = true; }
   let composer: EffectComposer | null = null;
@@ -305,9 +314,9 @@ export async function createWorld(canvas: HTMLCanvasElement, capture = false, mo
     const aoRender = ao.render.bind(ao), hid: THREE.Object3D[] = [];
     ao.render = (...args: Parameters<typeof aoRender>) => { scene.traverse(o => { const m = (o as THREE.Mesh).material as THREE.Material; if (o.visible && m && !Array.isArray(m) && ((m.transparent && !m.depthWrite) || m.colorWrite === false || (o as THREE.Points).isPoints || (o as THREE.Sprite).isSprite)) { o.visible = false; hid.push(o); } }); aoRender(...args); for (const o of hid) o.visible = true; hid.length = 0; };
     composer.addPass(ao);
-    composer.addPass(new UnrealBloomPass(new THREE.Vector2(1, 1), .16, .5, .95));
+    composer.addPass(new UnrealBloomPass(new THREE.Vector2(1, 1), .1, .4, .95));
     composer.addPass(new OutputPass());
-    composer.addPass(new ShaderPass({ uniforms: { tDiffuse: { value: null } }, vertexShader: 'varying vec2 vUv; void main(){ vUv=uv; gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.); }', fragmentShader: 'uniform sampler2D tDiffuse; varying vec2 vUv; void main(){ vec2 d=vUv-.5; vec3 c=texture2D(tDiffuse,vUv).rgb; c.r=texture2D(tDiffuse,vUv-d*.0012).r; c.b=texture2D(tDiffuse,vUv+d*.0012).b; c=mix(c,c*c*(3.-2.*c),.2); float l=dot(c,vec3(.2126,.7152,.0722)); c+=mix(vec3(-.008,0.,.014),vec3(.016,.006,-.012),smoothstep(.15,.85,l)); c=c*.97+.012; gl_FragColor=vec4(clamp(c,0.,1.),1.); }' }));
+    composer.addPass(new ShaderPass({ uniforms: { tDiffuse: { value: null } }, vertexShader: 'varying vec2 vUv; void main(){ vUv=uv; gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.); }', fragmentShader: 'uniform sampler2D tDiffuse; varying vec2 vUv; void main(){ vec2 d=vUv-.5; vec3 c=texture2D(tDiffuse,vUv).rgb; c=mix(c,c*c*(3.-2.*c),.2); float l=dot(c,vec3(.2126,.7152,.0722)); c+=mix(vec3(-.008,0.,.014),vec3(.016,.006,-.012),smoothstep(.15,.85,l)); c=c*.97+.012; gl_FragColor=vec4(clamp(c,0.,1.),1.); }' }));
   }
   function resize() {
     width = canvas.clientWidth; height = canvas.clientHeight; portrait = width < height;

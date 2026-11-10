@@ -131,11 +131,12 @@ def shoot(engine, name):
 
 scene.eevee.use_raytracing = True; scene.eevee.taa_render_samples = 64
 scene.eevee.use_shadows = True; scene.eevee.volumetric_tile_size = "4"
-shoot("BLENDER_EEVEE_NEXT" if "BLENDER_EEVEE_NEXT" in [e.identifier for e in bpy.types.RenderSettings.bl_rna.properties["engine"].enum_items] else "BLENDER_EEVEE", "eevee.png")
-
-# Cycles settings kept for stills
-scene.cycles.device = "CPU"; scene.cycles.samples = 96; scene.cycles.use_denoising = True; scene.cycles.denoiser = "OPENIMAGEDENOISE"
-scene.cycles.max_bounces = 6; scene.cycles.volume_bounces = 0
-shoot(scene.render.engine, "eevee2.png")
-bpy.ops.wm.save_as_mainfile(filepath=os.path.join(OUT, "room.blend"))
-result = times
+if not os.environ.get("ANIM"):  # tools/blender-anim.py reuses this scene for the film
+    shoot("BLENDER_EEVEE_NEXT" if "BLENDER_EEVEE_NEXT" in [e.identifier for e in bpy.types.RenderSettings.bl_rna.properties["engine"].enum_items] else "BLENDER_EEVEE", "eevee.png")
+    
+    # Cycles settings kept for stills
+    scene.cycles.device = "CPU"; scene.cycles.samples = 96; scene.cycles.use_denoising = True; scene.cycles.denoiser = "OPENIMAGEDENOISE"
+    scene.cycles.max_bounces = 6; scene.cycles.volume_bounces = 0
+    shoot(scene.render.engine, "eevee2.png")
+    bpy.ops.wm.save_as_mainfile(filepath=os.path.join(OUT, "room.blend"))
+    result = times
