@@ -17,7 +17,10 @@
       (window as any).exportRoom = async (i: number, n: number) => {
         world.update(paceAt(i / (n - 1)), 1 / 120); world.render();
         const { room, hangers, root, camera, sun } = world.parts;
+        // leave out three.js-only helpers: invisible shadow casters, fake contact shadows and glows
+        const hidden: any[] = []; for (const g of [room, hangers, root]) g.traverse((o: any) => { const m = o.material; if (o.isMesh && o.visible && m && (m.colorWrite === false || m.isShaderMaterial || (m.isMeshBasicMaterial && m.transparent))) { o.visible = false; hidden.push(o); } });
         const glb = await new GLTFExporter().parseAsync([room, hangers, root].filter(o => o.visible), { binary: true, onlyVisible: true }) as ArrayBuffer;
+        for (const o of hidden) o.visible = true;
         let b = ''; const u = new Uint8Array(glb); for (let k = 0; k < u.length; k += 32768) b += String.fromCharCode(...u.subarray(k, k + 32768));
         return { glb: btoa(b), camera: { p: camera.position.toArray(), q: camera.quaternion.toArray(), fov: camera.fov, aspect: camera.aspect }, sun: { dir: sun.position.clone().sub(sun.target.position).normalize().toArray(), color: sun.color.toArray(), intensity: sun.intensity }, tod: world.tod };
       };

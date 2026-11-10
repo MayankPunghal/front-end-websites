@@ -20,10 +20,10 @@ export const NO_CAST: Key[] = ['wall', 'ceil', 'floor', 'trim', 'rug', 'slat', '
 
 /** @param d target edge length in metres. Large values give the low-detail version used for the other storeys. */
 /** Where the main room's plants stand: x, z, model, scale, turn. */
-export const PLANTS: [number, number, string, number, number][] = [[-3.55, -2.85, 'potted_plant_01', 1.45, .6], [3.85, 4.1, 'potted_plant_02', 1.7, 2.1], [-2.3, -3.4, 'potted_plant_02', 1.35, 1.2]];
+export const PLANTS: [number, number, string, number, number][] = [[-3.55, -2.85, 'potted_plant_01', 1.45, .6], [3.1, 4.4, 'potted_plant_02', 1.7, 2.1], [-2.3, -3.4, 'potted_plant_02', 1.35, 1.2]];
 
-/** Scanned furniture in the main room: model, x, z, turn. */
-export const FURNITURE: [string, number, number, number][] = [['mid_century_lounge_chair', -2.9, 2, .9]];
+/** Furniture models in the main room: model (FurniMesh GLB under models/fm), x, z, turn, width in metres. */
+export const FURNITURE: [string, number, number, number, number][] = [['fm/sofa_l', 1.05, -.45, 0, 3.1], ['fm/table_oval', .75, 1.25, 0, 1.3], ['fm/loveseat', -2.75, 1.1, Math.PI / 2, 1.8]];
 
 export function buildRoom(d: number, mount: Mount = 'ceiling') {
   let seed = 7; const rnd = (a = 0, b = 1) => { seed = (seed * 1664525 + 1013904223) >>> 0; return a + (seed / 4294967296) * (b - a); };
@@ -66,13 +66,14 @@ export function buildRoom(d: number, mount: Mount = 'ceiling') {
   add('wall', box(X * 2, H, T), 0, H / 2, ZB - T / 2);
   // skirting and door
   add('trim', box(X * 2, 0.14, 0.025), 0, 0.07, ZB + 0.0125); add('trim', box(0.025, 0.14, DEPTH), -X + 0.0125, 0.07, CZ); add('trim', box(0.025, 0.14, DEPTH), X - 0.0125, 0.07, CZ);
-  add('oak', soft(0.05, 2.4, 1.05, 0.006), X - 0.03, 1.2, 2.3); for (const s of [-1, 1]) add('trim', box(0.05, 2.455, 0.09), X - 0.03, 1.2275, 2.3 + s * 0.57); add('trim', box(0.05, 0.09, 1.23), X - 0.03, 2.5, 2.3);
-  add('ink', rod(0.012, 0.13), X - 0.1, 1.05, 1.92, 0, 0, Math.PI / 2);
+  if (!fine) { add('oak', soft(0.05, 2.4, 1.05, 0.006), X - 0.03, 1.2, 2.3); for (const s of [-1, 1]) add('trim', box(0.05, 2.455, 0.09), X - 0.03, 1.2275, 2.3 + s * 0.57); add('trim', box(0.05, 0.09, 1.23), X - 0.03, 2.5, 2.3);
+  add('ink', rod(0.012, 0.13), X - 0.1, 1.05, 1.92, 0, 0, Math.PI / 2); } // the main room's right wall is a library (world.ts)
 
   // ---- rug ----
   add('rug', soft(5.6, 0.024, 4.2, 0.01), 0.3, 0.012, 0.9);
 
-  // ---- sofa ----
+  // ---- sofa and coffee table: the main room uses scanned models instead (FURNITURE) ----
+  if (!fine) {
   // one L-shaped body with cushions fitted against each other
   const SX0 = 1.76, SX1 = 2.84, SZ0 = -1.26, SZ1 = 2.55, RX0 = -0.6, DEEP = 1.04;
   const blk = (x0: number, x1: number, y0: number, y1: number, z0: number, z1: number, r = 0.05, puff = 0) => add('linen', soft(x1 - x0, y1 - y0, z1 - z0, r, puff), (x0 + x1) / 2, (y0 + y1) / 2, (z0 + z1) / 2);
@@ -88,15 +89,15 @@ export function buildRoom(d: number, mount: Mount = 'ceiling') {
   add('linen', soft(0.2, 0.5, DEEP - 0.22, 0.09, 0.05), 2.53, 0.82, SZ0 + 0.2 + (DEEP - 0.2) / 2, 0, 0, -0.14);
   add('cushion', soft(0.5, 0.5, 0.14, 0.06, 0.07), 0.3, 0.84, -0.72, 0.12, 0.28, 0.1); add('cushion', soft(0.14, 0.46, 0.46, 0.06, 0.06), 2.3, 0.84, -0.1, 0.2, 0, -0.3); add('rug', soft(0.14, 0.42, 0.42, 0.05, 0.06), 2.3, 0.82, 1.9, -0.2, 0, -0.34);
 
-  // ---- coffee table, with objects ----
   add('oak', lathe([[0, 0.02], [0.72, 0.02], [0.7, 0.05], [0.62, 0.34], [0.84, 0.36], [0.86, 0.39], [0.84, 0.42], [0, 0.42]]), -0.2, 0, 0.95);
   if (fine) {
     add('ink', soft(0.42, 0.04, 0.3, 0.005), 0.12, 0.44, 1.18, 0.3); add('art', soft(0.34, 0.03, 0.25, 0.005), 0.13, 0.475, 1.17, 0.5);
     add('stone', lathe([[0, 0], [0.09, 0], [0.19, 0.06], [0.24, 0.16], [0.225, 0.16], [0.17, 0.075], [0, 0.03]]), -0.3, 0.42, 0.85);
     for (let i = 0; i < 5; i++) add('ink', new THREE.SphereGeometry(0.04, 10, 8), -0.3 + rnd(-0.08, 0.08), 0.49, 0.85 + rnd(-0.08, 0.08));
   }
+  }
 
-  // ---- lounge chair: the main room uses a scanned model instead (FURNITURE) ----
+  // ---- lounge chair (distant rooms only) ----
   if (!fine) {
   const cx = -3, cz = 2.3, cr = 0.55, at = (lx: number, lz: number): [number, number] => [cx + lx * Math.cos(cr) + lz * Math.sin(cr), cz - lx * Math.sin(cr) + lz * Math.cos(cr)];
   for (const [lx, lz] of [[-0.4, 0.38], [0.4, 0.38], [-0.4, -0.38], [0.4, -0.38]]) { const [ax, az] = at(lx, lz); add('oak', soft(0.05, 0.36, 0.05, 0.015), ax, 0.18, az, cr); }
@@ -109,6 +110,7 @@ export function buildRoom(d: number, mount: Mount = 'ceiling') {
   // ---- back wall: art and console ----
   const artY = 1.85;
   if (mount !== 'wall') { add('oak', soft(2.2, 1.44, 0.04, 0.008), 0.2, artY, ZB + 0.03); add('trim', soft(2.1, 1.34, 0.01, 0.002), 0.2, artY, ZB + 0.055); add('art', soft(1.7, 0.96, 0.01, 0.002), 0.2, artY, ZB + 0.063); }
+  if (!fine) { // the main room has a walnut console with scanned vases (world.ts)
   add('oak', soft(3.2, 0.52, 0.46, 0.012), 0.2, 0.34, ZB + 0.26); for (const s of [-1.05, -0.35, 0.35, 1.05]) add('ink', box(0.012, 0.44, 0.005), 0.2 + s * 0.76 + 0.38 * Math.sign(s) * 0, 0.34, ZB + 0.492);
   for (const x of [-1.2, 1.6]) add('ink', rod(0.018, 0.08), x, 0, ZB + 0.26);
   if (fine) {
@@ -117,13 +119,14 @@ export function buildRoom(d: number, mount: Mount = 'ceiling') {
     add('shade', lathe([[0.14, 0], [0.09, 0.24]], 32), 1.35, 1.0, ZB + 0.26);
     for (let i = 0; i < 4; i++) { const t = 0.05 + i * 0.012; add(i % 2 ? 'cushion' : 'stone', soft(0.3, 0.035, 0.22, 0.004), 0.42, 0.615 + i * 0.038, ZB + 0.24, t); }
   }
+  }
 
-  // ---- left wall: slats and screen ----
-  for (let i = 0; i < 26; i++) add('slat', soft(0.06, H - 0.02, 0.1, 0.008), -X + 0.05, H / 2, ZB + 0.4 + i * 0.17);
+  // ---- left wall: slats (the full wall in the main room) and screen ----
+  for (let i = 0, n = fine ? Math.floor((ZF - ZB - 0.1) / 0.17) : 26; i < n; i++) add('slat', soft(0.06, H - 0.02, 0.1, 0.008), -X + 0.05, H / 2, (fine ? ZB + 0.1 : ZB + 0.4) + i * 0.17);
   add('ink', soft(0.04, 1.25, 2.2, 0.01), -X + 0.13, 1.6, 2.5);
 
   // ---- right wall: shelves ----
-  for (const y of [1, 1.7, 2.4]) {
+  if (!fine) for (const y of [1, 1.7, 2.4]) {
     add('oak', soft(0.34, 0.05, 2.3, 0.008), X - 0.17, y, -2.3);
     if (!fine) continue;
     let z = -3.34;
