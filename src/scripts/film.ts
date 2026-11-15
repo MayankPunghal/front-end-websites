@@ -11,20 +11,22 @@ async function boot(story: HTMLElement) {
   const pin = story.querySelector<HTMLElement>('.film__pin')!;
   let video = story.querySelector('video')!;
   root.classList.add('is-film');
+  pin.addEventListener('contextmenu', e => e.preventDefault()); // no 'Save video as' on the film (a deterrent only: the file is still fetched in the open)
   const path = `${story.dataset.film}/${pin.clientHeight > pin.clientWidth ? 'portrait' : 'landscape'}`;
   let film: Film;
   try { film = await (await fetch(`${path}.json`, { cache: 'no-cache' })).json(); } catch { return fail(); }
   video.addEventListener('error', fail, { once: true });
   video.poster = `${path}.jpg?v=${film.v}`; video.src = `${path}.mp4?v=${film.v}`;
 
-  const clamp = (x: number) => Math.min(1, Math.max(0, x));
+  const clamp = (x: number) => Math.min(1, Math.max(0, x)), up = (x: number, a: number, b: number) => { const t = clamp((x - a) / (b - a)); return t * t * t * (t * (6 * t - 15) + 10); };
+  let shownGrade = '';
   const chapters = [...story.querySelectorAll<HTMLElement>('[data-in]')].map(el => ({ el, a: +el.dataset.in!, b: +el.dataset.out!, shown: -1 }));
   const labels = [...story.querySelectorAll<HTMLElement>('[data-layer]')];
   const clockT = story.querySelector<HTMLElement>('[data-clock-t]')!, clockN = story.querySelector<HTMLElement>('[data-clock-n]')!, clock = story.querySelector<HTMLElement>('[data-clock]')!;
   const fine = matchMedia('(min-width: 48rem)').matches;
   const NAMES: [number, string][] = [[480, 'Dawn'], [680, 'Morning'], [900, 'Midday'], [1020, 'Afternoon'], [1150, 'Dusk'], [1e9, 'Night']];
 
-  let s = -1, p = 0, frame = 0, shown = -1, visible = true, top = 0, span = 1;
+  let s = -1, eased = -1, p = 0, frame = 0, shown = -1, visible = true, top = 0, span = 1;
   const resize = () => { top = story.getBoundingClientRect().top + scrollY - parseFloat(getComputedStyle(pin).top); span = story.offsetHeight - pin.offsetHeight; s = -1; };
   addEventListener('resize', resize); resize();
   new IntersectionObserver(([e]) => { visible = e.isIntersecting; }).observe(story);
@@ -50,6 +52,9 @@ async function boot(story: HTMLElement) {
       l.style.opacity = String(open);
       l.style.transform = `translate3d(${(fine ? q.x : Math.min(q.x, pin.clientWidth - 150)).toFixed(1)}px,${q.y.toFixed(1)}px,0)`;
     });
+    // time-of-day light, as in the 3D scene: neutral at midday, warming and dimming into dusk; it eases off as the camera pulls out to the night building
+    const w = up(todAt(frame), .42, .66) * (1 - up(p, .9, .97)), grade = w < .005 ? '' : `sepia(${(.45 * w).toFixed(3)}) saturate(${(1 + .35 * w).toFixed(3)}) hue-rotate(${(-12 * w).toFixed(1)}deg) brightness(${(1 - .25 * w).toFixed(3)})`;
+    if (grade !== shownGrade) { shownGrade = grade; story.querySelectorAll('video').forEach(v => { v.style.filter = grade; }); }
     const lit = p > .23 && p < .985; clock.style.opacity = lit ? '1' : '0';
     if (lit) {
       const tod = todAt(frame), mins = Math.round(370 + tod * 900), hh = String(Math.floor(mins / 60)).padStart(2, '0'), mm = String(mins % 60).padStart(2, '0');
@@ -60,7 +65,9 @@ async function boot(story: HTMLElement) {
   const tick = () => {
     requestAnimationFrame(tick);
     if (!visible || document.hidden) return;
-    const now = clamp((scrollY - top) / span);
+    // the film eases toward the scrollbar, so a wheel notch plays as a short run of frames instead of one jump
+    const goal = clamp((scrollY - top) / span); eased = eased < 0 ? goal : eased + (goal - eased) * .14;
+    const now = Math.abs(goal - eased) < 1e-4 ? (eased = goal) : eased;
     if (now !== s) { s = now; p = paceAt(s); frame = Math.round(s * (film.n - 1)); overlay(); }
     // a new seek only starts once the last one has finished, so the video never falls behind the scrollbar
     if (frame !== shown && !video.seeking && video.readyState >= 1) { shown = frame; video.currentTime = (frame + .5) / film.fps; }
