@@ -10,6 +10,8 @@
       import { createWorld } from '../../sites/sunrooof/three/world';
       import { paceAt } from '../../sites/sunrooof/pace';
       import { GLTFExporter } from 'three/examples/jsm/exporters/GLTFExporter.js';
+      import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
+      import * as THREE from 'three';
       const canvas = document.querySelector('canvas')!;
       const world = await createWorld(canvas, true, new URLSearchParams(location.search).get('mount') === 'wall' ? 'wall' : 'ceiling');
       world.resize(); (window as any).world = world;
@@ -19,10 +21,36 @@
         const { room, hangers, root, camera, sun } = world.parts;
         // leave out three.js-only helpers: invisible shadow casters, fake contact shadows and glows
         const hidden: any[] = []; for (const g of [room, hangers, root]) g.traverse((o: any) => { const m = o.material; if (o.isMesh && o.visible && m && (m.colorWrite === false || m.isShaderMaterial || (m.isMeshBasicMaterial && m.transparent))) { o.visible = false; hidden.push(o); } });
+        // Blender drops per-instance colours, so instanced meshes (the books) go out as one mesh with vertex colours
+        const swaps: any[] = []; room.traverse((o: any) => { if (o.isInstancedMesh && o.visible) swaps.push(o); });
+        const merged = swaps.map((o: any) => { const parts = []; const m = new THREE.Matrix4(), c = new THREE.Color(); for (let k = 0; k < o.count; k++) { o.getMatrixAt(k, m); const g = o.geometry.clone().applyMatrix4(m); if (o.instanceColor) o.getColorAt(k, c); const n = g.attributes.position.count, col = new Float32Array(n * 3); for (let v = 0; v < n; v++) col.set([c.r, c.g, c.b], v * 3); g.setAttribute('color', new THREE.BufferAttribute(col, 3)); parts.push(g); } const mat = o.material.clone(); mat.vertexColors = true; const mesh = new THREE.Mesh(mergeGeometries(parts), mat); mesh.matrix.copy(o.matrix); mesh.matrixAutoUpdate = false; o.parent.add(mesh); o.visible = false; return mesh; });
         const glb = await new GLTFExporter().parseAsync([room, hangers, root].filter(o => o.visible), { binary: true, onlyVisible: true }) as ArrayBuffer;
-        for (const o of hidden) o.visible = true;
+        for (const o of hidden) o.visible = true; for (const o of swaps) o.visible = true; for (const m of merged) m.removeFromParent();
         let b = ''; const u = new Uint8Array(glb); for (let k = 0; k < u.length; k += 32768) b += String.fromCharCode(...u.subarray(k, k + 32768));
         return { glb: btoa(b), camera: { p: camera.position.toArray(), q: camera.quaternion.toArray(), fov: camera.fov, aspect: camera.aspect }, sun: { dir: sun.position.clone().sub(sun.target.position).normalize().toArray(), color: sun.color.toArray(), intensity: sun.intensity }, tod: world.tod };
+      };
+      // Hands the night building (every other storey and the neighbouring blocks) to Blender as plain meshes, colours baked in,
+      // plus the scroll position p of every second frame, so Blender can time the pane flight and the reveal.
+      (window as any).exportCity = async (n: number) => {
+        world.update(paceAt(1), 1 / 120); world.render();
+        const { city } = world.parts, out = new THREE.Group(), m = new THREE.Matrix4(), c = new THREE.Color();
+        city.updateMatrixWorld(true);
+        city.traverse((o: any) => {
+          if (!o.isInstancedMesh) return;
+          const parts = [];
+          for (let k = 0; k < o.count; k++) {
+            o.getMatrixAt(k, m); const g = o.geometry.clone().applyMatrix4(m); c.setRGB(1, 1, 1); if (o.instanceColor) o.getColorAt(k, c);
+            const nv = g.attributes.position.count, base = g.attributes.color, col = new Float32Array(nv * 3);
+            for (let v = 0; v < nv; v++) col.set(base ? [base.getX(v) * c.r, base.getY(v) * c.g, base.getZ(v) * c.b] : [c.r, c.g, c.b], v * 3);
+            g.setAttribute('color', new THREE.BufferAttribute(col, 3)); for (const a of Object.keys(g.attributes)) if (!['position', 'normal', 'color'].includes(a)) g.deleteAttribute(a); parts.push(g);
+          }
+          const mesh = new THREE.Mesh(mergeGeometries(parts), new THREE.MeshBasicMaterial({ vertexColors: true }));
+          mesh.name = 'City' + out.children.length; mesh.userData.gain = o.material.color.toArray(); mesh.applyMatrix4(o.matrixWorld); out.add(mesh);  // gain: the material colour, a brightness over 1 that vertex colours cannot hold
+        });
+        const glb = await new GLTFExporter().parseAsync(out, { binary: true }) as ArrayBuffer;
+        let b = ''; const u = new Uint8Array(glb); for (let k = 0; k < u.length; k += 32768) b += String.fromCharCode(...u.subarray(k, k + 32768));
+        const ps = []; for (let i = 0; i < n; i += 2) ps.push(paceAt(i / (n - 1)));
+        return { glb: btoa(b), parts: out.children.map(x => [x.name, (x as any).geometry.attributes.position.count, x.userData.gain]), ps };
       };
       (window as any).frameAt = (i: number, n: number) => {
         const p = paceAt(i / (n - 1));

@@ -391,7 +391,7 @@ export async function createWorld(canvas: HTMLCanvasElement, capture = false, mo
   return {
     update, resize, labelAt, layers,
     /** For exporting the room to Blender. */
-    parts: { scene, camera, room, hangers, root, sun },
+    parts: { scene, camera, room, hangers, root, sun, city },
     get tod() { return curTod; },
     render: () => composer ? composer.render() : renderer.render(scene, camera),
     /** Step down on slow machines, never below one render pixel per CSS pixel. Returns false when nothing is left to drop. */
