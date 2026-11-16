@@ -15,7 +15,9 @@ const LAYERS = ['Housing', 'Thermal fins', 'Light source', 'Advanced optics', 'S
   <section class="film" data-film="/film" aria-label="One day under SUNROOOF">
     <div class="film__pin">
       <video aria-hidden="true" muted playsinline preload="auto" tabindex="-1" controlslist="nodownload" disablepictureinpicture disableremoteplayback></video>
-      <img class="film__poster" src={L(slides[0].after, 1600)} srcset={LS(slides[0].after, [800, 1200, 1600, 2200])} sizes="100vw" width="1440" height="720" alt={slides[0].alt} />
+      <!-- runs before first paint: switch to the film layout at once (film.ts falls back if the film fails) and show its first frame -->
+      <script is:inline>if(!matchMedia('(prefers-reduced-motion: reduce)').matches){var v=document.currentScript.previousElementSibling,p=v.parentElement;document.documentElement.classList.add('is-film');v.poster=p.parentElement.dataset.film+'/'+(innerHeight-72>innerWidth?'portrait':'landscape')+'.jpg';}</script>
+      <img class="film__poster" src={L(slides[0].after, 1600)} srcset={LS(slides[0].after, [800, 1200, 1600, 2200])} sizes="100vw" width="1440" height="720" alt={slides[0].alt} loading="lazy" />
       <article class="ch ch--hero" data-in="0" data-out=".075">
         <h1>Bring Sunlight to Spaces Where it is Not Possible to Have it</h1>
         <p>through technology, innovation and design</p>

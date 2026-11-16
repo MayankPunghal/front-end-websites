@@ -20,7 +20,7 @@ async function boot(story: HTMLElement) {
   // Seeking a streamed file aborts and re-requests a byte range on every scroll step (a few frames a second on a cold cache).
   // So the whole film is downloaded once and played from memory; the streamed copy covers the first seconds until it lands.
   const full = (v: HTMLVideoElement, url: string) => fetch(url).then(r => r.ok ? r.blob() : Promise.reject()).then(b => { const t = v.currentTime; v.src = URL.createObjectURL(b); v.currentTime = t; }).catch(() => {});
-  video.poster = `${path}.jpg?v=${film.v}`; video.src = `${path}.mp4?v=${film.v}`;
+  if (!video.poster.endsWith(`${path}.jpg`)) video.poster = `${path}.jpg`; video.src = `${path}.mp4?v=${film.v}`;
   full(video, video.src);
 
   const clamp = (x: number) => Math.min(1, Math.max(0, x)), up = (x: number, a: number, b: number) => { const t = clamp((x - a) / (b - a)); return t * t * t * (t * (6 * t - 15) + 10); };
