@@ -19,6 +19,13 @@ const folderIndex = {
         return fs.createReadStream(film, { start: a, end: z }).pipe(res);
       }
       if (rest && !path.extname(rest) && fs.existsSync(path.join(pub, rest, 'index.html'))) req.url = url.replace(/\/?$/, '/index.html') + req.url.slice(url.length);
+      // the watcher skips these copied sites (below), so Vite never learns of files a rebuild adds: serve them off disk
+      const file = /^sunroo+f\//.test(rest) && path.join(pub, decodeURIComponent(req.url.split('?')[0].replace(/^\/front-end-websites\//, '')));
+      if (file && fs.existsSync(file) && fs.statSync(file).isFile()) {
+        const type = { '.html': 'text/html', '.css': 'text/css', '.js': 'text/javascript', '.json': 'application/json', '.svg': 'image/svg+xml', '.webp': 'image/webp', '.png': 'image/png', '.jpg': 'image/jpeg', '.woff2': 'font/woff2' }[path.extname(file)];
+        res.writeHead(200, { 'Content-Type': type || 'application/octet-stream', 'Cache-Control': 'no-cache' });
+        return fs.createReadStream(file).pipe(res);
+      }
       next();
     });
   },
