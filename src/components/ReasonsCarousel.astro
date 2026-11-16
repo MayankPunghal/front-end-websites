@@ -28,14 +28,14 @@ const pause = '<svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true
 </section>
 
 <style is:global>
-  .r3c { background: #e3dab9; color: #111; padding: clamp(1.5rem, 3vw, 2.5rem) 0 clamp(2rem, 4vw, 3rem); }
-  .r3c h2 { font: 300 clamp(1.75rem, 1.2rem + 2vw, 2.5rem)/1.2 var(--font-display); margin: 0 0 1.5rem; padding-inline: clamp(1rem, 0.5rem + 3vw, 3.75rem); color: #111; }
+  .r3c { background: var(--paper-2); color: var(--ink); padding: clamp(1.5rem, 3vw, 2.5rem) 0 clamp(2rem, 4vw, 3rem); }
+  .r3c h2 { font: 500 clamp(1.75rem, 1.2rem + 2vw, 2.5rem)/1.2 var(--font-display); letter-spacing: -.035em; margin: 0 0 1.5rem; padding-inline: clamp(1rem, 0.5rem + 3vw, 3.75rem); color: var(--ink); }
   .r3c__t { display: flex; gap: 1.25rem; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; padding-inline: clamp(1rem, 0.5rem + 3vw, 3.75rem); scroll-padding-inline: clamp(1rem, 0.5rem + 3vw, 3.75rem); }
   .r3c__t::-webkit-scrollbar { display: none; }
   .r3c__s { position: relative; flex: 0 0 min(calc(100% - clamp(2rem, 1rem + 6vw, 7.5rem)), 66rem); margin: 0; aspect-ratio: 2.1; scroll-snap-align: start; background: #111; overflow: hidden; }
   .r3c__s video { width: 100%; height: 100%; object-fit: cover; display: block; }
   .r3c__s::after { content: ''; position: absolute; inset: auto 0 0; height: 40%; background: linear-gradient(transparent, rgb(0 0 0 / .55)); pointer-events: none; }
-  .r3c__s figcaption { position: absolute; z-index: 1; left: clamp(1rem, 2vw, 1.875rem); bottom: clamp(1rem, 3vw, 2.5rem); right: 1rem; color: #fff; font: 300 clamp(1.25rem, 1rem + 1vw, 1.875rem)/1.2 var(--font-display); }
+  .r3c__s figcaption { position: absolute; z-index: 1; left: clamp(1rem, 2vw, 1.875rem); bottom: clamp(1rem, 3vw, 2.5rem); right: 1rem; color: #fff; font: 500 clamp(1.25rem, 1rem + 1vw, 1.875rem)/1.2 var(--font-display); letter-spacing: -.035em; }
   .r3c__c { display: flex; justify-content: center; align-items: center; gap: 1.25rem; margin-top: 1.5rem; }
   .r3c__p { width: 2.75rem; height: 2.75rem; border-radius: 50%; border: 0; background: rgb(17 17 17 / .55); color: #fff; display: grid; place-items: center; cursor: pointer; transition: background .3s; } .r3c__p:hover { background: rgb(17 17 17 / .8); }
   .r3c__d { display: flex; align-items: center; gap: .75rem; height: 2.75rem; padding-inline: 1.25rem; border-radius: 99px; background: rgb(17 17 17 / .55); }

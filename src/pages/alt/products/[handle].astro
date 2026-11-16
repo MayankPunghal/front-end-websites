@@ -153,7 +153,7 @@ const ld = { '@context': 'https://schema.org', '@type': 'Product', name: p.title
   .pd__thumbs button { width: 4.5rem; height: 4.5rem; padding: 0; border: 2px solid transparent; border-radius: var(--r-1); background: var(--paper-3); cursor: pointer; overflow: hidden; flex: none; }
   .pd__thumbs button[aria-pressed=true] { border-color: var(--ink); } .pd__thumbs img { width: 100%; height: 100%; object-fit: cover; }
   .pd__buy { display: grid; gap: var(--s-5); min-width: 0; }
-  .pd__buy h1 { font: 300 clamp(1.75rem, 1.4rem + 1.2vw, 2.5rem)/1.15 var(--font-display); }
+  .pd__buy h1 { font: 500 clamp(1.75rem, 1.4rem + 1.2vw, 2.5rem)/1.15 var(--font-display); letter-spacing: -.035em; }
   .pd__lead { color: var(--ink-2); max-width: 52ch; }
   .pd__price { font: 400 1.5rem/1 var(--font-display); color: var(--ink); } .pd__price small { font: var(--w-regular) var(--t-small)/1 var(--font-body); color: var(--ink-3); }
   .pd fieldset { border: 0; padding: 0; margin: 0; display: grid; gap: var(--s-3); min-width: 0; }
@@ -170,12 +170,12 @@ const ld = { '@context': 'https://schema.org', '@type': 'Product', name: p.title
   .pd__plan { border: 0; padding: var(--s-6); background: var(--paper-2); color: var(--ink); border-radius: var(--r-1); width: min(32rem, 92vw); position: fixed; inset: 0; margin: auto; height: fit-content; } .pd__plan[open] { display: grid; gap: var(--s-5); } .pd__plan::backdrop { background: rgb(0 0 0 / .6); }
   .pd__x { justify-self: end; width: 2.75rem; height: 2.75rem; border: 0; background: transparent; color: inherit; font-size: 1.75rem; cursor: pointer; }
   .pd__sizes { position: relative; } .pd__sc { position: absolute; right: 0; top: 0; min-height: 2.75rem; padding: 0 var(--s-4); border: 1px solid var(--line); border-radius: var(--r-pill); background: transparent; color: inherit; font: inherit; font-size: var(--t-small); cursor: pointer; } .pd__sc:hover { border-color: var(--ink); }
-  .pd__pills { display: flex; flex-wrap: wrap; gap: var(--s-2); } .pd__pills a { display: inline-flex; align-items: center; min-height: 2.75rem; padding: 0 var(--s-4); border-radius: var(--r-pill); background: var(--ink); color: var(--paper); font-size: var(--t-small); text-decoration: none; font-weight: var(--w-semi); } .pd__pills a:hover { background: var(--sun); color: #111; }
+  .pd__pills { display: flex; flex-wrap: wrap; gap: var(--s-2); } .pd__pills a { display: inline-flex; align-items: center; min-height: 2.75rem; padding: 0 var(--s-4); border-radius: var(--r-pill); background: var(--ink); color: var(--paper); font-size: var(--t-small); text-decoration: none; font-weight: var(--w-semi); } .pd__pills a:hover { background: var(--sun); color: var(--ink); }
   .pd__note { margin: calc(var(--s-4) * -1) 0 0; color: var(--ink-3); font-size: var(--t-small); max-width: 52ch; }
   .pd__emi { display: flex; flex-wrap: wrap; gap: var(--s-2); margin: 0; font-size: var(--t-small); } .pd__emi span { padding: .375rem .75rem; border: 1px solid var(--line); border-radius: var(--r-pill); color: var(--ink-2); }
   .pd__pts { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--s-3); font-size: var(--t-small); } .pd__pts li { display: flex; gap: var(--s-3); align-items: center; color: var(--ink-2); } .pd__pts img { flex: none; width: 1.375rem; height: 1.375rem; }
   .stg { margin: 0 0 var(--s-4); padding: 0; list-style: none; display: grid; gap: var(--s-3); font-size: var(--t-small); color: var(--ink-2); } .stg b { color: var(--sun); font-weight: var(--w-semi); }
-  .pd__main { position: relative; } .pd__arr { position: absolute; top: 50%; translate: 0 -50%; width: 2.75rem; height: 2.75rem; border-radius: 50%; border: 0; background: #fff; color: #111; font-size: 1.5rem; line-height: 1; cursor: pointer; box-shadow: 0 2px 10px rgb(0 0 0 / .25); } .pd__arr--p { left: var(--s-3); } .pd__arr--n { right: var(--s-3); } .pd__arr:hover { background: var(--sun); }
+  .pd__main { position: relative; } .pd__arr { position: absolute; top: 50%; translate: 0 -50%; width: 2.75rem; height: 2.75rem; border-radius: 50%; border: 0; background: var(--paper); color: var(--ink); font-size: 1.5rem; line-height: 1; cursor: pointer; box-shadow: 0 2px 10px rgb(0 0 0 / .25); } .pd__arr--p { left: var(--s-3); } .pd__arr--n { right: var(--s-3); } .pd__arr:hover { background: var(--sun); }
   #pd-plan { width: 100%; height: auto; max-height: 11rem; }
   #pd-plan rect.fr { fill: none; stroke: var(--ink); stroke-width: 2; } #pd-plan rect.cell { fill: var(--sun); fill-opacity: .55; stroke: var(--brass-ink); stroke-width: 1; transition: all var(--d-base) var(--ease-out); }
   #pd-dims { display: grid; gap: var(--s-2); margin: 0; font-size: var(--t-small); } #pd-dims div { display: flex; justify-content: space-between; gap: var(--s-3); border-bottom: 1px solid var(--line); padding-bottom: var(--s-1); }
@@ -189,8 +189,8 @@ const ld = { '@context': 'https://schema.org', '@type': 'Product', name: p.title
   #calc-out { color: var(--ink); font-weight: var(--w-semi); }
   .pd__cta { display: flex; flex-wrap: wrap; gap: var(--s-3); }
   .pd__accs { display: grid; } .pd__cat { font-size: var(--t-small); color: var(--ink-3); text-decoration: underline; justify-self: start; }
-  .acc__k { font: 600 var(--t-small)/1 var(--font-body); text-transform: uppercase; letter-spacing: .06em; color: var(--ink-3); margin: var(--s-3) 0 var(--s-2); }
-  .pay { list-style: none; margin: 0 0 var(--s-4); padding: 0; display: grid; gap: var(--s-2); grid-template-columns: 1fr 1fr; } .pay li { display: grid; gap: .25rem; padding: var(--s-3); border: 1px solid var(--line); font-size: var(--t-small); } .pay b { color: var(--sun); text-transform: uppercase; font-size: .75rem; }
+  .acc__k { font: 600 var(--t-small)/1 var(--font-body); letter-spacing: 0; color: var(--ink-3); margin: var(--s-3) 0 var(--s-2); }
+  .pay { list-style: none; margin: 0 0 var(--s-4); padding: 0; display: grid; gap: var(--s-2); grid-template-columns: 1fr 1fr; } .pay li { display: grid; gap: .25rem; padding: var(--s-3); border: 1px solid var(--line); font-size: var(--t-small); } .pay b { color: var(--sun); font-size: .75rem; }
   .pd__info { display: grid; gap: var(--s-8); padding-bottom: var(--section); }
   .pd__info h2, .pd__rel h2 { font-size: var(--t-h3); margin-bottom: var(--s-5); }
   .acc { border-top: 1px solid var(--line); } .acc:last-child { border-bottom: 1px solid var(--line); } .acc > p { padding-bottom: var(--s-4); max-width: 60ch; }

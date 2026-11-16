@@ -39,43 +39,43 @@ const here = (href: string) => (href === '/' ? path === '/' : path.startsWith(hr
 </header>
 
 <style>
-  .hdr { position: sticky; top: 0; z-index: 50; background: #fff; --ink: #111; --paper: #fff; --ink-2: #2b2b2b; --ink-3: #5a5a5a; transition: background .35s var(--ease-out); }
-  .hdr[data-theme=night], .hdr.is-open { background: #111; --ink: #fff; --paper: #111; --ink-2: #e8e8e8; --ink-3: #bdbdbd; }
+  .hdr { position: sticky; top: 0; z-index: 50; background: rgb(18 17 15 / .78); -webkit-backdrop-filter: blur(18px) saturate(1.4); backdrop-filter: blur(18px) saturate(1.4); border-bottom: 1px solid var(--line); transition: background .35s var(--ease-out); }
+  .hdr.is-open { background: var(--night); }
   .hdr[data-static] { position: relative; } .hdr[data-static].is-open { position: fixed; inset: 0 0 auto 0; }
   .hdr__in { display: flex; align-items: center; gap: var(--s-5); height: 4.5rem; padding-inline: clamp(1rem, 0.5rem + 3vw, 3.25rem); }
   .hdr__logo { display: block; flex: none; } .hdr__r { display: flex; align-items: center; gap: var(--s-5); margin-left: auto; }
-  .hdr__l--light, .hdr[data-theme=night] .hdr__l--ink, .hdr.is-open .hdr__l--ink { display: none; }
-  .hdr[data-theme=night] .hdr__l--light, .hdr.is-open .hdr__l--light { display: block; }
+  .hdr__l--ink { display: none; }
+  .hdr__l--light { display: block; }
   .hdr__nav { display: none; margin-inline: auto; gap: clamp(1.5rem, 1rem + 1.6vw, 2.5rem); }
-  .hdr__nav a { text-decoration: none; text-transform: uppercase; font-size: 0.9375rem; letter-spacing: 0.01em; color: var(--ink); padding: var(--s-2) 0; position: relative; }
+  .hdr__nav a { text-decoration: none; font-size: 0.9375rem; font-weight: 500; color: var(--ink-2); transition: color var(--d-base); padding: var(--s-2) 0; position: relative; }
   .hdr__nav a::after { content: ''; position: absolute; left: 0; right: 0; bottom: 2px; height: 1px; background: currentColor; transform: scaleX(0); transform-origin: left; transition: transform var(--d-base) var(--ease-out); }
-  .hdr__nav a:hover::after { transform: scaleX(1); }
-  .hdr__cta { display: inline-flex; align-items: center; gap: 0.5rem; margin-left: auto; min-height: 2.75rem; padding: 0 1rem; background: var(--ink); color: var(--paper); text-transform: uppercase; font-size: 0.875rem; text-decoration: none; transition: background var(--d-base), color var(--d-base); }
+  .hdr__nav a:hover::after, .hdr__nav a[aria-current]::after { transform: scaleX(1); } .hdr__nav a:hover, .hdr__nav a[aria-current] { color: var(--ink); } .hdr__nav a::after { background: var(--sun); }
+  .hdr__cta { display: inline-flex; align-items: center; gap: 0.5rem; margin-left: auto; min-height: 2.75rem; padding: 0 1.15rem; border-radius: var(--r-pill); background: var(--sun); color: #12110f; font-size: 0.9375rem; font-weight: 600; text-decoration: none; transition: box-shadow var(--d-base) var(--ease-out), transform var(--d-base) var(--ease-out); }
   .hdr__cta[hidden] { display: none; }
-  .hdr__cta svg { color: var(--sun); }
-  .hdr__cta:hover { background: #333; }
-  .hdr[data-theme=night] .hdr__cta, .hdr.is-open .hdr__cta { background: transparent; color: var(--ink); padding: 0 .5rem; } .hdr[data-theme=night] .hdr__cta:hover, .hdr.is-open .hdr__cta:hover { background: transparent; color: var(--sun); }
+  .hdr__cta svg { color: #12110f; }
+  .hdr__cta:hover { box-shadow: var(--glow); transform: translateY(-1px); }
+  
   .hdr__menu { display: grid; overflow: hidden; height: 1.25em; line-height: 1.25; } .hdr__menu > span { grid-area: 1 / 1; text-align: right; } .hdr__menu > span:last-child { transform: translateY(100%); }
   .hdr__bars { position: relative; width: 20px; height: 14px; flex: none; } .hdr__bars i { position: absolute; left: 0; height: 1.6px; width: 100%; background: currentColor; border-radius: 1px; transform-origin: center; } .hdr__bars i:nth-child(1) { top: 0; } .hdr__bars i:nth-child(2) { top: 6.2px; } .hdr__bars i:nth-child(3) { top: 12.4px; width: 60%; }
   .hdr.is-open .hdr__menu > span:first-child { transform: translateY(-100%); } .hdr.is-open .hdr__menu > span:last-child { transform: none; }
   .hdr.is-open .hdr__bars i:nth-child(1) { transform: translateY(6.2px) rotate(45deg); } .hdr.is-open .hdr__bars i:nth-child(2) { transform: scaleX(0); opacity: 0; } .hdr.is-open .hdr__bars i:nth-child(3) { width: 100%; transform: translateY(-6.2px) rotate(-45deg); }
-  .hdr__burger { display: inline-flex; align-items: center; gap: 0.6rem; min-height: 2.75rem; padding: 0 0.25rem; background: none; border: 0; cursor: pointer; color: var(--ink); text-transform: uppercase; font-size: 0.9375rem; }
+  .hdr__burger { display: inline-flex; align-items: center; gap: 0.6rem; min-height: 2.75rem; padding: 0 0.25rem; background: none; border: 0; cursor: pointer; color: var(--ink); font-size: 0.9375rem; font-weight: 500; }
   .menu { position: fixed; inset: 4.5rem 0 0 0; background: #111; color: #fff; z-index: 49; overflow-y: auto; visibility: hidden; clip-path: circle(0 at calc(100% - 3.5rem) -2.25rem); }
   .hdr.is-open .menu { visibility: visible; clip-path: circle(150% at calc(100% - 3.5rem) -2.25rem); }
   .menu__in { opacity: 0; } .hdr.is-open .menu__in { opacity: 1; }
   .menu__in { display: grid; gap: var(--s-6); min-height: 100%; align-content: center; padding: var(--s-5) clamp(1rem, 0.5rem + 3vw, 3.25rem) var(--s-6); }
   .menu__links { display: grid; gap: min(1.6vh, .75rem); align-content: center; }
-  .menu__links a { justify-self: start; position: relative; font: 300 min(7.4vw, 6.4vh, 4rem)/1.12 var(--font-display); text-decoration: none; color: #fff; padding-block: .1em; padding-left: clamp(0rem, 2vw, 2.5rem); }
+  .menu__links a { justify-self: start; position: relative; font: 500 min(7.4vw, 6.4vh, 4rem)/1.12 var(--font-display); letter-spacing: -.035em; text-decoration: none; color: #fff; padding-block: .1em; padding-left: clamp(0rem, 2vw, 2.5rem); }
   .menu__links a::after { content: ''; position: absolute; left: clamp(0rem, 2vw, 2.5rem); right: 0; bottom: 0; height: 2px; background: var(--sun); transform: scaleX(0); transform-origin: left; transition: transform .35s var(--ease-out); }
   .menu__links a:hover::after, .menu__links a:focus-visible::after, .menu__meta a:hover::after, .menu__meta a:focus-visible::after { transform: scaleX(1); }
-  .menu__meta { display: grid; gap: .5rem; align-content: center; font-size: 1.125rem; text-transform: uppercase; }
+  .menu__meta { display: grid; gap: .5rem; align-content: center; font-size: 1.125rem; }
   .menu__meta a { position: relative; justify-self: end; color: #fff; text-decoration: none; padding-block: .1em; } .menu__meta a::after { content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 1px; background: currentColor; transform: scaleX(0); transform-origin: right; transition: transform .35s var(--ease-out); } .menu__meta a:hover { color: var(--sun); }
   .menu__meta .menu__s { font-size: .875rem; color: rgb(255 255 255 / .8); }
   @media (min-width: 62rem) { .menu__in { grid-template-columns: 1fr auto; align-items: center; gap: var(--s-8, 4rem); } .menu__meta { text-align: right; justify-items: end; } }
   @media (prefers-reduced-motion: no-preference) {
     .menu { transition: clip-path .6s cubic-bezier(.65, 0, .35, 1), visibility 0s .6s; } .hdr.is-open .menu { transition: clip-path .85s cubic-bezier(.22, 1, .36, 1), visibility 0s; }
     .menu__in { transition: opacity .25s; } .hdr.is-open .menu__in { transition: opacity .4s .15s; }
-    .hdr__menu > span, .hdr__bars i { transition: transform .5s cubic-bezier(.22, 1, .36, 1), opacity .3s, width .5s cubic-bezier(.22, 1, .36, 1); }
+    .hdr__menu > span, .hdr__bars i { transition: transform .5s cubic-bezier(.22, 1, .36, 1), opacity .3s; }
     .hdr.is-open .menu__links a { animation: rise var(--d-slow) var(--ease-out) both; }
     .hdr.is-open .menu .menu__links a:nth-child(2) { animation-delay: 50ms; } .hdr.is-open .menu .menu__links a:nth-child(3) { animation-delay: 100ms; } .hdr.is-open .menu .menu__links a:nth-child(4) { animation-delay: 150ms; }
     .hdr.is-open .menu .menu__links a:nth-child(5) { animation-delay: 200ms; } .hdr.is-open .menu .menu__links a:nth-child(6) { animation-delay: 250ms; } .hdr.is-open .menu .menu__links a:nth-child(7) { animation-delay: 300ms; }

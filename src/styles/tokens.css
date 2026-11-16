@@ -1,33 +1,36 @@
 /* SUNROOOF design tokens: the single source of truth. Documented in docs/design-system.md */
 :root {
   /* colour */
-  --paper: #ffffff;
-  --paper-2: #e3dcc0;
-  --paper-3: #d3c9a4;
-  --ink: #111111;
-  --ink-2: #2b2b2b;       /* body on paper, 10.9:1 */
-  --ink-3: #5a5a5a;       /* captions on paper, 4.9:1 */
-  --night: #111111;
-  --night-2: #1b1b1b;
-  --night-3: #2a2a2a;
-  --on-night: #ffffff;
-  --on-night-2: #bdbdbd;  /* 8.9:1 on night */
-  --brass: #ffc933;       /* accent on night, 7.2:1 */
-  --brass-ink: #6d4a00;   /* accent text on paper, 5.4:1 */
+  /* Gallery noir: a warm graphite showroom where the light is the only colour */
+  --paper: #12110f;
+  --paper-2: #1a1916;
+  --paper-3: #26241f;
+  --ink: #f2ede4;
+  --ink-2: #d6d0c5;       /* body on paper, 12:1 */
+  --ink-3: #9b958b;       /* captions on paper, 6.3:1 */
+  --night: #0b0a09;
+  --night-2: #151411;
+  --night-3: #201e1a;
+  --on-night: #f2ede4;
+  --on-night-2: #b2aca2;  /* 8.6:1 on night */
+  --brass: #ffd23f;
+  --brass-ink: #ffd23f;   /* accent text on graphite, 12:1 */
   --sun: #ffd23f;
+  --sun-soft: rgb(255 210 63 / .16);
+  --glow: 0 0 0 1px rgb(255 210 63 / .55), 0 12px 48px -10px rgb(255 190 60 / .55);
   --sky: #bfd6e3;
   --ember: #e2683c;
-  --line: color-mix(in srgb, var(--ink) 16%, transparent);
-  --line-night: color-mix(in srgb, var(--on-night) 18%, transparent);
-  --danger: #a7321a;
+  --line: rgb(242 237 228 / .12);
+  --line-night: rgb(242 237 228 / .12);
+  --danger: #ff9a80;
 
   /* type */
-  --font-display: 'Original', 'Iowan Old Style', Georgia, serif;
+  --font-display: 'DM Sans Variable', 'DM Sans', system-ui, sans-serif;
   --font-body: 'DM Sans Variable', 'DM Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
   --w-regular: 400; --w-medium: 500; --w-semi: 600; --w-bold: 700;
   --t-micro: 0.75rem;                               /* 12 */
   --t-small: 0.875rem;                              /* 14 */
-  --t-body: 1rem;                                   /* 16 */
+  --t-body: 1.0625rem;                              /* 17 */
   --t-lead: clamp(1.125rem, 1.05rem + 0.4vw, 1.375rem);
   --t-h4: clamp(1.25rem, 1.1rem + 0.6vw, 1.625rem);
   --t-h3: clamp(1.75rem, 1.4rem + 1.5vw, 2.75rem);
@@ -46,7 +49,7 @@
   --cols: 12;
 
   /* shape */
-  --r-0: 0; --r-1: 2px; --r-2: 6px; --r-pill: 999px;
+  --r-0: 0; --r-1: 4px; --r-2: 10px; --r-3: 18px; --r-pill: 999px;
   --border: 1px solid var(--line);
   --shadow-soft: 0 1px 2px rgb(21 18 14 / 0.06), 0 12px 32px -12px rgb(21 18 14 / 0.18);
   --shadow-lift: 0 2px 4px rgb(21 18 14 / 0.08), 0 30px 60px -20px rgb(21 18 14 / 0.35);

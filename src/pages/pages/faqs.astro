@@ -34,10 +34,10 @@ const ld = { '@context': 'https://schema.org', '@type': 'FAQPage', mainEntity: f
 </Base>
 
 <style>
-  .fq__h { font: 300 clamp(2rem, 1.6rem + 1.4vw, 2.5rem)/1.2 var(--font-display); margin: 0; padding: clamp(2.5rem, 5vw, 4rem) clamp(1rem, 0.5rem + 3vw, 3.25rem) 0; color: #fff; }
+  .fq__h { font: 500 clamp(2rem, 1.6rem + 1.4vw, 2.5rem)/1.2 var(--font-display); letter-spacing: -.035em; margin: 0; padding: clamp(2.5rem, 5vw, 4rem) clamp(1rem, 0.5rem + 3vw, 3.25rem) 0; color: #fff; }
   .fq { padding: clamp(2.5rem, 6vw, 5rem) clamp(1rem, 0.5rem + 3vw, 3.25rem) clamp(3rem, 7vw, 6rem); color: #fff; }
   .fq__tabs { display: grid; grid-template-columns: repeat(3, 1fr); border-bottom: 1px solid rgb(255 255 255 / .4); margin-bottom: 2.5rem; }
-  .fq__tabs button { position: relative; padding: .875rem 0; background: none; border: 0; color: #fff; font: inherit; font-size: clamp(.9375rem, .8rem + .5vw, 1.125rem); text-transform: uppercase; cursor: pointer; }
+  .fq__tabs button { position: relative; padding: .875rem 0; background: none; border: 0; color: #fff; font: inherit; font-size: clamp(.9375rem, .8rem + .5vw, 1.125rem); cursor: pointer; }
   .fq__tabs button::before { content: ''; position: absolute; left: 10%; right: 10%; bottom: 0; height: 1.5rem; background: radial-gradient(ellipse at 50% 100%, rgb(255 201 51 / .45), transparent 70%); opacity: 0; transition: opacity .4s; pointer-events: none; }
   .fq__tabs button[aria-selected=true]::before { opacity: 1; }
   .fq__list[hidden] { display: none; }
@@ -50,7 +50,7 @@ const ld = { '@context': 'https://schema.org', '@type': 'FAQPage', mainEntity: f
   .fq__i[open] summary::after { transform: rotate(225deg); }
   .fq__i p { margin: 0; padding: 0 1.25rem 1.25rem; color: #9d9fa1; font-size: .875rem; max-width: 70ch; }
   .fq__more { display: grid; justify-items: center; gap: .75rem; margin: 3rem 0 0; font-size: .8125rem; }
-  .fq__more a { color: #fff; text-transform: uppercase; font-size: .75rem; text-decoration: none; border-bottom: 1px solid #fff; padding: .4rem .25rem; } .fq__more a:hover { color: var(--sun); border-color: var(--sun); }
+  .fq__more a { color: #fff; font-size: .75rem; text-decoration: none; border-bottom: 1px solid #fff; padding: .4rem .25rem; } .fq__more a:hover { color: var(--sun); border-color: var(--sun); }
 </style>
 
 <script>

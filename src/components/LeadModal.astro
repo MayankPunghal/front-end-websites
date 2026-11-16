@@ -89,7 +89,7 @@ const total = chips.length + 6;
   .lm__step[hidden] { display: none; }
   .lm__step:not([hidden]) { animation: lm-step .5s var(--ease-out); }
   @keyframes lm-step { from { opacity: 0; transform: translateX(28px); } }
-  .lm legend, .lm__q { font: 300 clamp(1.75rem, 1.2rem + 2.4vw, 2.75rem)/1.1 var(--font-display); color: var(--on-night); padding: 0; }
+  .lm legend, .lm__q { font: 500 clamp(1.75rem, 1.2rem + 2.4vw, 2.75rem)/1.1 var(--font-display); letter-spacing: -.035em; color: var(--on-night); padding: 0; }
   .lm__q span { font: 400 .875rem var(--font-body); color: var(--on-night-2); margin-left: .5rem; }
   .lm__opts { display: grid; gap: var(--s-2); margin-top: var(--s-4); }
   .lm__opt { position: relative; display: block; }
@@ -105,7 +105,7 @@ const total = chips.length + 6;
   .lm__file input[type=file] { color: var(--on-night); }
   .lm__err { color: #ff9a80; min-height: 1.5rem; font-size: .9375rem; }
   .lm__nav { display: flex; justify-content: space-between; gap: var(--s-4); }
-  .lm__back, .lm__next { min-height: 3rem; padding: 0 var(--s-6); font-size: .9375rem; text-transform: uppercase; letter-spacing: .02em; cursor: pointer; }
+  .lm__back, .lm__next { min-height: 3rem; padding: 0 var(--s-6); font-size: .9375rem; letter-spacing: .02em; cursor: pointer; }
   .lm__back { background: none; border: 1px solid var(--line-night); color: var(--on-night); } .lm__back[hidden] { visibility: hidden; display: block; }
   .lm__next { background: var(--sun); border: 1px solid var(--sun); color: var(--night); margin-left: auto; font-weight: 500; }
   .lm__next[hidden] { display: none; }

@@ -37,10 +37,35 @@ async function boot() {
     if (img.hasAttribute('data-reveal')) { f.setAttribute('data-reveal', ''); img.removeAttribute('data-reveal'); }
     img.removeAttribute('data-plx'); img.replaceWith(f); f.append(img);
   });
-  const reveals = document.querySelectorAll<HTMLElement>('[data-reveal]');
+  const all = [...document.querySelectorAll<HTMLElement>('[data-reveal]')];
+  // Headings rise word by word out of a mask; framed pictures open from a smaller window. Everything else keeps the plain rise.
+  const heads = all.filter(el => /^H[1-3]$/.test(el.tagName));
+  const frames = all.filter(el => !heads.includes(el) && (el.tagName === 'IMG' || el.matches('[data-plx], .plx-f') || (el.children.length === 1 && el.firstElementChild!.tagName === 'IMG')));
+  const reveals = all.filter(el => !heads.includes(el) && !frames.includes(el));
   const words = document.querySelectorAll<HTMLElement>('[data-words]');
 
   mm.add('(prefers-reduced-motion: no-preference)', () => {
+    // 0a. Headings: each word slides up from behind its own mask, staggered, like a title card.
+    heads.forEach(h => {
+      if (!h.dataset.split) {
+        h.dataset.split = '1';
+        const label = h.textContent!.replace(/\s+/g, ' ').trim();
+        h.querySelectorAll('br').forEach(b => b.replaceWith(' '));
+        const parts = h.textContent!.trim().split(/\s+/);
+        h.textContent = ''; h.setAttribute('aria-label', label);
+        parts.forEach((w, i) => { const m = document.createElement('span'); m.className = 'wm'; m.setAttribute('aria-hidden', 'true'); const s = document.createElement('span'); s.className = 'wi'; s.textContent = w; m.append(s); h.append(m, i < parts.length - 1 ? ' ' : ''); });
+      }
+      gsap.set(h, { opacity: 1, y: 0 });
+      gsap.fromTo(h.querySelectorAll('.wi'), { yPercent: 110, rotate: 4 }, { yPercent: 0, rotate: 0, duration: 1.15, ease: 'expo.out', stagger: 0.045, scrollTrigger: { trigger: h, start: 'top 88%', once: true } });
+    });
+    // 0b. Pictures: the frame opens from an inset window while the image settles from a slight zoom.
+    frames.forEach(f => {
+      const img = f.tagName === 'IMG' ? f : f.querySelector('img');
+      gsap.set(f, { opacity: 1, y: 0 });
+      const tl = gsap.timeline({ scrollTrigger: { trigger: f, start: 'top 90%', once: true } });
+      tl.fromTo(f, { clipPath: 'inset(14% 10% 14% 10% round 18px)' }, { clipPath: 'inset(0% 0% 0% 0% round 10px)', duration: 1.4, ease: 'expo.out', clearProps: 'clipPath' });
+      if (img && img !== f) tl.fromTo(img, { filter: 'brightness(.55)' }, { filter: 'brightness(1)', duration: 1.4, ease: 'power2.out', clearProps: 'filter' }, 0);
+    });
     // 1. Section reveals: rise 32px + fade, once, batched so a row staggers instead of N triggers.
     ScrollTrigger.batch(reveals, {
       start: 'top 90%', once: true,
@@ -105,7 +130,7 @@ async function boot() {
   });
 
   // Reduced motion: make sure nothing is left hidden.
-  mm.add('(prefers-reduced-motion: reduce)', () => { reveals.forEach(r => (r.style.opacity = '1')); });
+  mm.add('(prefers-reduced-motion: reduce)', () => { all.forEach(r => (r.style.opacity = '1')); });
   (window as any).__motionReady = true;
   requestAnimationFrame(() => ScrollTrigger.refresh());
   addEventListener('load', () => ScrollTrigger.refresh());
