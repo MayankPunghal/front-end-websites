@@ -48,19 +48,21 @@ const tabs = [['all', 'All'], ['ceiling', 'Ceiling'], ['window', 'Window'], ['ac
 
 <style is:global>
   .at { padding-block: clamp(2rem, 5vw, 4rem) clamp(3rem, 6vw, 5rem); }
-  .at__bc { display: flex; gap: .5rem; align-items: center; font-size: .9375rem; color: #111; } .at__bc a { color: inherit; text-decoration: none; } .at__bc a:hover { text-decoration: underline; }
-  .at h1 { font: 500 clamp(2rem, 1.4rem + 2.4vw, 3.25rem)/1.15 var(--font-display); letter-spacing: -0.01em; margin: .5rem 0 clamp(2rem, 5vw, 4rem); color: #111; }
+  .at__bc { display: flex; gap: .5rem; align-items: center; font-size: .9375rem; color: var(--ink-2, var(--ink)); } .at__bc a { color: inherit; text-decoration: none; } .at__bc a:hover { text-decoration: underline; }
+  .at h1 { font: 500 clamp(2rem, 1.4rem + 2.4vw, 3.25rem)/1.15 var(--font-display); letter-spacing: -0.01em; margin: .5rem 0 clamp(2rem, 5vw, 4rem); color: var(--ink); }
   .at__tabs { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: clamp(1.5rem, 3vw, 2.5rem); }
-  .at__tab { display: grid; justify-items: center; gap: .75rem; padding: .5rem 0 .25rem; background: none; border: 0; color: #111; cursor: pointer; font: inherit; }
+  .at__tab { display: grid; justify-items: center; gap: .75rem; padding: .5rem 0 .25rem; background: none; border: 0; color: var(--ink); cursor: pointer; font: inherit; }
   .at__tab span { position: relative; font-size: clamp(.8125rem, .6rem + .8vw, 1.5rem); padding-bottom: .375rem; }
-  .at__tab span::after { content: ''; position: absolute; left: 50%; bottom: 0; width: 3.5rem; height: 1px; translate: -50% 0; background: var(--sun); transform: scaleX(0); transition: transform .45s var(--ease-out); }
+  .at__tab span::after { content: ''; position: absolute; left: calc(50% - 1.75rem); bottom: 0; width: 3.5rem; height: 1px; background: var(--sun); transform: scaleX(0); transition: transform .45s var(--ease-out); }
   .at__tab[aria-pressed=true] span::after { transform: scaleX(1); }
-  .at__tab:focus-visible { outline: 2px solid #111; outline-offset: 4px; }
+  .at__tab:focus-visible { outline: 2px solid var(--ink); outline-offset: 4px; }
   .at__tab svg { width: clamp(3.5rem, 2rem + 6vw, 7rem); height: auto; overflow: visible; transition: translate .4s var(--ease-out); } .at__tab:hover svg { translate: 0 -4px; }
-  .at__tab .ln { fill: none; stroke: #111; stroke-width: 1; vector-effect: non-scaling-stroke; stroke-linejoin: round; stroke-dasharray: 1; }
-  .at__tab .pn { fill: #f9d65c; fill-opacity: .4; stroke: #111; stroke-width: .75; vector-effect: non-scaling-stroke; transition: fill-opacity .5s, filter .5s; }
+  .at__tab .ln { fill: none; stroke: currentColor; opacity: .85; stroke-width: 1; vector-effect: non-scaling-stroke; stroke-linejoin: round; stroke-dasharray: 1; }
+  .at__tab .pn { fill: #f9d65c; fill-opacity: .4; stroke: currentColor; stroke-width: .75; vector-effect: non-scaling-stroke; transition: fill-opacity .5s, filter .5s; }
   .at__tab:hover .pn, .at__tab[aria-pressed=true] .pn { fill-opacity: 1; }
-  .at__tab .bf { fill: #f9d65c; fill-opacity: .2; } .at__tab .fl { fill: #f9d65c; fill-opacity: .5; } .at__tab[aria-pressed=true] .bf, .at__tab:hover .bf { fill-opacity: .34; }
+  /* at rest: the original line cube with its yellow panel; the light beam only falls on hover or when the tab is selected */
+  .at__tab .bm { opacity: 0; transition: opacity .5s var(--ease-out); } .at__tab:hover .bm, .at__tab[aria-pressed=true] .bm { opacity: 1; }
+  .at__tab .bf { fill: #f9d65c; fill-opacity: .16; } .at__tab .fl { fill: #f9d65c; fill-opacity: .35; }
   .at__tab .ry { fill: none; stroke: #d9a400; stroke-width: 1; vector-effect: non-scaling-stroke; stroke-dasharray: 3 5; } .at__tab .mt { fill: #d9a400; opacity: 0; }
   .at__tab[aria-pressed=true] .pn { filter: drop-shadow(0 0 5px rgb(249 214 92 / .9)); }
   .at__g { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: clamp(.5rem, 1vw, .875rem); }
@@ -72,11 +74,11 @@ const tabs = [['all', 'All'], ['ceiling', 'Ceiling'], ['window', 'Window'], ['ac
   @media (max-width: 40rem) { .at__g { grid-template-columns: 1fr; } .at__tabs { gap: .25rem; } }
   @media (prefers-reduced-motion: no-preference) {
     .at__tab .ln { animation: at-draw 1.1s var(--ease-out) both; } .at__tab:hover .ln { animation: at-draw .9s var(--ease-out) both; }
-    .at__tab .bm { animation: at-breathe 3.6s ease-in-out infinite; } .at__tab .bm--win { animation: at-breathe 3.6s ease-in-out infinite, at-sway 7s ease-in-out infinite; }
+    .at__tab:is(:hover, [aria-pressed=true]) .bm { animation: at-breathe 3.6s ease-in-out infinite; } .at__tab:is(:hover, [aria-pressed=true]) .bm--win { animation: at-breathe 3.6s ease-in-out infinite, at-sway 7s ease-in-out infinite; }
     .at__tab .ry { animation: at-flow 1.4s linear infinite; } .at__tab .mt { animation: at-mote 3.2s calc(var(--n) * 1s) ease-in-out infinite; }
     .at__tab .pn--top, .at__tab .pn--win { animation: at-lamp 3.6s ease-in-out infinite; }
     .at__tab .pn--cell { animation: at-level 2.6s calc(var(--n, 0) * .32s) ease-in-out infinite; }
-    @keyframes at-breathe { 50% { opacity: .6; } } @keyframes at-sway { 50% { transform: translate(-3px, -1.5px); } } @keyframes at-flow { to { stroke-dashoffset: -8; } }
+    @keyframes at-breathe { 50% { opacity: .6; } } /* only runs while the beam is shown */ @keyframes at-sway { 50% { transform: translate(-3px, -1.5px); } } @keyframes at-flow { to { stroke-dashoffset: -8; } }
     @keyframes at-mote { 0% { transform: translateY(5px); opacity: 0; } 35%, 60% { opacity: .9; } 100% { transform: translateY(-9px); opacity: 0; } }
     @keyframes at-lamp { 0%, 100% { fill-opacity: .55; } 50% { fill-opacity: 1; } } @keyframes at-level { 0%, 100% { fill-opacity: .2; } 50% { fill-opacity: 1; } }
     .at__g li:not([hidden]) { animation: at-in .6s var(--ease-out) both; animation-delay: calc(var(--i, 0) * 70ms); }
