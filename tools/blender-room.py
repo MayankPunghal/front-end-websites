@@ -80,7 +80,7 @@ for ob in scene.objects:
         elif key == "ceil": paint(m, srgb("#ece7df"), .2)
         elif key == "floor": scan(m, "herringbone_parquet", 1.6, normal=1.0, rough=(.35, .7))
         elif key == "rug": scan(m, "rough_linen", .9, tint=srgb("#d9cdb9"), normal=1)
-        elif key == "linen": scan(m, "rough_linen", .45, tint=srgb("#e8dcc6"), normal=1, sheen=.3)
+        elif key == "linen": scan(m, "rough_linen", .45, tint=srgb(os.environ.get("SOFA", "#b89c74")), normal=1.3, sheen=.2)  # cream linen at a real albedo, deeper weave: the old near-white #e8dcc6 clipped flat in the midday sun
         elif key in ("oak", "slat"): scan(m, "wood_floor", .9, tint=srgb("#c8a27a") if key == "oak" else srgb("#8a6040"), normal=.5)
         elif m.name == frame_mat: scan(m, "wood_floor", .7, tint=srgb("#b07850"), normal=.4)
         elif key == "cushion": scan(m, "velour_velvet", .35, tint=srgb("#c2603e"), normal=.8, sheen=.8)
@@ -160,7 +160,7 @@ for ob in list(scene.objects):
     m = ob.material_slots[0].material; key = ob.name.split(".")[0]
     if key in ("Diffuser", "Front", "Haze", "Dust"): continue  # helpers built here, not room surfaces
     if key == "geometry_0":  # off-white boucle (Poly Haven curly teddy scan), lifted toward cream
-        box_scan(m, "rough_linen", .3, tuple(1.4 * v for v in srgb("#cbbfab")), .9, sheen=.3)  # fine off-white linen weave: reads as upholstery fabric
+        box_scan(m, "rough_linen", .3, tuple(float(os.environ.get("SOFAK", 1.0)) * v for v in srgb(os.environ.get("SOFA", "#b89c74"))), .9, sheen=.3)  # cream linen at a real fabric albedo: the old 1.4x near-white clipped flat in the midday sun and hid the weave
         nt_ = m.node_tree; mul_ = next(n for n in nt_.nodes if n.type == "VECT_MATH" and n.operation == "MULTIPLY"); src_ = mul_.inputs[0].links[0].from_socket
         bw_ = nt_.nodes.new("ShaderNodeRGBToBW"); nt_.links.new(src_, bw_.inputs[0]); nt_.links.new(bw_.outputs[0], mul_.inputs[0])  # the scan is blue-grey linen: keep its weave, not its colour; print("REAL sofa", ob.name)
     elif key != "floor" and hi.z < .04 and d.x > 3: box_scan(m, "wool_boucle", .5, srgb("#d8cdbb"), 1.6, sheen=.4); print("REAL rug", ob.name)
@@ -791,18 +791,18 @@ bm = bmesh.new(); bmesh.ops.create_cube(bm, size=1); fogMesh = bpy.data.meshes.n
 fog = bpy.data.objects.new("Haze", fogMesh); scene.collection.objects.link(fog)
 fog.location = Y_UP @ Vector((0, H / 2, 1.4)); fog.scale = (10, 8.4, H)
 vm = bpy.data.materials.new("Haze"); vm.use_nodes = True; vn = vm.node_tree; vn.nodes.remove(vn.nodes["Principled BSDF"])
-vol = vn.nodes.new("ShaderNodeVolumePrincipled"); vol.inputs["Density"].default_value = float(os.environ.get("HAZE", .006 if W_ else .004)); vol.inputs["Anisotropy"].default_value = .4  # thicker, forward-scattering haze: only sunlight lights it, so it shows as shafts, not milk
-sun.data.volume_factor = float(os.environ.get("SVOL", 0 if W_ else 4))  # the sun's shafts through the skylight read in the haze
+vol = vn.nodes.new("ShaderNodeVolumePrincipled"); vol.inputs["Density"].default_value = float(os.environ.get("HAZE", .0033 if W_ else .0022)); vol.inputs["Anisotropy"].default_value = .4  # thicker, forward-scattering haze: only sunlight lights it, so it shows as shafts, not milk
+sun.data.volume_factor = float(os.environ.get("SVOL", 0 if W_ else 2.2))  # the sun's shafts through the skylight read in the haze
 vn.links.new(vol.outputs[0], vn.nodes["Material Output"].inputs["Volume"]); fog.data.materials.append(vm)
 for o in scene.objects:  # only sunlight lights the haze: shafts, not an even glow
     if o.type == "LIGHT" and o.name.split(".")[0] != "Sun": o.data.volume_factor = 0
 # sunlight: one small, distant spot, so the wall and glazing bars (or the skylight beams) cut sharp parallel shafts in the haze
-sl = bpy.data.lights.new("SunShaft", "SPOT"); sl.spot_blend = 1.; sl.shadow_soft_size = float(os.environ.get("SOFT", .45)); sl.specular_factor = .5; sl.volume_factor = float(os.environ.get("WVOL", 7))  # x2: the rays read too faint in the test clips
+sl = bpy.data.lights.new("SunShaft", "SPOT"); sl.spot_blend = 1.; sl.shadow_soft_size = float(os.environ.get("SOFT", 1.4)); sl.specular_factor = .5; sl.volume_factor = float(os.environ.get("WVOL", 3.5))  # x2: the rays read too faint in the test clips
 slo = bpy.data.objects.new("SunShaft", sl); scene.collection.objects.link(slo); archl.append(slo)
 if WINDOW: sl.spot_size = math.radians(50); sl["base"] = 40000; slo.location = (1.2, NB + 6, 6.2); aim = Vector((-.3, NB - 2.6, 0))
-else: sl.spot_size = math.radians(55); sl["base"] = 26000; sl.volume_factor = float(os.environ.get("CVOL", 2.2)); slo.location = (.8, (SY0 + SY1) / 2 + 1.2, 9); aim = Vector((-.2, (SY0 + SY1) / 2 - .5, 0))  # high above the skylight, a little off vertical
+else: sl.spot_size = math.radians(55); sl["base"] = 26000; sl.volume_factor = float(os.environ.get("CVOL", 1.2)); slo.location = (.8, (SY0 + SY1) / 2 + 1.2, 9); aim = Vector((-.2, (SY0 + SY1) / 2 - .5, 0))  # high above the skylight, a little off vertical
 slo.rotation_euler = (aim - slo.location).to_track_quat("-Z", "Y").to_euler()
-for l_ in [fill] + [l for l in archl if l.name.startswith("ArchLight")]: l_.data.volume_factor = float(os.environ.get("FVOL", .35))  # a faint even glow in the haze under the skylight and in front of the arches: rays plus diffuse light
+for l_ in [fill] + [l for l in archl if l.name.startswith("ArchLight")]: l_.data.volume_factor = float(os.environ.get("FVOL", .1))  # a faint even glow in the haze under the skylight and in front of the arches: rays plus diffuse light
 
 # ---- colour management: filmic look ----
 scene.view_settings.view_transform = "AgX"; scene.view_settings.look = "AgX - Punchy"; scene.view_settings.exposure = .3  # softer: no crushed blacks, no hot whites
@@ -810,7 +810,7 @@ scene.view_settings.view_transform = "AgX"; scene.view_settings.look = "AgX - Pu
 # soft halation round bright glass, as a camera lens records a lit window
 cng = bpy.data.node_groups.new("Comp", "CompositorNodeTree"); cng.interface.new_socket("Image", in_out="OUTPUT", socket_type="NodeSocketColor")
 crl = cng.nodes.new("CompositorNodeRLayers"); cgl = cng.nodes.new("CompositorNodeGlare"); cgo = cng.nodes.new("NodeGroupOutput")
-cgl.inputs["Type"].default_value = "Bloom"; cgl.inputs["Highlights Threshold"].default_value = 1.2; cgl.inputs["Strength"].default_value = .22; cgl.inputs["Size"].default_value = .7; cgl.inputs["Quality"].default_value = "High"
+cgl.inputs["Type"].default_value = "Bloom"; cgl.inputs["Highlights Threshold"].default_value = float(os.environ.get("BTHR", 2)); cgl.inputs["Strength"].default_value = float(os.environ.get("BLOOM", .08)); cgl.inputs["Size"].default_value = .7; cgl.inputs["Quality"].default_value = "High"
 cng.links.new(crl.outputs["Image"], cgl.inputs["Image"]); cng.links.new(cgl.outputs[0], cgo.inputs[0]); scene.compositing_node_group = cng
 times = {}
 def shoot(engine, name):

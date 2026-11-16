@@ -41,6 +41,7 @@ def flight(t):  # Catmull-Rom through FL
     p0, p1, p2, p3 = FL[max(j - 1, 0)], FL[j], FL[j + 1], FL[min(j + 2, n)]
     return .5 * (2 * p1 + (p2 - p0) * u + (2 * p0 - 5 * p1 + 4 * p2 - p3) * u * u + (3 * p1 - p0 - 3 * p2 + p3) * u ** 3)
 cityo, citym = [], []
+sofa_o = next((o for o in scene.objects if o.name.startswith("geometry_0")), None)  # focus target for the night pull-out
 def load_city():  # only once the film reaches the building: its 2M vertices cost ~1 GB the room frames do not need
     before = set(bpy.data.objects); bpy.ops.import_scene.gltf(filepath=os.path.join(ROOT, "artifacts", "blender", "city.glb"))
     gains = {n_: g_ for n_, _, g_ in CITY["parts"]}
@@ -131,7 +132,9 @@ for n, k in enumerate(keys):
     if CITY and p > .86 and not cityo: load_city()
     for o in cityo: o.hide_render = p <= .86
     fog.hide_render = p > .86 or stage > .5 or CYC; area.data.use_shadow = p <= .86 and not W_  # at the building pull-out the haze and pane shadows do not read; dropping them keeps RAM under 90%
-    for e_ in citym: e_.inputs[1].default_value = (fin + .03) / 1.03
+    for e_ in citym: e_.inputs[1].default_value = (fin + .03) / 1.03 * float(os.environ.get("CITYG", .35))  # neighbours dimmer than our room: lived-in windows, not lightboxes
+    cam.data.dof.use_dof = p > .86 and os.environ.get("CDOF", ".35") != "0"  # the pull-out: focus stays on our room, the neighbours soften like a night photo
+    if cam.data.dof.use_dof: cam.data.dof.focus_object = sofa_o; cam.data.dof.aperture_fstop = float(os.environ.get("CDOF", ".35"))
     bg.inputs[0].default_value = tuple(a * (1 - fin) + b * fin for a, b in zip(bg0, (.012, .016, .03, 1))); bg.inputs[1].default_value = bgs0 * (1 - fin) + fin
     fwd = cam.matrix_world.to_quaternion() @ Vector((0, 0, -1)); cam.rotation_euler = fwd.to_track_quat("-Z", "Y").to_euler()  # level horizon: no camera roll
     cam.data.angle_y = math.radians(k["fov"])  # the film's own lens, as on the website
@@ -155,12 +158,12 @@ for n, k in enumerate(keys):
     for b in glowing: b.inputs["Emission Strength"].default_value = 0  # the frame wood was self-lit, which read as painted on
     for pn_ in panes: pn_.inputs[1].default_value = 4 * lvl  # below clipping, so the frosted falloff shows
     for l in archl: l.data.energy = l.data["base"] * (lsun ** .5 if l.name.startswith("SunShaft") else lvl * (AMB if l.name.startswith("ArchLight") else 1))  # low sun still throws strong rays: dawn and dusk shafts no longer fade out with the room light
-    for g in archg: g.inputs[1].default_value = max(float(os.environ.get("AGLOW", 5.4)) * lvl, 3 * pw_ * stage * (g == archg[0]))  # bright daylight glass; AgX rolls the top off softly, the bloom haloes it
+    for g in archg: g.inputs[1].default_value = max(float(os.environ.get("AGLOW", 3.8)) * lvl, 3 * pw_ * stage * (g == archg[0]))  # bright daylight glass; AgX rolls the top off softly, the bloom haloes it
     sd = Y_UP @ Vector(k["sunDir"]); el0 = math.asin(max(-1, min(1, sd.z))); hw = 0 if W_ else up(math.degrees(el0), 45, 75)  # (window mode: its sun already stands low outside the back wall) a noon sun straight down lit the whole view evenly under this big skylight: cap it at 60 deg, from behind the camera, so the patch lands where it is seen
     hz = Vector((sd.x, sd.y, 0)); hz = (hz.normalized() if hz.length > 1e-4 else Vector((0, -1, 0))) * (1 - hw) + Vector((0, -1, 0)) * hw; el = el0 if W_ else min(el0, math.radians(float(os.environ.get("SUNEL", 60))))
     sd = hz.normalized() * math.cos(el) + Vector((0, 0, math.sin(el))); sun.rotation_euler = (-sd).to_track_quat("-Z", "Y").to_euler()
     sun.data.energy = float(os.environ.get("SUN", 80)) * (float(os.environ.get("WSUNK", 2)) if W_ else 1) * lsun * (1 - up(p, .885, .915));  # the panel beam stays flat: tilted, its edge pokes through the ceiling sun.data.color = tuple(.3 + .7 * v / m for v in c)
-    scene.view_settings.exposure = -.2 - float(os.environ.get("XPULL", 1.6)) * max(0, lvl - .7) + (.6 if os.environ.get("MODE") == "window" else 0)  # the arches light less of the room than the skylight  # midday sun is ~4x dawn: pull exposure so it doesn't blow out
+    scene.view_settings.exposure = -.2 - float(os.environ.get("XPULL", 2.0)) * max(0, lvl - .7) + (.6 if os.environ.get("MODE") == "window" else 0)  # the arches light less of the room than the skylight  # midday sun is ~4x dawn: pull exposure so it doesn't blow out
     beamv = (.17 - .05 * up(p, .7, .8)) * (1 - up(p, .86, 1)) * (1 - e * .4) * lit  # world.ts dayBeam
     sz_ = max(.05, sd.z)
     for b_ in beams:
