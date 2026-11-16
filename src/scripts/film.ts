@@ -16,10 +16,22 @@ async function boot(story: HTMLElement) {
   let film: Film;
   try { film = await (await fetch(`${path}.json`, { cache: 'no-cache' })).json(); } catch { return fail(); }
   video.addEventListener('error', fail, { once: true });
+  video.addEventListener('loadedmetadata', () => { shownZoom = ''; s = -1; });
   video.poster = `${path}.jpg?v=${film.v}`; video.src = `${path}.mp4?v=${film.v}`;
 
   const clamp = (x: number) => Math.min(1, Math.max(0, x)), up = (x: number, a: number, b: number) => { const t = clamp((x - a) / (b - a)); return t * t * t * (t * (6 * t - 15) + 10); };
-  let shownGrade = '';
+  let shownGrade = '', shownZoom = '', zk = 1, ztx = 0;
+  // narrow screens: the exploded product is wider than the screen, so the film zooms out and moves left, leaving the right side for the labels
+  const PROD = path.endsWith('portrait') ? [.073, .856] : [.26, .7]; // the exploded product's left and right edges, as fractions of the film's width
+  const zoom = () => {
+    const W = pin.clientWidth, H = pin.clientHeight, vw = video.videoWidth || 1, vh = video.videoHeight || 1, c = Math.max(W / vw, H / vh), w = vw * c, h = vh * c;
+    const z = W < H || !fine ? up(s, .4, .45) * (1 - up(s, .66, .71)) : 0, kt = Math.min(1, .56 * W / ((PROD[1] - PROD[0]) * w));
+    zk = 1 + (kt - 1) * z; ztx = (.62 * W - W / 2 - (PROD[1] - .5) * w * kt) * z;
+    const m = (z * 18).toFixed(1), css = z < .002 ? '' : `translate3d(${ztx.toFixed(1)}px,0,0) scale(${zk.toFixed(4)})|linear-gradient(90deg,#0000,#000 ${m}%,#000 ${100 - +m}%,#0000),linear-gradient(#0000,#000 ${m}%,#000 ${100 - +m}%,#0000)`;
+    // the element itself is sized to the covering box (not cropped by object-fit), so zooming out reveals the whole film
+    const key = `${css}|${w.toFixed(1)}|${h.toFixed(1)}`;
+    if (key !== shownZoom) { shownZoom = key; const [t = '', mk = ''] = css.split('|'); story.querySelectorAll('video').forEach(v => { Object.assign(v.style, { transform: t, maskImage: mk, maskComposite: 'intersect', maxWidth: 'none', width: `${w}px`, height: `${h}px`, left: `${(W - w) / 2}px`, top: `${(H - h) / 2}px` }); }); }
+  };
   const chapters = [...story.querySelectorAll<HTMLElement>('[data-in]')].map(el => ({ el, a: +el.dataset.in!, b: +el.dataset.out!, shown: -1 }));
   const labels = [...story.querySelectorAll<HTMLElement>('[data-layer]')];
   const clockT = story.querySelector<HTMLElement>('[data-clock-t]')!, clockN = story.querySelector<HTMLElement>('[data-clock-n]')!, clock = story.querySelector<HTMLElement>('[data-clock]')!;
@@ -36,10 +48,11 @@ async function boot(story: HTMLElement) {
   const labelAt = (i: number) => {
     const k = Math.floor(frame / 4) * 4, a = film.labels[k], b = film.labels[k + 4] ?? a; if (!a) return null;
     const W = pin.clientWidth, H = pin.clientHeight, t = (frame - k) / 4, vw = video.videoWidth || 16, vh = video.videoHeight || 9, scale = Math.max(W / vw, H / vh), w = vw * scale, h = vh * scale;
-    return { x: (W - w) / 2 + (a[i * 2] + (b[i * 2] - a[i * 2]) * t) * w, y: (H - h) / 2 + (a[i * 2 + 1] + (b[i * 2 + 1] - a[i * 2 + 1]) * t) * h };
+    return { x: W / 2 + ztx + (a[i * 2] + (b[i * 2] - a[i * 2]) * t - .5) * w * zk, y: H / 2 + (a[i * 2 + 1] + (b[i * 2 + 1] - a[i * 2 + 1]) * t - .5) * h * zk };
   };
 
   const overlay = () => {
+    zoom();
     for (const c of chapters) {
       const o = Math.min(clamp((p - c.a) / .016), clamp((c.b - p) / .016)), v = c.a === 0 ? clamp((c.b - p) / .016) : c.b >= 1 ? clamp((p - c.a) / .016) : o;
       if (Math.abs(v - c.shown) < .004) continue;
@@ -50,7 +63,7 @@ async function boot(story: HTMLElement) {
       const q = open < .01 ? null : labelAt(i);
       if (!q) { l.style.opacity = '0'; return; }
       l.style.opacity = String(open);
-      l.style.transform = `translate3d(${(fine ? q.x : Math.min(q.x, pin.clientWidth - 150)).toFixed(1)}px,${q.y.toFixed(1)}px,0)`;
+      l.style.transform = `translate3d(${(fine ? q.x : Math.min(q.x, pin.clientWidth - 128)).toFixed(1)}px,${q.y.toFixed(1)}px,0)`;
     });
     // time-of-day light, as in the 3D scene: neutral at midday, warming and dimming into dusk; it eases off as the camera pulls out to the night building
     const w = up(todAt(frame), .42, .66) * (1 - up(p, .9, .97)), grade = w < .005 ? '' : `sepia(${(.45 * w).toFixed(3)}) saturate(${(1 + .35 * w).toFixed(3)}) hue-rotate(${(-12 * w).toFixed(1)}deg) brightness(${(1 - .25 * w).toFixed(3)})`;
@@ -87,7 +100,7 @@ async function boot(story: HTMLElement) {
       const next = alt[m]; if (want !== m) return;
       next.v.currentTime = (frame + .5) / next.film.fps; await new Promise(ok => next.v.addEventListener('seeked', ok, { once: true }));
       if (want !== m) return;
-      video.style.opacity = '0'; next.v.style.opacity = '1'; video = next.v; film = next.film; shown = -1;
+      video.style.opacity = '0'; next.v.style.opacity = '1'; video = next.v; film = next.film; shown = -1; shownZoom = ''; s = -1;
     } catch { if (want === m && m !== 'ceiling') choose('ceiling'); }
   };
   buttons.forEach(b => b.addEventListener('click', () => choose(b.dataset.mount!)));
