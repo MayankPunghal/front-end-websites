@@ -21,6 +21,32 @@ const yt = (u: string) => u.match(/(?:v=|youtu\.be\/)([\w-]{11})/)?.[1] ?? '';
         {cols.map(c => <ul class="gl__col">{[0, 1, 2].map(k => c.map(g => <li aria-hidden={k ? 'true' : undefined}><button type="button" class="gl__b" tabindex={k ? -1 : undefined} data-full={g.src} data-cap="" aria-label="View photo"><Pic src={g.src} alt={k ? '' : 'SUNROOOF skylight installation'} widths={[360, 600, 900]} sizes="(min-width: 62rem) 33vw, 50vw" w={g.w} h={g.h} /></button></li>))}</ul>)}
       </div>
     </div>
+    <!-- Photo wall: runs as the page parses (not after the module bundle loads), so the drifting wall is the first thing anyone sees.
+         Columns 1 and 3 stream up, column 2 down, as Web Animations on the compositor; page scroll or hovering the wall eases them to a stop. -->
+    <script is:inline>(() => {
+      if (matchMedia('(prefers-reduced-motion: reduce)').matches || !matchMedia('(min-width: 40rem)').matches) return;
+      const wall = document.currentScript.previousElementSibling.querySelector('.gl__m'), pane0 = wall.parentElement, cols = [...wall.querySelectorAll('.gl__col')], SPEED = 55;
+      let anims = [], k = 1, ramp = 0, idle = 0, seen = true, hover = false, scrolling = false, last = 0;
+      const drift = () => { const dlg = document.querySelector('.gl__lb'), on = seen && !pane0.hidden && !(dlg && dlg.open); anims.forEach(an => (on ? an.play() : an.pause())); };
+      const build = () => {
+        if (!cols[0].offsetParent) return;
+        const prog = anims[0] ? anims[0].currentTime / anims[0].effect.getTiming().duration % 1 : 0;
+        anims.forEach(a => a.cancel());
+        const one = cols.map(c => c.scrollHeight / 3);
+        wall.style.height = Math.max(...one) + 'px';
+        anims = cols.map((c, i) => { const y = ['translateY(0)', 'translateY(' + -one[i] + 'px)'], dur = one[i] / SPEED * 1000;
+          const an = c.animate({ transform: i % 2 ? y.reverse() : y }, { duration: dur, iterations: Infinity, easing: 'linear' }); an.currentTime = prog * dur; an.updatePlaybackRate(k); return an; });
+        drift();
+      };
+      const step = now => { const dt = Math.min((now - last) / 1000, 0.05), g = hover || scrolling ? 0 : 1; last = now;
+        k += (g - k) * Math.min(1, dt * 4); if (Math.abs(g - k) < 0.002) k = g; anims.forEach(an => an.updatePlaybackRate(k)); ramp = k === g ? 0 : requestAnimationFrame(step); };
+      const retarget = () => { if (!ramp) { last = performance.now(); ramp = requestAnimationFrame(step); } };
+      addEventListener('scroll', () => { scrolling = true; retarget(); clearTimeout(idle); idle = setTimeout(() => { scrolling = false; retarget(); }, 1400); }, { passive: true });
+      wall.addEventListener('pointerenter', () => { hover = true; retarget(); }); wall.addEventListener('pointerleave', () => { hover = false; retarget(); });
+      new IntersectionObserver(([e]) => { seen = e.isIntersecting; drift(); }).observe(wall);
+      build(); addEventListener('resize', build); addEventListener('load', build);
+      window.__wall = { drift };
+    })();</script>
 
     <div class="gl__p" role="tabpanel" id="gl-p1" aria-labelledby="gl-t1" hidden>
       <div class="gl__f">
@@ -97,37 +123,7 @@ const yt = (u: string) => u.match(/(?:v=|youtu\.be\/)([\w-]{11})/)?.[1] ?? '';
 <script>
   import { swap } from '../../scripts/filter';
   const root = document.querySelector<HTMLElement>('[data-gallery]')!;
-  // Photo wall: columns 1 and 3 stream up, column 2 streams down, at a constant speed. Each is a Web Animation (runs on the compositor, so it stays smooth even when the main thread is busy); page scroll or hovering the wall eases the playback rate to 0 and back.
-  const cols = [...root.querySelectorAll<HTMLElement>('.gl__col')], SPEED = 55; // px per second
-  const wall = root.querySelector<HTMLElement>('.gl__m')!, pane0 = root.querySelector<HTMLElement>('#gl-p0')!;
-  let anims: Animation[] = [], k = 1, goal = 1, ramp = 0, idle = 0, seen = true, hover = false, scrolling = false, last = 0;
-  const build = () => {
-    if (!cols[0].offsetParent) return;
-    const prog = anims[0] ? Number(anims[0].currentTime) / Number(anims[0].effect!.getTiming().duration) % 1 : 0;
-    anims.forEach(a => a.cancel());
-    const one = cols.map(c => c.scrollHeight / 3);
-    wall.style.height = Math.max(...one) + 'px';
-    anims = cols.map((c, i) => {
-      const y = [`translateY(0)`, `translateY(${-one[i]}px)`], dur = one[i] / SPEED * 1000;
-      const an = c.animate({ transform: i % 2 ? y.reverse() : y }, { duration: dur, iterations: Infinity, easing: 'linear' });
-      an.currentTime = prog * dur; an.updatePlaybackRate(k); return an;
-    });
-    drift();
-  };
-  const drift = () => { const on = seen && !pane0.hidden && !dlg.open; anims.forEach(an => (on ? an.play() : an.pause())); };
-  const step = (now: number) => {
-    const dt = Math.min((now - last) / 1000, 0.05); last = now; const g = hover || scrolling ? 0 : 1;
-    k += (g - k) * Math.min(1, dt * 4); if (Math.abs(g - k) < 0.002) k = g;
-    anims.forEach(an => an.updatePlaybackRate(k));
-    ramp = k === g ? 0 : requestAnimationFrame(step);
-  };
-  const retarget = () => { if (!ramp) { last = performance.now(); ramp = requestAnimationFrame(step); } };
-  if (!matchMedia('(prefers-reduced-motion: reduce)').matches && matchMedia('(min-width: 40rem)').matches) {
-    addEventListener('scroll', () => { scrolling = true; retarget(); clearTimeout(idle); idle = window.setTimeout(() => { scrolling = false; retarget(); }, 1400); }, { passive: true });
-    wall.addEventListener('pointerenter', () => { hover = true; retarget(); }); wall.addEventListener('pointerleave', () => { hover = false; retarget(); });
-    new IntersectionObserver(([e]) => { seen = e.isIntersecting; drift(); }).observe(wall);
-    setTimeout(build); addEventListener('resize', build); addEventListener('load', build);
-  } else seen = false;
+  const drift = () => (window as any).__wall?.drift(); // the photo wall itself runs inline, right after its markup
   // tabs
   const tabs = [...root.querySelectorAll<HTMLButtonElement>('[data-tab]')], panes = [...root.querySelectorAll<HTMLElement>('.gl__p')];
   const pick = (i: number, focus = false) => { tabs.forEach((t, k) => { t.setAttribute('aria-selected', String(k === i)); t.tabIndex = k === i ? 0 : -1; panes[k].hidden = k !== i; }); if (focus) tabs[i].focus(); dispatchEvent(new Event('resize')); drift(); };
