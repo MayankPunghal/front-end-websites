@@ -39,7 +39,9 @@ const here = (href: string) => (href === '/' ? path === '/' : path.startsWith(hr
 </header>
 
 <style>
-  .hdr { position: sticky; top: 0; z-index: 50; background: rgb(18 17 15 / .78); -webkit-backdrop-filter: blur(18px) saturate(1.4); backdrop-filter: blur(18px) saturate(1.4); border-bottom: 1px solid var(--line); transition: background .35s var(--ease-out); }
+  .hdr { position: sticky; top: 0; z-index: 50; border-bottom: 1px solid var(--line); }
+  /* the frost sits on a layer behind the bar: a backdrop-filter on .hdr itself would trap the fixed menu panel inside the 72px bar */
+  .hdr::before { content: ''; position: absolute; inset: 0; z-index: -1; background: rgb(18 17 15 / .78); -webkit-backdrop-filter: blur(18px) saturate(1.4); backdrop-filter: blur(18px) saturate(1.4); }
   .hdr.is-open { background: var(--night); }
   .hdr[data-static] { position: relative; } .hdr[data-static].is-open { position: fixed; inset: 0 0 auto 0; }
   .hdr__in { display: flex; align-items: center; gap: var(--s-5); height: 4.5rem; padding-inline: clamp(1rem, 0.5rem + 3vw, 3.25rem); }

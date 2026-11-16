@@ -18,8 +18,10 @@ export const local = (url: string, w = 1600): string | null => {
 };
 
 export const localize = (html: string): string => {
-  html = html.replace(URL_RE, (m, q?: string) => {
-    const w = Number(/[?&]width=(\d+)/.exec(q ?? '')?.[1]) || undefined;
+  html = html.replace(URL_RE, (m, q: string | undefined, at: number, all: string) => {
+    // a lone src (no srcset width after it) is also shown on 2x screens, so it gets twice the width it asked for
+    const asked = Number(/[?&]width=(\d+)/.exec(q ?? '')?.[1]) || undefined, inSet = /^\s+\d+w/.test(all.slice(at + m.length, at + m.length + 8));
+    const w = asked && !inSet ? asked * 2 : asked;
     const l = local(m.replace(/\?.*$/, ''), w);
     if (!l) { if (!M['!' + key(m.replace(/\?.*$/, ''))]) missing.add(m.replace(/\?.*$/, '')); return m; }
     return l;
@@ -28,6 +30,9 @@ export const localize = (html: string): string => {
   return html.replace(/<img\b[^>]*>/g, tag => {
     const id = /\ssrc="\/img\/([0-9a-f]{10})-/.exec(tag)?.[1], e = id ? byId.get(id) : undefined;
     if (!e) return tag;
+    // a srcset that stops short of the largest mirrored file gets it as a last candidate, so wide 2x screens can pick it
+    const top = e.bs[e.bs.length - 1], file = `/img/${e.i}-${top}.webp`;
+    if (/\ssrcset="/.test(tag) && !tag.includes(file)) tag = tag.replace(/(\ssrcset="[^"]*)"/, `$1, ${file} ${top}w"`);
     if (!/\sloading=/.test(tag)) tag = tag.replace('<img', '<img loading="lazy" decoding="async"');
     if (e.a || e.w < 300) return tag; // transparent logos: a backdrop would show through
     const bg = `background:url(${e.lq}) center/cover no-repeat;`;
