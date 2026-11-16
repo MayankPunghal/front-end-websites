@@ -31,5 +31,7 @@ export default defineConfig({
   output: 'static',
   trailingSlash: 'ignore',
   devToolbar: { enabled: false },
-  vite: { plugins: [folderIndex] },
+  // artifacts/ holds render frames, worktrees and their builds: watching it floods the dev server after every rebuild,
+  // and while it churns it serves the hero films at well under 1 MB/s
+  vite: { plugins: [folderIndex], server: { watch: { ignored: ['**/artifacts/**', '**/public/sunrooof/film/**', '**/public/sunroof/**'] } } },
 });
