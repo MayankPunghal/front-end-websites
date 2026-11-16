@@ -22,7 +22,7 @@ async function boot() {
       const hx = gsap.quickTo(halo, 'x', { duration: 0.55, ease: 'power3' }), hy = gsap.quickTo(halo, 'y', { duration: 0.55, ease: 'power3' });
       addEventListener('pointermove', e => { dx(e.clientX); dy(e.clientY); hx(e.clientX); hy(e.clientY); c.classList.add('on'); }, { passive: true });
       document.addEventListener('pointerleave', () => c.classList.remove('on'));
-      document.addEventListener('pointerover', e => { const t = (e.target as Element).closest('a, button, summary, label, input, select, textarea, [role=tab], .cmp'); c.classList.toggle('hot', !!t); c.classList.toggle('img', !t && !!(e.target as Element).closest('main img, video')); });
+      document.addEventListener('pointerover', e => { const t = (e.target as Element).closest('a, button, summary, label, input, select, textarea, [role=tab], .cmp'); c.classList.toggle('hot', !!t); c.classList.toggle('img', !t && !!(e.target as Element).closest('main img')); c.classList.toggle('off', !!(e.target as Element).closest('video, iframe')); });
     }
 
     // 3. Magnetic controls: buttons lean toward the pointer and spring back.

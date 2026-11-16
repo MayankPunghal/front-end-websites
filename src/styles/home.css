@@ -82,7 +82,7 @@
   .tp__t h3 { font: 400 1.125rem/1.3 var(--font-body); margin-top: .75rem; color: var(--ink); } .tp__t p { font-size: .9375rem; color: var(--ink-3); margin: 0; }
   @keyframes tp-rib { to { transform: translateX(-50%); } } @media (prefers-reduced-motion: reduce) { .tp__rib { overflow-x: auto; } .tp__t { animation: none; } .tp__t li[aria-hidden] { display: none; } }
   @media (min-width: 48rem) { .tp__head { grid-template-columns: 1fr 1fr; } .tp__head p { justify-self: end; text-align: right; } }
-  .mq { overflow: hidden; padding-block: 2rem; border-block: 1px solid var(--line); } .mq__t { display: flex; gap: 4rem; width: max-content; align-items: center; will-change: transform; animation: mq 50s linear infinite; } .mq__t img { height: 4rem; width: auto; filter: grayscale(1) invert(1); mix-blend-mode: screen; opacity: .75; }
+  .mq { overflow: hidden; padding-block: 2rem; border-block: 1px solid var(--line); } .mq__t { display: flex; gap: 4rem; width: max-content; align-items: center; will-change: transform; animation: mq 50s linear infinite; } .mq__t img { height: 3.25rem; width: auto; padding: .6rem 1.1rem; box-sizing: content-box; background: #f2ede4; border-radius: var(--r-2); }
   @keyframes mq { to { transform: translateX(-50%); } } @media (prefers-reduced-motion: reduce) { .mq__t { animation: none; } }
   .nod { padding: clamp(3rem, 2rem + 4vw, 6rem) var(--gx); display: grid; gap: var(--s-6); justify-items: center; text-align: center; } .nod__b { display: flex; gap: 2rem; } .nod__b img { width: 5.5rem; height: 5.5rem; object-fit: contain; }
 
