@@ -64,6 +64,37 @@ const yt = (u: string) => u.match(/(?:v=|youtu\.be\/)([\w-]{11})/)?.[1] ?? '';
           </li>
         ))}
       </ul>
+      <!-- Delivered sites drift like the photo wall: a one-screen window, outer columns stream up, the middle one down, ping-ponging
+           through the list; hovering it or scrolling the page eases it to a stop. Rebuilt after every filter and resize. -->
+      <script is:inline>(() => {
+        if (matchMedia('(prefers-reduced-motion: reduce)').matches || !matchMedia('(min-width: 40rem)').matches) return;
+        const ul = document.currentScript.previousElementSibling, pane = ul.parentElement, SPEED = 45;
+        let anims = [], k = 1, ramp = 0, idle = 0, seen = false, hover = false, scrolling = false, last = 0, t = 0;
+        const drift = () => { const dlg = document.querySelector('.gl__lb'), on = seen && !pane.hidden && !(dlg && dlg.open); anims.forEach(a => (on ? a.play() : a.pause())); };
+        const build = () => {
+          anims.forEach(a => a.cancel()); anims = [];
+          if (pane.hidden) return;
+          ul.classList.add('is-drift');
+          const lis = [...ul.children].filter(li => li.tagName === 'LI' && !li.hidden); if (!lis.length) return;
+          const n = getComputedStyle(ul).gridTemplateColumns.split(' ').length, end = Math.max(...lis.map(li => li.offsetTop + li.offsetHeight)), dist = Math.max(0, end - ul.clientHeight);
+          if (dist < 40) return;
+          const dur = dist / SPEED * 1000;
+          anims = lis.map((li, i) => { const y = ['translateY(0)', 'translateY(' + -dist + 'px)'];
+            const a = li.animate({ transform: (i % n) % 2 ? y.reverse() : y }, { duration: dur, iterations: Infinity, direction: 'alternate', easing: 'linear' });
+            a.updatePlaybackRate(k); return a; });
+          drift();
+        };
+        const later = ms => { clearTimeout(t); t = setTimeout(build, ms); };
+        const step = now => { const dt = Math.min((now - last) / 1000, 0.05), g = hover || scrolling ? 0 : 1; last = now;
+          k += (g - k) * Math.min(1, dt * 4); if (Math.abs(g - k) < 0.002) k = g; anims.forEach(a => a.updatePlaybackRate(k)); ramp = k === g ? 0 : requestAnimationFrame(step); };
+        const retarget = () => { if (!ramp) { last = performance.now(); ramp = requestAnimationFrame(step); } };
+        addEventListener('scroll', () => { scrolling = true; retarget(); clearTimeout(idle); idle = setTimeout(() => { scrolling = false; retarget(); }, 1400); }, { passive: true });
+        ul.addEventListener('pointerenter', () => { hover = true; retarget(); }); ul.addEventListener('pointerleave', () => { hover = false; retarget(); });
+        new IntersectionObserver(([e]) => { seen = e.isIntersecting; drift(); }).observe(ul);
+        pane.querySelectorAll('select').forEach(s => s.addEventListener('change', () => later(1300))); // after the filter's own fade and rise
+        addEventListener('resize', () => later(150)); addEventListener('load', () => later(0));
+        new MutationObserver(() => { if (!pane.hidden) later(60); else drift(); }).observe(pane, { attributes: true, attributeFilter: ['hidden'] });
+      })();</script>
     </div>
 
     <div class="gl__p" role="tabpanel" id="gl-p2" aria-labelledby="gl-t2" hidden>
@@ -103,6 +134,7 @@ const yt = (u: string) => u.match(/(?:v=|youtu\.be\/)([\w-]{11})/)?.[1] ?? '';
   .gl__f select option { color: #111; } .gl__f select:focus-visible { outline: 2px solid var(--sun); outline-offset: 2px; }
   .gl__f p { margin: 0 0 0 auto; font-size: .875rem; color: #9d9fa1; }
   .gl__grid { list-style: none; padding: 0; margin: 0; display: grid; grid-template-columns: repeat(2, 1fr); gap: clamp(.75rem, 2vw, 1.5rem); } .gl__grid li[hidden] { display: none; }
+  .gl__grid.is-drift { height: 100svh; overflow: clip; align-content: start; -webkit-mask-image: linear-gradient(transparent, #000 2.5rem, #000 calc(100% - 2.5rem), transparent); mask-image: linear-gradient(transparent, #000 2.5rem, #000 calc(100% - 2.5rem), transparent); } .gl__grid.is-drift li { will-change: transform; }
   .gl__grid { row-gap: clamp(2rem, 4vw, 3rem); } .gl__grid .gl__b { aspect-ratio: 400 / 440; } .gl__grid .gl__b img { height: 100%; object-fit: cover; }
   .gl__n { margin: 1rem 0 .75rem; font: 400 1rem/1.3 var(--font-body); } .gl__tg { display: flex; flex-wrap: wrap; gap: .625rem; margin: 0; } .gl__tg span { padding: .3rem .6rem; border: 1px solid #fff; font-size: .8125rem; line-height: 1.2; }
   .gl__v { list-style: none; padding: 0; margin: 0; display: grid; grid-template-columns: 1fr; gap: clamp(.75rem, 2vw, 1.875rem); }
