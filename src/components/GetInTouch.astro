@@ -17,6 +17,7 @@ const text: [string, string, string, string][] = [['city', 'City', 'text', 'addr
       <p>Fill out the form and our specialist will contact you as soon as possible</p>
     </div>
     <form class="gt__form" method="post" action={SITE.formEndpoint} enctype="multipart/form-data" target={`${id}-frame`} novalidate data-git>
+      <input type="hidden" name="form_id" value={SITE.formId} />
       {selects.map(name => (
         <div class="field">
           <select name={name} aria-label={clean(S[name].label)} required>

@@ -10,6 +10,7 @@ const total = chips.length + 6;
 ---
 <dialog class="lm" aria-labelledby="lm-q" data-lead-modal>
   <form method="post" action={SITE.formEndpoint} enctype="multipart/form-data" target="lm-frame" novalidate>
+    <input type="hidden" name="form_id" value={SITE.formId} />
     <header class="lm__top">
       <span class="lm__count" data-count aria-live="polite">1 / {total}</span>
       <span class="lm__bar" aria-hidden="true"><i data-bar></i></span>

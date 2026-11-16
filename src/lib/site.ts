@@ -14,6 +14,7 @@ export const SITE = {
   legal: 'SUNROOOF LUMINARIES PRIVATE LIMITED',
   parent: 'MAGPPIE Group',
   formEndpoint: 'https://ecf.cirkleinc.com/api/form-submit', // existing sales-team lead integration: unchanged
+  formId: '8d1184ae-77cc-4c56-8e25-40c6dba2a1f9', // the form's id in the ECF Shopify app; its own script sends it as form_id with every submission
   liveOrigin: 'https://sunrooof.com',
 };
 
