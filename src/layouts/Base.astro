@@ -28,6 +28,8 @@ const canonical = new URL(Astro.url.pathname, SITE.liveOrigin).href;
     <meta name="theme-color" content="#ffffff" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="preconnect" href="https://cdn.shopify.com" crossorigin />
+    <link rel="preconnect" href="https://api.fontshare.com" crossorigin />
+    <link rel="stylesheet" href="https://api.fontshare.com/v2/css?f[]=melodrama@400,500,600&display=swap" />
     <script is:inline>
       // Reveal states only exist when motion is allowed; if the animation chunk never arrives, content must not stay hidden.
       if (!matchMedia('(prefers-reduced-motion: reduce)').matches) {

@@ -65,7 +65,7 @@ const here = (href: string) => (href === '/' ? path === '/' : path.startsWith(hr
   .menu__in { opacity: 0; } .hdr.is-open .menu__in { opacity: 1; }
   .menu__in { display: grid; gap: var(--s-6); min-height: 100%; align-content: center; padding: var(--s-5) clamp(1rem, 0.5rem + 3vw, 3.25rem) var(--s-6); }
   .menu__links { display: grid; gap: min(1.6vh, .75rem); align-content: center; }
-  .menu__links a { justify-self: start; position: relative; font: 500 min(7.4vw, 6.4vh, 4rem)/1.12 var(--font-display); letter-spacing: -.035em; text-decoration: none; color: #fff; padding-block: .1em; padding-left: clamp(0rem, 2vw, 2.5rem); }
+  .menu__links a { justify-self: start; position: relative; font: 500 min(7.4vw, 6.4vh, 4rem)/1.12 var(--font-display); letter-spacing: -0.01em; text-decoration: none; color: #fff; padding-block: .1em; padding-left: clamp(0rem, 2vw, 2.5rem); }
   .menu__links a::after { content: ''; position: absolute; left: clamp(0rem, 2vw, 2.5rem); right: 0; bottom: 0; height: 2px; background: var(--sun); transform: scaleX(0); transform-origin: left; transition: transform .35s var(--ease-out); }
   .menu__links a:hover::after, .menu__links a:focus-visible::after, .menu__meta a:hover::after, .menu__meta a:focus-visible::after { transform: scaleX(1); }
   .menu__meta { display: grid; gap: .5rem; align-content: center; font-size: 1.125rem; }

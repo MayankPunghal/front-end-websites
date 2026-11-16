@@ -90,11 +90,11 @@ const arrow = '<svg viewBox="0 0 11 18" width="11" height="18" fill="none" strok
 
 <style>
   .ps { padding-inline: clamp(1rem, 0.5rem + 3vw, 3.25rem); color: #fff; background: #121212; }
-  .ps h2 { font: 500 clamp(1.75rem, 1.2rem + 1.6vw, 2.5rem)/1.2 var(--font-display); letter-spacing: -.035em; margin: 0; }
-  .ps h3 { font: 500 1.75rem/1.2 var(--font-display); letter-spacing: -.035em; margin: 0; }
+  .ps h2 { font: 500 clamp(1.75rem, 1.2rem + 1.6vw, 2.5rem)/1.2 var(--font-display); letter-spacing: -0.01em; margin: 0; }
+  .ps h3 { font: 500 1.75rem/1.2 var(--font-display); letter-spacing: -0.01em; margin: 0; }
   .lc { padding-block: clamp(3rem, 7vw, 6rem); } .lc h2 { max-width: 15ch; margin-bottom: 2rem; }
   .lc__pics { display: grid; gap: .75rem; margin-inline: calc(clamp(1rem, 0.5rem + 3vw, 3.25rem) * -1); } .lc__pics img { width: 100%; height: auto; display: block; }
-  .lc__txt { display: grid; gap: 2rem; padding-top: 2rem; align-items: start; } .lc__txt p { margin: .75rem 0 0; font-size: .875rem; line-height: 1.5; max-width: 28rem; } .lc__txt .lc__k { color: var(--sun); font-weight: 700; font-size: .8125rem; margin-top: 1.25rem; } .lc__vs { font: 500 1.5rem var(--font-display); letter-spacing: -.035em; text-align: center; }
+  .lc__txt { display: grid; gap: 2rem; padding-top: 2rem; align-items: start; } .lc__txt p { margin: .75rem 0 0; font-size: .875rem; line-height: 1.5; max-width: 28rem; } .lc__txt .lc__k { color: var(--sun); font-weight: 700; font-size: .8125rem; margin-top: 1.25rem; } .lc__vs { font: 500 1.5rem var(--font-display); letter-spacing: -0.01em; text-align: center; }
   .tl { padding-block: clamp(3rem, 7vw, 6rem); text-align: center; } .tl__s { font-size: .875rem; margin: 1rem 0 3rem; }
   .tl__row { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, 1fr); gap: 2rem 0; }
   .tl__row li { position: relative; display: grid; justify-items: center; gap: .5rem; }
@@ -118,7 +118,7 @@ const arrow = '<svg viewBox="0 0 11 18" width="11" height="18" fill="none" strok
   .pt { background: linear-gradient(#a56d36, #2b1d12 30%, #0e0e0e 70%); display: grid; gap: 2rem; padding-block: clamp(3rem, 6vw, 5rem) 3rem; align-items: center; } .pt > img { width: 100%; max-width: 33rem; height: auto; background: #fff; } .pt h2 { font-size: clamp(2rem, 1.4rem + 2vw, 3.25rem); margin-bottom: 1.5rem; } .pt p { font-size: .75rem; line-height: 1.55; max-width: 24rem; margin: 0 0 1rem; }
   .pt__b { display: inline-block; margin-top: .75rem; padding: .75rem 1rem; border: 1px solid rgb(255 255 255 / .6); color: #fff; text-decoration: none; font-size: .75rem; } .pt__b:hover { border-color: var(--sun); color: var(--sun); }
   .sc { text-align: center; padding-block: 3rem; display: grid; justify-items: center; gap: 1.25rem; } .sc img { width: 3.75rem; height: auto; } .sc h2 { color: var(--sun); font-size: clamp(1.375rem, 1.1rem + 1vw, 1.75rem); } .sc a { color: #fff; text-decoration: none; font-size: .8125rem; border-bottom: 1px solid var(--sun); padding: .5rem .25rem; } .sc a:hover { color: var(--sun); }
-  .rl { padding-block: 3rem clamp(3rem, 7vw, 6rem); } .rl h2 { margin-bottom: 2rem; } .rl ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 2rem 1.25rem; grid-template-columns: repeat(auto-fill, minmax(min(100%, 16rem), 1fr)); } .rl a { display: grid; gap: .5rem; color: #fff; text-decoration: none; } .rl img { width: 100%; height: auto; aspect-ratio: 1; object-fit: cover; background: #3d3d3d; } .rl b { font: 400 1.0625rem/1.2 var(--font-display); } .rl span { font-size: .75rem; } .rl b { font: 500 .9375rem/1.2 var(--font-display); letter-spacing: -.035em; }
+  .rl { padding-block: 3rem clamp(3rem, 7vw, 6rem); } .rl h2 { margin-bottom: 2rem; } .rl ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 2rem 1.25rem; grid-template-columns: repeat(auto-fill, minmax(min(100%, 16rem), 1fr)); } .rl a { display: grid; gap: .5rem; color: #fff; text-decoration: none; } .rl img { width: 100%; height: auto; aspect-ratio: 1; object-fit: cover; background: #3d3d3d; } .rl b { font: 400 1.0625rem/1.2 var(--font-display); } .rl span { font-size: .75rem; } .rl b { font: 500 .9375rem/1.2 var(--font-display); letter-spacing: -0.01em; }
   @media (min-width: 62rem) {
     .lc__pics { grid-template-columns: 1fr 1fr; } .lc__txt { grid-template-columns: 1fr auto 1fr; } .lc__txt > div:first-child { padding-left: 0; } .lc__vs { padding-top: .25rem; }
     .tl__row { grid-template-columns: repeat(6, 1fr); } .tl__a { display: block; }

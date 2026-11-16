@@ -14,9 +14,9 @@ img, svg, video { display: block; max-width: 100%; }
 img { height: auto; }
 a { color: inherit; text-underline-offset: 0.2em; text-decoration-thickness: 1px; }
 button, input, select, textarea { font: inherit; color: inherit; }
-h1, h2, h3, h4 { margin: 0; font-family: var(--font-display); font-weight: 500; color: var(--ink); text-wrap: balance; letter-spacing: -0.03em; }
-h1 { font-size: var(--t-h1); line-height: var(--lh-tight); letter-spacing: -0.045em; }
-h2 { font-size: var(--t-h2); line-height: .98; letter-spacing: -0.04em; }
+h1, h2, h3, h4 { margin: 0; font-family: var(--font-display); font-weight: 500; color: var(--ink); text-wrap: balance; letter-spacing: -0.01em; }
+h1 { font-size: var(--t-h1); line-height: var(--lh-tight); letter-spacing: -0.01em; }
+h2 { font-size: var(--t-h2); line-height: .98; letter-spacing: -0.01em; }
 h3 { font-size: var(--t-h3); line-height: var(--lh-snug); }
 h4 { font-size: var(--t-h4); line-height: var(--lh-snug); }
 p { margin: 0; text-wrap: pretty; }
@@ -188,7 +188,7 @@ html:has(dialog[open]) .cur { display: none; }
 .cur.off { opacity: 0; }
 html.has-cur :is(video, iframe) { cursor: auto !important; }
 .kin { overflow: clip; padding-block: clamp(2rem, 5vw, 5rem); background: var(--paper); border-block: 1px solid var(--line); }
-.kin__t { display: flex; width: max-content; margin: 0; white-space: nowrap; font: 500 clamp(3.5rem, 2rem + 8vw, 11rem)/.9 var(--font-display); letter-spacing: -.055em; will-change: transform; }
+.kin__t { display: flex; width: max-content; margin: 0; white-space: nowrap; font: 500 clamp(3.5rem, 2rem + 8vw, 11rem)/.9 var(--font-display); letter-spacing: -0.01em; will-change: transform; }
 .kin__t span { display: inline-flex; align-items: center; color: transparent; -webkit-text-stroke: 1px rgb(242 237 228 / .35); }
 .kin__t span:nth-child(3n+2) { color: var(--ink); -webkit-text-stroke: 0; }
 .kin__t span::after { content: ''; width: .32em; height: .32em; margin-inline: .45em; border-radius: 50%; background: radial-gradient(circle, #fff6d0, var(--sun) 40%, rgb(255 160 40 / 0) 72%); box-shadow: 0 0 40px 10px rgb(255 190 60 / .35); }

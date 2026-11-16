@@ -25,7 +25,7 @@
   --danger: #ff9a80;
 
   /* type */
-  --font-display: 'DM Sans Variable', 'DM Sans', system-ui, sans-serif;
+  --font-display: 'Melodrama', 'Libre Bodoni', Georgia, serif; /* Fontshare, free for commercial use (ITF Free Font License) */
   --font-body: 'DM Sans Variable', 'DM Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
   --w-regular: 400; --w-medium: 500; --w-semi: 600; --w-bold: 700;
   --t-micro: 0.75rem;                               /* 12 */

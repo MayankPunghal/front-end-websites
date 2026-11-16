@@ -49,7 +49,7 @@ const tabs = [['all', 'All'], ['ceiling', 'Ceiling'], ['window', 'Window'], ['ac
 <style is:global>
   .at { padding-block: clamp(2rem, 5vw, 4rem) clamp(3rem, 6vw, 5rem); }
   .at__bc { display: flex; gap: .5rem; align-items: center; font-size: .9375rem; color: #111; } .at__bc a { color: inherit; text-decoration: none; } .at__bc a:hover { text-decoration: underline; }
-  .at h1 { font: 500 clamp(2rem, 1.4rem + 2.4vw, 3.25rem)/1.15 var(--font-display); letter-spacing: -.035em; margin: .5rem 0 clamp(2rem, 5vw, 4rem); color: #111; }
+  .at h1 { font: 500 clamp(2rem, 1.4rem + 2.4vw, 3.25rem)/1.15 var(--font-display); letter-spacing: -0.01em; margin: .5rem 0 clamp(2rem, 5vw, 4rem); color: #111; }
   .at__tabs { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: clamp(1.5rem, 3vw, 2.5rem); }
   .at__tab { display: grid; justify-items: center; gap: .75rem; padding: .5rem 0 .25rem; background: none; border: 0; color: #111; cursor: pointer; font: inherit; }
   .at__tab span { position: relative; font-size: clamp(.8125rem, .6rem + .8vw, 1.5rem); padding-bottom: .375rem; }
@@ -68,7 +68,7 @@ const tabs = [['all', 'All'], ['ceiling', 'Ceiling'], ['window', 'Window'], ['ac
   .at__g a { position: relative; display: block; aspect-ratio: 1; overflow: hidden; background: #ddd; color: #fff; text-decoration: none; }
   .at__g img { width: 100%; height: 100%; object-fit: cover; display: block; }
   .at__g a::after { content: ''; position: absolute; inset: auto 0 0; height: 45%; background: linear-gradient(transparent, rgb(0 0 0 / .6)); pointer-events: none; }
-  .at__g h2 { position: absolute; z-index: 1; left: clamp(1rem, 4vw, 3rem); right: 1rem; bottom: clamp(1rem, 3.5vw, 2.75rem); margin: 0; font: 500 clamp(1.125rem, .8rem + 1.2vw, 1.75rem)/1.2 var(--font-display); letter-spacing: -.035em; color: #fff; }
+  .at__g h2 { position: absolute; z-index: 1; left: clamp(1rem, 4vw, 3rem); right: 1rem; bottom: clamp(1rem, 3.5vw, 2.75rem); margin: 0; font: 500 clamp(1.125rem, .8rem + 1.2vw, 1.75rem)/1.2 var(--font-display); letter-spacing: -0.01em; color: #fff; }
   @media (max-width: 40rem) { .at__g { grid-template-columns: 1fr; } .at__tabs { gap: .25rem; } }
   @media (prefers-reduced-motion: no-preference) {
     .at__tab .ln { animation: at-draw 1.1s var(--ease-out) both; } .at__tab:hover .ln { animation: at-draw .9s var(--ease-out) both; }
