@@ -21,13 +21,15 @@ async function boot(story: HTMLElement) {
   // So the whole film is downloaded once and played from memory; the streamed copy covers the first seconds until it lands.
   const full = (v: HTMLVideoElement, url: string) => fetch(url).then(r => r.ok ? r.blob() : Promise.reject()).then(b => { const t = v.currentTime; v.src = URL.createObjectURL(b); v.currentTime = t; }).catch(() => {});
   if (!video.poster.endsWith(`${path}.jpg`)) video.poster = `${path}.jpg`; video.src = `${path}.mp4?v=${film.v}`;
-  full(video, video.src);
+  const src = video.src; // the page's own images and fonts go first; the full copy starts once they have loaded
+  document.readyState === 'complete' ? full(video, src) : addEventListener('load', () => full(video, src), { once: true });
 
   const clamp = (x: number) => Math.min(1, Math.max(0, x)), up = (x: number, a: number, b: number) => { const t = clamp((x - a) / (b - a)); return t * t * t * (t * (6 * t - 15) + 10); };
   let shownGrade = '', shownZoom = '', zk = 1, ztx = 0;
   // narrow screens: the exploded product is wider than the screen, so the film zooms out and moves left, leaving the right side for the labels
   const PROD = path.endsWith('portrait') ? [.073, .856] : [.26, .7]; // the exploded product's left and right edges, as fractions of the film's width
   const zoom = () => {
+    if (!video.videoWidth) return; // size unknown (first load, or the in-memory copy swapping in): keep the last layout instead of sizing to a 1px film
     const W = pin.clientWidth, H = pin.clientHeight, vw = video.videoWidth || 1, vh = video.videoHeight || 1, c = Math.max(W / vw, H / vh), w = vw * c, h = vh * c;
     const z = W < H || !fine ? up(s, .4, .45) * (1 - up(s, .66, .71)) : 0, kt = Math.min(1, .56 * W / ((PROD[1] - PROD[0]) * w));
     zk = 1 + (kt - 1) * z; ztx = (.62 * W - W / 2 - (PROD[1] - .5) * w * kt) * z;
