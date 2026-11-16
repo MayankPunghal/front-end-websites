@@ -16,8 +16,12 @@ async function boot(story: HTMLElement) {
   let film: Film;
   try { film = await (await fetch(`${path}.json`, { cache: 'no-cache' })).json(); } catch { return fail(); }
   video.addEventListener('error', fail, { once: true });
-  video.addEventListener('loadedmetadata', () => { shownZoom = ''; s = -1; });
+  video.addEventListener('loadedmetadata', () => { shownZoom = ''; s = -1; shown = -1; });
+  // Seeking a streamed file aborts and re-requests a byte range on every scroll step (a few frames a second on a cold cache).
+  // So the whole film is downloaded once and played from memory; the streamed copy covers the first seconds until it lands.
+  const full = (v: HTMLVideoElement, url: string) => fetch(url).then(r => r.ok ? r.blob() : Promise.reject()).then(b => { const t = v.currentTime; v.src = URL.createObjectURL(b); v.currentTime = t; }).catch(() => {});
   video.poster = `${path}.jpg?v=${film.v}`; video.src = `${path}.mp4?v=${film.v}`;
+  full(video, video.src);
 
   const clamp = (x: number) => Math.min(1, Math.max(0, x)), up = (x: number, a: number, b: number) => { const t = clamp((x - a) / (b - a)); return t * t * t * (t * (6 * t - 15) + 10); };
   let shownGrade = '', shownZoom = '', zk = 1, ztx = 0;
@@ -95,7 +99,7 @@ async function boot(story: HTMLElement) {
         const v = first.cloneNode() as HTMLVideoElement, data: Film = await (await fetch(`${path}-wall.json`, { cache: 'no-cache' })).json();
         v.style.opacity = '0'; v.removeAttribute('poster'); v.src = `${path}-wall.mp4?v=${data.v}`; first.after(v);
         await new Promise((ok, no) => { v.addEventListener('loadeddata', ok, { once: true }); v.addEventListener('error', no, { once: true }); });
-        alt[m] = { v, film: data };
+        alt[m] = { v, film: data }; full(v, v.src);
       }
       const next = alt[m]; if (want !== m) return;
       next.v.currentTime = (frame + .5) / next.film.fps; await new Promise(ok => next.v.addEventListener('seeked', ok, { once: true }));

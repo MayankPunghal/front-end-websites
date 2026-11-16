@@ -75,6 +75,6 @@ const canonical = new URL(Astro.url.pathname, SITE.liveOrigin).href;
       // Images that finish loading after first paint sharpen in from their placeholder; cached ones just appear.
       addEventListener('load', e => { const i = e.target; if (i.tagName === 'IMG' && i.hasAttribute('data-lq')) { i.classList.add('lq-in'); i.addEventListener('animationend', () => i.classList.remove('lq-in'), { once: true }); } }, true);
     </script>
-    <script>import '../scripts/motion'; import '../scripts/smooth';</script>
+    <script>import '../scripts/motion'; import '../scripts/smooth'; import '../scripts/studio';</script>
   </body>
 </html>

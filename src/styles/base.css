@@ -166,8 +166,28 @@ html { accent-color: var(--sun); color-scheme: dark; background: var(--paper); }
 @view-transition { navigation: auto; }
 .hdr { view-transition-name: hdr; }
 @media (prefers-reduced-motion: no-preference) {
-  ::view-transition-old(root) { animation: vt-out .45s cubic-bezier(.65, 0, .35, 1) both; }
-  ::view-transition-new(root) { animation: vt-in .75s cubic-bezier(.22, 1, .36, 1) .12s both; }
-  @keyframes vt-out { to { opacity: 0; transform: scale(.985); filter: blur(6px) brightness(.6); } }
-  @keyframes vt-in { from { opacity: 0; transform: translateY(28px); filter: blur(8px); } }
+  ::view-transition-old(root) { animation: vt-out .7s cubic-bezier(.65, 0, .35, 1) both; }
+  ::view-transition-new(root) { animation: vt-in .95s cubic-bezier(.76, 0, .24, 1) both; }
+  @keyframes vt-out { to { transform: scale(.94) translateY(-4%); filter: brightness(.35) blur(4px); } }
+  @keyframes vt-in { from { clip-path: inset(100% 0 0 0); } to { clip-path: inset(0 0 0 0); } }
 }
+
+/* ---- studio motion layer (scripts/studio.ts) ---- */
+.progress { position: fixed; z-index: 120; left: 0; top: 0; width: 100%; height: 2px; background: linear-gradient(90deg, #ff9a3d, var(--sun)); box-shadow: 0 0 12px rgb(255 200 60 / .8); transform-origin: 0 50%; transform: scaleX(0); pointer-events: none; }
+.cur { position: fixed; inset: 0; z-index: 150; pointer-events: none; opacity: 0; transition: opacity .3s; mix-blend-mode: screen; }
+.cur.on { opacity: 1; }
+.cur i, .cur b { position: absolute; left: 0; top: 0; border-radius: 50%; }
+.cur i { width: 8px; height: 8px; margin: -4px 0 0 -4px; background: #fff6d0; box-shadow: 0 0 12px 3px rgb(255 210 63 / .9); }
+.cur b { width: 46px; height: 46px; margin: -23px 0 0 -23px; border: 1px solid rgb(255 210 63 / .45); background: radial-gradient(circle, rgb(255 200 60 / .22), transparent 70%); transition: width .45s var(--ease-out), height .45s var(--ease-out), margin .45s var(--ease-out), background-color .3s; }
+.cur.hot b { width: 84px; height: 84px; margin: -42px 0 0 -42px; background: radial-gradient(circle, rgb(255 200 60 / .35), transparent 70%); border-color: rgb(255 210 63 / .8); }
+.cur.img b { width: 120px; height: 120px; margin: -60px 0 0 -60px; border-color: transparent; background: radial-gradient(circle, rgb(255 225 140 / .3), transparent 70%); }
+@media (hover: hover) and (pointer: fine) { html.has-cur, html.has-cur a, html.has-cur button, html.has-cur summary, html.has-cur [role=tab] { cursor: none; } }
+.kin { overflow: clip; padding-block: clamp(2rem, 5vw, 5rem); background: var(--paper); border-block: 1px solid var(--line); }
+.kin__t { display: flex; width: max-content; margin: 0; white-space: nowrap; font: 500 clamp(3.5rem, 2rem + 8vw, 11rem)/.9 var(--font-display); letter-spacing: -.055em; will-change: transform; }
+.kin__t span { display: inline-flex; align-items: center; color: transparent; -webkit-text-stroke: 1px rgb(242 237 228 / .35); }
+.kin__t span:nth-child(3n+2) { color: var(--ink); -webkit-text-stroke: 0; }
+.kin__t span::after { content: ''; width: .32em; height: .32em; margin-inline: .45em; border-radius: 50%; background: radial-gradient(circle, #fff6d0, var(--sun) 40%, rgb(255 160 40 / 0) 72%); box-shadow: 0 0 40px 10px rgb(255 190 60 / .35); }
+.sky.is-pinned { height: calc(100svh - 4.5rem); display: grid; align-content: center; overflow: clip; }
+.sky.is-pinned .hs-row { overflow: visible; scroll-snap-type: none; }
+[data-shafts] { position: relative; isolation: isolate; overflow: clip; }
+.shafts { position: absolute; inset: 0; z-index: -1; width: 100%; height: 100%; pointer-events: none; mix-blend-mode: screen; }
