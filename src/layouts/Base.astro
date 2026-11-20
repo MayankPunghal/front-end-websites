@@ -16,6 +16,7 @@ const canonical = new URL(Astro.url.pathname, SITE.liveOrigin).href;
 <html lang="en">
   <head>
     <meta charset="utf-8" />
+    <slot name="early" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>{full}</title>
     <meta name="description" content={description} />

@@ -4,6 +4,9 @@ import HomeBody from '../components/HomeBody.astro';
 import '../styles/home.css';
 import { L, LS } from '../lib/live';
 import { slides } from '../lib/homeData';
+import fs from 'node:fs';
+// film versions, baked in so the opening piece can be requested before the stylesheets and the film's own JSON
+const FV = Object.fromEntries(['landscape', 'portrait'].map(n => { try { return [n, JSON.parse(fs.readFileSync('../../../public/sunrooof/film/' + n + '.json', 'utf8')).v]; } catch { return [n, 0]; } }));
 const LAYERS = ['Housing', 'Thermal fins', 'Light source', 'Advanced optics', 'Special lenses', 'Sky surface', 'Design frame'];
 ---
 <Base
@@ -11,12 +14,14 @@ const LAYERS = ['Housing', 'Thermal fins', 'Light source', 'Advanced optics', 'S
   description="SUNROOOF brings the feel of natural daylight indoors with sun lighting for homes, offices, hotels, retail spaces and premium interiors."
   image={L(slides[0].after, 1200)}
 >
+  <!-- first thing in the head: fetch the hero film's opening piece (and its timeline) before the stylesheets hold scripts back -->
+  <script slot="early" is:inline define:vars={{ FV }}>if(!matchMedia('(prefers-reduced-motion: reduce)').matches&&FV.landscape){var n=innerHeight-72>innerWidth?'portrait':'landscape',u='/front-end-websites/sunrooof/film/'+n;window.__film0={path:u,json:fetch(u+'.json',{cache:'no-cache'}).then(function(r){return r.json()}),piece:fetch(u+'-0.mp4?v='+FV[n]).then(function(r){if(!r.ok)throw 0;return r.blob()})};}</script>
   <!-- 1 · HERO: one day under SUNROOOF, a film scrubbed by scroll -->
   <section class="film" data-film="/film" aria-label="One day under SUNROOOF">
     <div class="film__pin">
       <video aria-hidden="true" muted playsinline preload="auto" tabindex="-1" controlslist="nodownload" disablepictureinpicture disableremoteplayback></video>
-      <!-- runs before first paint: switch to the film layout at once (film.ts falls back if the film fails), show its first frame, and start fetching the opening piece ahead of everything else on the page -->
-      <script is:inline>if(!matchMedia('(prefers-reduced-motion: reduce)').matches){var v=document.currentScript.previousElementSibling,p=v.parentElement;document.documentElement.classList.add('is-film');var u=p.parentElement.dataset.film+'/'+(innerHeight-72>innerWidth?'portrait':'landscape');v.poster=u+'.jpg';var j=fetch(u+'.json',{cache:'no-cache'}).then(function(r){return r.json()});window.__film0={path:u,json:j,piece:j.then(function(f){return fetch(u+'-0.mp4?v='+f.v)}).then(function(r){return r.blob()})};}</script>
+      <!-- runs before first paint: switch to the film layout at once (film.ts falls back if the film fails) and show its first frame -->
+      <script is:inline>if(!matchMedia('(prefers-reduced-motion: reduce)').matches){var v=document.currentScript.previousElementSibling,p=v.parentElement;document.documentElement.classList.add('is-film');var u=p.parentElement.dataset.film+'/'+(innerHeight-72>innerWidth?'portrait':'landscape');v.poster=u+'.jpg';}</script>
       <img class="film__poster" src={L(slides[0].after, 1600)} srcset={LS(slides[0].after, [800, 1200, 1600, 2200])} sizes="100vw" width="1440" height="720" alt={slides[0].alt} loading="lazy" />
       <article class="ch ch--hero" data-in="0" data-out=".075">
         <h1>Bring Sunlight to Spaces Where it is Not Possible to Have it</h1>
