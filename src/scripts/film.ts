@@ -26,15 +26,16 @@ async function boot(story: HTMLElement) {
     for (let i = 1; i < k; i++) { const v = first.cloneNode() as HTMLVideoElement; v.removeAttribute('poster'); v.removeAttribute('src'); v.style.visibility = 'hidden'; vids[i - 1].after(v); vids.push(v); }
     vids.forEach(v => v.addEventListener('loadedmetadata', () => { shownZoom = ''; s = -1; shown = -1; }));
     const r: Reel = { vids, film: f, at: 0, seg, want: 0 }, url = (i: number) => f.seg ? `${base}-${i}.mp4?v=${f.v}` : `${base}.mp4?v=${f.v}`;
-    (async () => { // one piece at a time, always the unloaded one nearest where the visitor is (or heading)
-      const done = new Set<number>();
+    const done = new Set<number>();
+    const load = async () => { // two of these run side by side, each taking the unloaded piece nearest where the visitor is (or heading)
       while (done.size < k) {
         let i = -1; for (let d = 0; d < k && i < 0; d++) for (const j of [r.want + d, r.want - d]) if (j >= 0 && j < k && !done.has(j)) { i = j; break; }
         done.add(i);
         try { const b: Blob = await (i === 0 && base === path && early ? early.piece : fetch(url(i)).then(x => x.ok ? x.blob() : Promise.reject())); vids[i].src = URL.createObjectURL(b); }
         catch { vids[i].src = url(i); if (i === 0 && r === reel) fail(); } // fall back to streaming that piece
       }
-    })();
+    };
+    load(); load();
     return r;
   };
   let reel = reelOf(video, path, film);
