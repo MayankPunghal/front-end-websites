@@ -1,7 +1,10 @@
 // Hero: scroll picks a frame of a pre-rendered film. Chapter copy, layer labels and the clock follow the same position.
 import { paceAt } from '../lib/pace';
 
-type Film = { v: number; n: number; fps: number; tod: number[]; labels: Record<string, number[]> };
+type Film = { v: number; n: number; fps: number; seg?: number; tod: number[]; labels: Record<string, number[]> };
+// A film is cut into short pieces (seg frames each), one <video> per piece. Each piece is downloaded whole and played from memory,
+// nearest the visitor first, so the opening scrubs within a second or two while the rest arrives in story order.
+type Reel = { vids: HTMLVideoElement[]; film: Film; at: number; seg: number; want: number };
 
 const story = document.querySelector<HTMLElement>('[data-film]');
 if (story && !matchMedia('(prefers-reduced-motion: reduce)').matches) boot(story);
@@ -14,15 +17,39 @@ async function boot(story: HTMLElement) {
   pin.addEventListener('contextmenu', e => e.preventDefault()); // no 'Save video as' on the film (a deterrent only: the file is still fetched in the open)
   const path = `${story.dataset.film}/${pin.clientHeight > pin.clientWidth ? 'portrait' : 'landscape'}`;
   let film: Film;
-  try { film = await (await fetch(`${path}.json`, { cache: 'no-cache' })).json(); } catch { return fail(); }
-  video.addEventListener('error', fail, { once: true });
-  video.addEventListener('loadedmetadata', () => { shownZoom = ''; s = -1; shown = -1; });
-  // Seeking a streamed file aborts and re-requests a byte range on every scroll step (a few frames a second on a cold cache).
-  // So the whole film is downloaded once and played from memory; the streamed copy covers the first seconds until it lands.
-  const full = (v: HTMLVideoElement, url: string) => fetch(url).then(r => r.ok ? r.blob() : Promise.reject()).then(b => { const t = v.currentTime; v.src = URL.createObjectURL(b); v.currentTime = t; }).catch(() => {});
-  if (!video.poster.endsWith(`${path}.jpg`)) video.poster = `${path}.jpg`; video.src = `${path}.mp4?v=${film.v}`;
-  const src = video.src; // the page's own images and fonts go first; the full copy starts once they have loaded
-  document.readyState === 'complete' ? full(video, src) : addEventListener('load', () => full(video, src), { once: true });
+  const early = (window as any).__film0?.path === path ? (window as any).__film0 : null; // started by the inline script in the page head
+  try { film = await (early ? early.json : fetch(`${path}.json`, { cache: 'no-cache' }).then(r => r.json())); } catch { return fail(); }
+  if (!video.poster.endsWith(`${path}.jpg`)) video.poster = `${path}.jpg`;
+  // Seeking a streamed file re-requests a byte range on every scroll step, so each piece is fetched whole and played from memory.
+  const reelOf = (first: HTMLVideoElement, base: string, f: Film): Reel => {
+    const seg = f.seg || f.n, k = Math.ceil(f.n / seg), vids = [first];
+    for (let i = 1; i < k; i++) { const v = first.cloneNode() as HTMLVideoElement; v.removeAttribute('poster'); v.removeAttribute('src'); v.style.visibility = 'hidden'; vids[i - 1].after(v); vids.push(v); }
+    vids.forEach(v => v.addEventListener('loadedmetadata', () => { shownZoom = ''; s = -1; shown = -1; }));
+    const r: Reel = { vids, film: f, at: 0, seg, want: 0 }, url = (i: number) => f.seg ? `${base}-${i}.mp4?v=${f.v}` : `${base}.mp4?v=${f.v}`;
+    (async () => { // one piece at a time, always the unloaded one nearest where the visitor is (or heading)
+      const done = new Set<number>();
+      while (done.size < k) {
+        let i = -1; for (let d = 0; d < k && i < 0; d++) for (const j of [r.want + d, r.want - d]) if (j >= 0 && j < k && !done.has(j)) { i = j; break; }
+        done.add(i);
+        try { const b: Blob = await (i === 0 && base === path && early ? early.piece : fetch(url(i)).then(x => x.ok ? x.blob() : Promise.reject())); vids[i].src = URL.createObjectURL(b); }
+        catch { vids[i].src = url(i); if (i === 0 && r === reel) fail(); } // fall back to streaming that piece
+      }
+    })();
+    return r;
+  };
+  let reel = reelOf(video, path, film);
+  const show = (r: Reel, i: number) => { r.vids[r.at].style.visibility = 'hidden'; r.vids[i].style.visibility = ''; r.at = i; if (r === reel) video = r.vids[i]; };
+  const lenOf = (r: Reel, i: number) => Math.min(r.seg, r.film.n - i * r.seg);
+  /** Points the reel at the current frame: seeks the piece that holds it and swaps it in once it shows that frame; parks the pieces either side on their nearest frame so crossing into them is instant. */
+  const seekTo = (r: Reel) => {
+    const i = Math.min(r.vids.length - 1, frame / r.seg | 0), v = r.vids[i], t = (frame - i * r.seg + .5) / r.film.fps; r.want = i;
+    if (v.readyState < 1) return; // not downloaded yet: the last frame stays up
+    if (v.seeking) return;
+    if (Math.abs(v.currentTime - t) > 1e-3) { v.currentTime = t; return; }
+    if (i !== r.at) show(r, i);
+    shown = frame;
+    for (const j of [i - 1, i + 1]) { const n = r.vids[j]; if (!n || n.readyState < 1 || n.seeking) continue; const pt = (j < i ? lenOf(r, j) - .5 : .5) / r.film.fps; if (Math.abs(n.currentTime - pt) > 1e-3) n.currentTime = pt; }
+  };
 
   const clamp = (x: number) => Math.min(1, Math.max(0, x)), up = (x: number, a: number, b: number) => { const t = clamp((x - a) / (b - a)); return t * t * t * (t * (6 * t - 15) + 10); };
   let shownGrade = '', shownZoom = '', zk = 1, ztx = 0;
@@ -89,24 +116,27 @@ async function boot(story: HTMLElement) {
     const now = Math.abs(goal - eased) < 1e-4 ? (eased = goal) : eased;
     if (now !== s) { s = now; p = paceAt(s); frame = Math.round(s * (film.n - 1)); overlay(); }
     // a new seek only starts once the last one has finished, so the video never falls behind the scrollbar
-    if (frame !== shown && !video.seeking && video.readyState >= 1) { shown = frame; video.currentTime = (frame + .5) / film.fps; }
+    if (frame !== shown) seekTo(reel);
   };
   // switching mounts: the other film loads on first use and takes over at the same moment of the story
-  const first = video, alt: Record<string, { v: HTMLVideoElement; film: Film }> = { ceiling: { v: video, film } }, buttons = [...story.querySelectorAll<HTMLButtonElement>('[data-mount]')];
+  const alt: Record<string, Reel> = { ceiling: reel }, buttons = [...story.querySelectorAll<HTMLButtonElement>('[data-mount]')];
   let want = 'ceiling';
   const choose = async (m: string) => {
     want = m; buttons.forEach(b => b.setAttribute('aria-pressed', String(b.dataset.mount === m)));
     try {
       if (!alt[m]) {
-        const v = first.cloneNode() as HTMLVideoElement, data: Film = await (await fetch(`${path}-wall.json`, { cache: 'no-cache' })).json();
-        v.style.opacity = '0'; v.removeAttribute('poster'); v.src = `${path}-wall.mp4?v=${data.v}`; first.after(v);
-        await new Promise((ok, no) => { v.addEventListener('loadeddata', ok, { once: true }); v.addEventListener('error', no, { once: true }); });
-        alt[m] = { v, film: data }; full(v, v.src);
+        const data: Film = await (await fetch(`${path}-wall.json`, { cache: 'no-cache' })).json(), all = story.querySelectorAll('video');
+        const v = all[0].cloneNode() as HTMLVideoElement; v.removeAttribute('poster'); v.removeAttribute('src'); v.style.visibility = ''; all[all.length - 1].after(v);
+        alt[m] = reelOf(v, `${path}-wall`, data); alt[m].vids.forEach(x => { x.style.opacity = '0'; });
       }
-      const next = alt[m]; if (want !== m) return;
-      next.v.currentTime = (frame + .5) / next.film.fps; await new Promise(ok => next.v.addEventListener('seeked', ok, { once: true }));
+      const next = alt[m];
+      // wait for the piece holding the current frame, then show it there before crossfading
+      while (want === m) { next.want = Math.min(next.vids.length - 1, frame / next.seg | 0); const v = next.vids[next.want]; if (v.readyState >= 1) break; await new Promise(ok => setTimeout(ok, 50)); }
       if (want !== m) return;
-      video.style.opacity = '0'; next.v.style.opacity = '1'; video = next.v; film = next.film; shown = -1; shownZoom = ''; s = -1;
+      const i = next.want, v = next.vids[i]; v.currentTime = (frame - i * next.seg + .5) / next.film.fps; await new Promise(ok => v.addEventListener('seeked', ok, { once: true }));
+      if (want !== m) return;
+      show(next, i); reel.vids.forEach(x => { x.style.opacity = '0'; }); next.vids.forEach(x => { x.style.opacity = '1'; });
+      reel = next; video = next.vids[i]; film = next.film; shown = -1; shownZoom = ''; s = -1;
     } catch { if (want === m && m !== 'ceiling') choose('ceiling'); }
   };
   buttons.forEach(b => b.addEventListener('click', () => choose(b.dataset.mount!)));
